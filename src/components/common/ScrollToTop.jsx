@@ -43,10 +43,10 @@ export default function ScrollToTop() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 p-3.5 rounded-full bg-[#f5b800] text-slate-950 shadow-2xl shadow-amber-500/30 border border-amber-300 font-bold cursor-pointer transition flex items-center justify-center"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 p-2.5 sm:p-3.5 rounded-full bg-[#f5b800] text-slate-950 shadow-xl shadow-amber-500/30 border border-amber-300 font-bold cursor-pointer transition flex items-center justify-center"
           aria-label="Scroll to Top"
         >
-          <FiChevronUp size={22} strokeWidth={2.5} />
+          <FiChevronUp className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
         </motion.button>
       )}
     </AnimatePresence>

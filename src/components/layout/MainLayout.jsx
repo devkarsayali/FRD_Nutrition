@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import CartDrawer from "../cart/CartDrawer";
 import CheckoutModal from "../cart/CheckoutModal";
+import AuthModal from "../auth/AuthModal";
 import ScrollToTop from "../common/ScrollToTop";
 import Footer from "./Footer";
 import Navbar from "./Navbar";
@@ -22,6 +23,7 @@ export default function MainLayout() {
       {/* Global Interactive Drawer, Modals & Scroll Button */}
       <CartDrawer />
       <CheckoutModal />
+      <AuthModal />
       <ScrollToTop />
     </div>
   );

@@ -154,11 +154,9 @@ export default function SupplementsPage() {
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
                   style={{
-                    background: `linear-gradient(to right, #f5b800 0%, #f5b800 ${
-                      ((maxPrice - 500) / (50000 - 500)) * 100
-                    }%, #1e293b ${
-                      ((maxPrice - 500) / (50000 - 500)) * 100
-                    }%, #1e293b 100%)`,
+                    background: `linear-gradient(to right, #f5b800 0%, #f5b800 ${((maxPrice - 500) / (50000 - 500)) * 100
+                      }%, #1e293b ${((maxPrice - 500) / (50000 - 500)) * 100
+                      }%, #1e293b 100%)`,
                   }}
                   className="w-full h-2.5 rounded-lg appearance-none cursor-pointer accent-[#f5b800] transition-all shadow-inner"
                 />
@@ -180,9 +178,9 @@ export default function SupplementsPage() {
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between">
-                <span className="text-xs text-slate-400 font-bold">
-                  Found <span className="text-[#f5b800] font-black">{filteredProducts.length}</span> supplements
-                </span>
+              <span className="text-xs text-slate-400 font-bold">
+                Found <span className="text-[#f5b800] font-black">{filteredProducts.length}</span> supplements
+              </span>
 
               {isFiltered && (
                 <button

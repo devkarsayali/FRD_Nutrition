@@ -125,7 +125,7 @@ export default function Navbar() {
 
             {/* Profile Dropdown Menu */}
             {user && isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-64 bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-800 rounded-3xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute right-0 mt-3 w-60 sm:w-64 max-w-[calc(100vw-1.5rem)] bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-800 rounded-3xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-in fade-in zoom-in-95 duration-200">
                 {/* User Identity Header */}
                 <div className="px-3.5 py-2.5 mb-2 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black flex items-center justify-center text-sm shadow-md shrink-0">

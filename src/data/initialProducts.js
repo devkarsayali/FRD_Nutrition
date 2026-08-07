@@ -319,7 +319,7 @@ export const INITIAL_PRODUCTS = [
     }
   }
 
-  ,{
+  , {
     id: "frd-peanut-09",
     name: "PRO-PEANUT NATURAL BUTTER",
     subtitle: "High-Protein Peanut Butter Spread",
@@ -354,7 +354,7 @@ export const INITIAL_PRODUCTS = [
     }
   }
 
-  ,{
+  , {
     id: "frd-musli-10",
     name: "PRO-MUSLI WHOLE GRAINS",
     subtitle: "Protein-Forward Muesli Mix",
@@ -389,7 +389,7 @@ export const INITIAL_PRODUCTS = [
     }
   }
 
-  ,{
+  , {
     id: "frd-oats-11",
     name: "PRO-ROLLING OATS",
     subtitle: "High-Protein Rolled Oats",
@@ -424,7 +424,7 @@ export const INITIAL_PRODUCTS = [
     }
   }
 
-  ,{
+  , {
     id: "frd-glucose-12",
     name: "PRO-GLUCOSE ENERGY",
     subtitle: "Fast-Absorbing Carbohydrate Powder",

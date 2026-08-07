@@ -518,55 +518,55 @@ export default function HomePage() {
         transition={{ duration: 0.55 }}
         className="py-12"
       >
-        <div className="container-custom bg-[#131b2e] p-8 sm:p-12 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div className="container-custom bg-[#131b2e] p-4 sm:p-12 rounded-3xl sm:rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6 sm:space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center">
             {/* Left: Storefront & Interior Gallery */}
-            <div className="lg:col-span-6 space-y-4">
+            <div className="lg:col-span-6 space-y-3 sm:space-y-4">
               {/* Main Large Store Image: About4 */}
-              <div className="rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80 bg-[#090d16]">
+              <div className="rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80 bg-[#090d16]">
                 <img
                   src={About4}
                   alt="FRD Nutrition Premium Storefront - About4"
-                  className="w-full h-72 sm:h-[380px] object-cover object-top hover:scale-105 transition-transform duration-500"
+                  className="w-full h-48 sm:h-[380px] object-cover object-top hover:scale-105 transition-transform duration-500"
                 />
               </div>
 
               {/* Bottom 3 Grid Images: About2, About3 & About1 */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
                   <img
                     src={About2}
                     alt="FRD Store Interior Shelves - About2"
-                    className="w-full h-28 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
+                    className="w-full h-20 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
                   <img
                     src={About3}
                     alt="FRD Store Exterior Team - About3"
-                    className="w-full h-28 sm:h-32 object-cover object-top hover:scale-105 transition-transform duration-500"
+                    className="w-full h-20 sm:h-32 object-cover object-top hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
                   <img
                     src={About1}
                     alt="FRD Store Stock Display - About1"
-                    className="w-full h-28 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
+                    className="w-full h-20 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Right: Store Live Information */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="flex items-center gap-2 text-xs font-black text-[#f5b800] uppercase tracking-widest">
-                <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-                  <FiMapPin className="text-[#f5b800]" size={16} />
+            <div className="lg:col-span-6 space-y-4 sm:space-y-6">
+              <div className="flex items-center gap-2 text-[10px] sm:text-xs font-black text-[#f5b800] uppercase tracking-widest">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                  <FiMapPin className="text-[#f5b800]" size={14} />
                 </div>
                 <span>FRD NUTRITION STORE • LIVE EXPERIENCE</span>
               </div>
 
-              <h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+              <h2 className="font-heading text-xl sm:text-4xl font-extrabold text-white leading-tight">
                 Experience Us Live: Visit Our Store
               </h2>
 

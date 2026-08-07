@@ -3,12 +3,19 @@ import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FiCheckCircle, FiEye, FiEyeOff, FiLock, FiMail, FiUser, FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
+import { useUserAuth } from "../../context/UserAuthContext";
 
-export default function AuthModal({ isOpen, onClose }) {
+export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose }) {
+  const { isAuthOpen, setIsAuthOpen, loginUser, logoutUser, user: contextUser } = useUserAuth();
+
+  const isOpen = customIsOpen !== undefined ? customIsOpen : isAuthOpen;
+  const handleClose = customOnClose || (() => setIsAuthOpen(false));
+
   const [mode, setMode] = useState("login"); // "login" | "signup" | "forgot"
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+
+  const activeUser = contextUser;
+  const isLoggedIn = Boolean(contextUser);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -68,10 +75,8 @@ export default function AuthModal({ isOpen, onClose }) {
       name: foundUser?.name || formData.name || cleanEmail.split("@")[0] || "Athlete",
       email: cleanEmail,
     };
-    setIsLoggedIn(true);
-    setUser(loggedUser);
-    toast.success(`Welcome back, ${loggedUser.name}! Logged in successfully.`);
-    onClose();
+    loginUser(loggedUser);
+    handleClose();
   };
 
   const handleSignUpSubmit = (e) => {
@@ -99,14 +104,12 @@ export default function AuthModal({ isOpen, onClose }) {
     };
     saveRegisteredUser(newUser);
 
-    setIsLoggedIn(true);
-    setUser({
+    loginUser({
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
     });
-    toast.success(`Welcome to FRD Nutrition, ${newUser.name}! Account created successfully.`);
-    onClose();
+    handleClose();
   };
 
   const handleForgotPassword = (e) => {
@@ -124,17 +127,13 @@ export default function AuthModal({ isOpen, onClose }) {
       name: "Ram Athlete",
       email: "athlete@gmail.com",
     };
-    setIsLoggedIn(true);
-    setUser(googleUser);
-    toast.success("Signed in with Google successfully!");
-    onClose();
+    loginUser(googleUser);
+    handleClose();
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUser(null);
-    toast.success("Logged out successfully.");
-    onClose();
+  const handleLogoutAction = () => {
+    logoutUser();
+    handleClose();
   };
 
   if (!isOpen) return null;
@@ -151,7 +150,7 @@ export default function AuthModal({ isOpen, onClose }) {
         >
           {/* Close Button */}
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-5 right-5 p-2 rounded-full bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition"
             aria-label="Close modal"
           >
@@ -159,7 +158,7 @@ export default function AuthModal({ isOpen, onClose }) {
           </button>
 
           {/* Logged In View */}
-          {isLoggedIn && user ? (
+          {isLoggedIn && activeUser ? (
             <div className="text-center space-y-6 py-4">
               <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 text-[#f5b800] flex items-center justify-center mx-auto shadow-inner">
                 <FiUser size={32} />
@@ -169,9 +168,9 @@ export default function AuthModal({ isOpen, onClose }) {
                   AUTHENTICATED ATHLETE
                 </span>
                 <h3 className="font-heading text-2xl font-bold text-white">
-                  {user.name}
+                  {activeUser.name}
                 </h3>
-                <p className="text-xs text-slate-400">{user.email}</p>
+                <p className="text-xs text-slate-400">{activeUser.email}</p>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-2 text-left">
@@ -186,7 +185,7 @@ export default function AuthModal({ isOpen, onClose }) {
               </div>
 
               <button
-                onClick={handleLogout}
+                onClick={handleLogoutAction}
                 className="w-full py-3.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold hover:bg-slate-800 transition text-xs shadow-md"
               >
                 Log Out

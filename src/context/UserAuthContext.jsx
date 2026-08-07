@@ -98,7 +98,7 @@ export function UserAuthProvider({ children }) {
     } else {
       toast.error(message);
       setPendingAction(() => actionCallback);
-      window.location.href = "/user/login";
+      setIsAuthOpen(true);
     }
   };
 
