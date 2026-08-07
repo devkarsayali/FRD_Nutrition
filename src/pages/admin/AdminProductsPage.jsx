@@ -345,7 +345,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
 
           <button
             onClick={handleOpenAdd}
-            className="whitespace-nowrap px-5 py-3 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs flex items-center gap-2 shadow-lg shadow-lime-500/20"
+            className="w-full sm:w-auto justify-center whitespace-nowrap px-5 py-2.5 sm:py-3 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs flex items-center gap-2 shadow-lg shadow-lime-500/20"
           >
             <FiPlus size={18} />
             <span>Add New Supplement</span>
@@ -356,7 +356,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       {/* Supplements CRUD Data Table */}
       <div className="bg-[#141813] rounded-3xl border border-neutral-800 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-neutral-300">
+          <table className="w-full min-w-[700px] text-left text-xs text-neutral-300">
             <thead className="bg-neutral-900 text-neutral-400 uppercase text-[10px] border-b border-neutral-800">
               <tr>
                 <th className="p-4">Supplement</th>
@@ -457,7 +457,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
             onClick={() => setIsAddModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-2xl bg-[#141813] text-white rounded-3xl border border-neutral-800 shadow-2xl p-8 z-10 space-y-6 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-[#141813] text-white rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-2xl p-4 sm:p-8 z-10 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <h3 className="font-heading text-xl font-bold">
                 {editingProduct ? "Edit Supplement" : "Add New Supplement"}

@@ -63,6 +63,18 @@ export default function AdminLayout() {
     };
   }, [location.pathname]);
 
+  // Lock body scroll on mobile when sidebar drawer is open
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isSidebarOpen]);
+
   // Load unread customer orders count for sidebar badge
   const loadUnreadOrdersCount = () => {
     try {
@@ -148,9 +160,9 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d100c] text-white flex flex-col font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#0d100c] text-white flex flex-col font-sans">
       {/* TOP HEADER BAR WITH GLOBAL SEARCH BAR */}
-      <header className="h-16 sm:h-20 bg-[#121611] border-b border-neutral-800 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-50 shadow-md gap-3 sm:gap-6">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 sm:h-20 bg-[#121611]/95 backdrop-blur-xl border-b border-neutral-800 px-4 sm:px-8 flex items-center justify-between shadow-2xl gap-3 sm:gap-6">
         {/* Left: FRD Logo */}
         <div className="flex items-center gap-3 sm:gap-6 shrink-0">
           <button
@@ -250,8 +262,8 @@ export default function AdminLayout() {
         </div>
       </header>
 
-      {/* MAIN BODY AREA WITH STICKY SIDEBAR + MAIN CONTENT */}
-      <div className="flex-1 flex relative">
+      {/* MAIN BODY AREA WITH FIXED LEFT SIDEBAR + MAIN CONTENT */}
+      <div className="flex-1 flex relative pt-16 sm:pt-20">
         {/* Mobile Slide-Over Backdrop */}
         {isSidebarOpen && (
           <div
@@ -262,9 +274,8 @@ export default function AdminLayout() {
 
         {/* Sidebar Drawer */}
         <aside
-          className={`fixed md:sticky top-0 md:top-20 left-0 z-50 md:z-40 h-full md:h-[calc(100vh-5rem)] w-64 bg-[#121611] border-r border-neutral-800 p-6 flex flex-col justify-between shrink-0 transition-transform duration-300 ease-in-out ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          }`}
+          className={`fixed top-16 sm:top-20 left-0 bottom-0 z-50 md:z-40 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] w-64 bg-[#121611] border-r border-neutral-800 p-6 flex flex-col justify-between overflow-y-auto no-scrollbar shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            }`}
         >
           <div className="space-y-6">
             <div className="flex items-center justify-between md:block">
@@ -300,11 +311,10 @@ export default function AdminLayout() {
                     to={item.path}
                     end={item.path === "/admin"}
                     onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-semibold text-xs transition ${
-                      isCurrentActive
+                    className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-semibold text-xs transition ${isCurrentActive
                         ? "bg-lime-500 text-neutral-950 shadow-md shadow-lime-500/20 font-bold"
                         : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Icon size={18} />
@@ -313,11 +323,10 @@ export default function AdminLayout() {
 
                     {badgeCount > 0 && (
                       <span
-                        className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center border border-[#121611] ${
-                          isCurrentActive
+                        className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center border border-[#121611] ${isCurrentActive
                             ? "bg-neutral-950 text-white"
                             : "bg-red-500 text-white"
-                        }`}
+                          }`}
                       >
                         {badgeCount}
                       </span>
@@ -330,7 +339,7 @@ export default function AdminLayout() {
         </aside>
 
         {/* Main Admin Content View */}
-        <main className="flex-1 p-4 sm:p-6 md:p-10 max-w-7xl min-w-0 w-full">
+        <main className="flex-1 p-4 sm:p-6 md:p-10 max-w-7xl min-w-0 w-full md:ml-64">
           <Outlet context={{ isAddModalOpen, setIsAddModalOpen, searchQuery, setSearchQuery }} />
         </main>
       </div>
