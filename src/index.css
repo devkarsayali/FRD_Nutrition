@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-lime: #84cc16;
+  --color-brand-lime-light: #a3e635;
+  --color-amber-gold: #f5b800;
+  --color-dark-bg: #10130f;
+  --color-dark-surface: #141813;
+  --color-dark-card: #191e19;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  scroll-behavior: smooth;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #10130f;
+  color: #ffffff;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+}
+
+/* Custom Utilities */
+.container-custom {
+  width: min(100% - 32px, 1280px);
+  margin-inline: auto;
+}
+
+.text-gradient-lime {
+  background: linear-gradient(135deg, #a3e635 0%, #84cc16 50%, #65a30d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+  background: rgba(20, 24, 19, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(25, 30, 25, 0.95);
+  border-color: rgba(132, 204, 22, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(132, 204, 22, 0.2);
+  transform: translateY(-3px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #10130f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222922;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #84cc16;
+}
