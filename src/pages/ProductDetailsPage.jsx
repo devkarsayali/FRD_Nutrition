@@ -152,45 +152,45 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="bg-[#10130f] text-white min-h-screen py-8">
-      <div className="container-custom max-w-7xl mx-auto space-y-10 px-4 sm:px-6">
+      <div className="container-custom max-w-7xl mx-auto space-y-6 sm:space-y-10 px-3 sm:px-6">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-neutral-400">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-neutral-400">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-neutral-400 hover:text-white transition"
+            className="flex items-center gap-1 text-neutral-400 hover:text-white transition shrink-0"
           >
-            <FiArrowLeft size={15} />
+            <FiArrowLeft size={14} />
             <span>Back</span>
           </button>
           <span>/</span>
-          <Link to="/supplements" className="hover:text-lime-400">
+          <Link to="/supplements" className="hover:text-lime-400 shrink-0">
             Supplements
           </Link>
           <span>/</span>
-          <span className="text-lime-400 font-semibold truncate max-w-[200px] sm:max-w-none">
+          <span className="text-lime-400 font-semibold truncate max-w-[150px] sm:max-w-none">
             {product.name}
           </span>
         </div>
 
         {/* Main Product Showcase Box */}
-        <div className="bg-[#141813] rounded-3xl border border-neutral-800 p-6 sm:p-8 shadow-2xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="bg-[#141813] rounded-2xl sm:rounded-3xl border border-neutral-800 p-4 sm:p-8 shadow-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-start">
             
             {/* LEFT COLUMN: Media Gallery (Main Viewport + Thumbnails) */}
             <div className="lg:col-span-6 space-y-4">
-              <div className="bg-[#191e19] rounded-2xl border border-neutral-800 p-6 relative flex items-center justify-center min-h-[380px] sm:min-h-[460px] overflow-hidden group">
+              <div className="bg-[#191e19] rounded-2xl border border-neutral-800 p-3 sm:p-6 relative flex items-center justify-center min-h-[280px] sm:min-h-[460px] overflow-hidden group">
                 {/* Share Button Overlay */}
                 <button
                   onClick={handleShare}
-                  className="absolute top-4 right-4 p-2.5 rounded-full bg-neutral-900/80 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-700/60 transition z-10"
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full bg-neutral-900/80 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-700/60 transition z-10"
                   title="Share Product"
                 >
-                  <FiShare2 size={18} />
+                  <FiShare2 size={16} />
                 </button>
 
                 {/* Badge Tag */}
                 {product.badge && (
-                  <span className="absolute top-4 left-4 px-3 py-1 rounded-md bg-lime-500 text-neutral-950 font-black text-[11px] uppercase tracking-wider z-10">
+                  <span className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 py-1 rounded-md bg-lime-500 text-neutral-950 font-black text-[10px] sm:text-[11px] uppercase tracking-wider z-10">
                     {product.badge}
                   </span>
                 )}
@@ -211,7 +211,7 @@ export default function ProductDetailsPage() {
                         controls
                         autoPlay
                         loop
-                        className="w-full max-h-[420px] rounded-xl object-contain"
+                        className="w-full max-h-[320px] sm:max-h-[420px] rounded-xl object-contain"
                       />
                     )}
                   </div>
@@ -219,19 +219,19 @@ export default function ProductDetailsPage() {
                   <img
                     src={currentUrl}
                     alt={product.name || "Supplement"}
-                    className="w-full max-h-[420px] object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105"
+                    className="w-full max-h-[300px] sm:max-h-[420px] object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105"
                   />
                 )}
               </div>
 
               {/* Photos & Videos Thumbnails Row */}
               {allMedia.length > 1 && (
-                <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-thin">
                   {allMedia.map((item, idx) => (
                     <button
                       key={idx}
                       onClick={() => setSelectedMediaIndex(idx)}
-                      className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${
+                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${
                         selectedMediaIndex === idx
                           ? "border-lime-500 ring-2 ring-lime-500/30"
                           : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
@@ -455,8 +455,8 @@ export default function ProductDetailsPage() {
                 onClick={handleEnquireNow}
                 className="w-full py-3.5 px-6 rounded-xl font-extrabold uppercase text-xs tracking-wider transition bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 text-[#f5b800] border border-amber-500/40 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 active:scale-[0.99] cursor-pointer"
               >
-                <FiHelpCircle size={17} />
-                <span>Enquire Now for {product.name}</span>
+                <FiHelpCircle size={17} className="shrink-0" />
+                <span className="truncate">Enquire Now for {product.name}</span>
               </button>
 
               {/* Dispatch & Security Highlights */}

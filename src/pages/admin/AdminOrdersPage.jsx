@@ -676,9 +676,9 @@ export default function AdminOrdersPage({ defaultTab }) {
           </div>
 
           {filteredMessages.length === 0 ? (
-            <div className="p-12 text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-600 mx-auto">
-                <FiMessageSquare size={28} />
+            <div className="p-8 sm:p-12 text-center space-y-3">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-600 mx-auto">
+                <FiMessageSquare size={26} />
               </div>
               <h3 className="font-bold text-base text-white">No Contact Messages Found</h3>
               <p className="text-xs text-neutral-400">
@@ -688,157 +688,262 @@ export default function AdminOrdersPage({ defaultTab }) {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse table-fixed">
-                <thead>
-                  <tr className="bg-neutral-900/90 text-neutral-400 font-bold uppercase text-[10px] tracking-wider border-b border-neutral-800">
-                    <th className="py-3.5 px-3 w-[14%]">Message ID & Date</th>
-                    <th className="py-3.5 px-3 w-[16%]">Customer Details</th>
-                    <th className="py-3.5 px-3 w-[20%]">Contact Info</th>
-                    <th className="py-3.5 px-3 w-[22%]">Enquiry / Item</th>
-                    <th className="py-3.5 px-3 w-[16%]">Message Preview</th>
-                    <th className="py-3.5 px-3 w-[10%]">Status</th>
-                    <th className="py-3.5 px-3 w-[12%] text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-800/80 text-xs">
-                  {filteredMessages.map((msg) => (
-                    <tr
-                      key={msg.id}
-                      className={`hover:bg-neutral-900/50 transition ${
-                        msg.status === "unread" ? "bg-lime-500/[0.03]" : ""
-                      }`}
-                    >
-                      {/* ID & Date */}
-                      <td className="py-3.5 px-3">
-                        <div className="space-y-1">
-                          <span className="font-mono text-[11px] font-bold text-lime-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 inline-block truncate max-w-full">
-                            {msg.id}
-                          </span>
-                          <span className="text-[10px] text-neutral-400 block truncate">
-                            {msg.date}
-                          </span>
-                        </div>
-                      </td>
+            <>
+              {/* MOBILE RESPONSIVE CARDS VIEW (< md) */}
+              <div className="grid grid-cols-1 gap-3.5 p-3 sm:p-4 md:hidden">
+                {filteredMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-4 rounded-2xl border transition space-y-3 ${
+                      msg.status === "unread"
+                        ? "bg-lime-500/[0.04] border-lime-500/30 shadow-md shadow-lime-500/5"
+                        : "bg-neutral-900/60 border-neutral-800"
+                    }`}
+                  >
+                    {/* Header Row: ID, Date, Status */}
+                    <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] font-bold text-lime-400 bg-neutral-950 px-2 py-0.5 rounded border border-neutral-800">
+                          {msg.id}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">{msg.date}</span>
+                      </div>
+                      {msg.status === "unread" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold uppercase">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          Unread
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700/50 text-[10px] font-bold uppercase">
+                          <FiCheckCircle size={10} />
+                          Read
+                        </span>
+                      )}
+                    </div>
 
-                      {/* Customer Details */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-xs shrink-0">
-                            {(msg.name || "C").charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <span className="font-bold text-white block text-xs truncate" title={msg.name}>{msg.name}</span>
-                            <span className="text-[10px] text-neutral-500 block truncate">
-                              {msg.product ? "Product Customer" : "General Customer"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Contact Info */}
-                      <td className="py-3.5 px-3">
-                        <div className="space-y-1 min-w-0">
-                          <a
-                            href={`mailto:${msg.email}`}
-                            className="flex items-center gap-1.5 text-lime-400 font-semibold hover:underline text-xs truncate"
-                            title={msg.email}
-                          >
-                            <FiMail size={12} className="shrink-0" />
+                    {/* Customer & Contact Info */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-xs shrink-0">
+                        {(msg.name || "C").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-0.5">
+                        <h4 className="font-bold text-white text-sm truncate">{msg.name}</h4>
+                        <div className="flex flex-col gap-0.5 text-xs">
+                          <a href={`mailto:${msg.email}`} className="text-lime-400 font-semibold hover:underline truncate flex items-center gap-1">
+                            <FiMail size={11} className="shrink-0" />
                             <span className="truncate">{msg.email}</span>
                           </a>
-                          <a
-                            href={`tel:${msg.phone}`}
-                            className="flex items-center gap-1.5 text-neutral-300 hover:text-white text-[11px] truncate"
-                          >
-                            <FiPhone size={12} className="text-neutral-500 shrink-0" />
-                            <span className="truncate">{msg.phone}</span>
-                          </a>
+                          {msg.phone && (
+                            <a href={`tel:${msg.phone}`} className="text-neutral-400 hover:text-white text-[11px] flex items-center gap-1">
+                              <FiPhone size={11} className="shrink-0" />
+                              <span>{msg.phone}</span>
+                            </a>
+                          )}
                         </div>
-                      </td>
+                      </div>
+                    </div>
 
-                      {/* Product Name & Subject */}
-                      <td className="py-3.5 px-3">
-                        {msg.product ? (
-                          <div className="space-y-1 min-w-0">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/admin/products?search=${encodeURIComponent(msg.product)}`);
-                              }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 text-[11px] font-extrabold max-w-full transition cursor-pointer group/item min-w-0"
-                              title={`Click to view "${msg.product}" in Admin Supplements catalog`}
-                            >
-                              <FiPackage size={12} className="shrink-0 text-[#f5b800] group-hover/item:scale-110 transition-transform" />
-                              <span className="truncate max-w-[140px] sm:max-w-[160px]">{msg.product}</span>
-                              <FiExternalLink size={10} className="shrink-0 opacity-75 group-hover/item:opacity-100" />
-                            </button>
-                            {msg.subject && msg.subject !== `Enquiry for ${msg.product}` && (
-                              <span className="text-[10px] text-neutral-400 block truncate font-medium">
-                                Subj: {msg.subject}
-                              </span>
-                            )}
+                    {/* Product Badge if enquiry */}
+                    {msg.product && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/products?search=${encodeURIComponent(msg.product)}`);
+                          }}
+                          className="w-full inline-flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-extrabold transition cursor-pointer hover:bg-amber-500/25"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <FiPackage size={14} className="shrink-0 text-[#f5b800]" />
+                            <span className="truncate">{msg.product}</span>
                           </div>
-                        ) : (
-                          <div className="min-w-0">
-                            <span className="font-semibold text-neutral-300 block truncate text-xs">
-                              {msg.subject || "General Contact"}
-                            </span>
-                            <span className="text-[10px] text-neutral-500 block truncate">Contact Form</span>
-                          </div>
-                        )}
-                      </td>
+                          <FiExternalLink size={12} className="shrink-0 opacity-80" />
+                        </button>
+                      </div>
+                    )}
 
-                      {/* Message Preview */}
-                      <td className="py-3.5 px-3">
-                        <div className="bg-neutral-900/80 p-2 rounded-xl border border-neutral-800 min-w-0">
-                          <p className="text-neutral-300 text-xs truncate font-medium" title={msg.message}>
-                            "{msg.message}"
-                          </p>
-                        </div>
-                      </td>
+                    {/* Message Preview */}
+                    <div className="bg-neutral-950 p-2.5 rounded-xl border border-neutral-800/80">
+                      <p className="text-neutral-300 text-xs line-clamp-2 italic">
+                        "{msg.message}"
+                      </p>
+                    </div>
 
-                      {/* Status Tag */}
-                      <td className="py-3.5 px-3">
-                        {msg.status === "unread" ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                            Unread
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700/50 text-[10px] font-bold uppercase">
-                            <FiCheckCircle size={10} />
-                            Read
-                          </span>
-                        )}
-                      </td>
+                    {/* Actions Footer */}
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-neutral-800/80">
+                      <button
+                        onClick={() => setSelectedMessage(msg)}
+                        className="flex-1 py-2 px-3 rounded-xl bg-neutral-900 text-neutral-200 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800 text-xs font-bold flex items-center justify-center gap-1.5"
+                      >
+                        <FiEye size={14} />
+                        <span>View Details</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border border-neutral-800"
+                        title="Delete Record"
+                      >
+                        <FiTrash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => setSelectedMessage(msg)}
-                            className="p-2 rounded-xl bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800"
-                            title="View Full Message Details"
-                          >
-                            <FiEye size={15} />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteMessage(msg.id)}
-                            className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border border-neutral-800"
-                            title="Delete Record"
-                          >
-                            <FiTrash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
+              {/* DESKTOP TABLE VIEW (hidden md:block) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse table-fixed">
+                  <thead>
+                    <tr className="bg-neutral-900/90 text-neutral-400 font-bold uppercase text-[10px] tracking-wider border-b border-neutral-800">
+                      <th className="py-3.5 px-3 w-[14%]">Message ID & Date</th>
+                      <th className="py-3.5 px-3 w-[16%]">Customer Details</th>
+                      <th className="py-3.5 px-3 w-[20%]">Contact Info</th>
+                      <th className="py-3.5 px-3 w-[22%]">Enquiry / Item</th>
+                      <th className="py-3.5 px-3 w-[16%]">Message Preview</th>
+                      <th className="py-3.5 px-3 w-[10%]">Status</th>
+                      <th className="py-3.5 px-3 w-[12%] text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/80 text-xs">
+                    {filteredMessages.map((msg) => (
+                      <tr
+                        key={msg.id}
+                        className={`hover:bg-neutral-900/50 transition ${
+                          msg.status === "unread" ? "bg-lime-500/[0.03]" : ""
+                        }`}
+                      >
+                        {/* ID & Date */}
+                        <td className="py-3.5 px-3">
+                          <div className="space-y-1">
+                            <span className="font-mono text-[11px] font-bold text-lime-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 inline-block truncate max-w-full">
+                              {msg.id}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block truncate">
+                              {msg.date}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Customer Details */}
+                        <td className="py-3.5 px-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-xs shrink-0">
+                              {(msg.name || "C").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="font-bold text-white block text-xs truncate" title={msg.name}>{msg.name}</span>
+                              <span className="text-[10px] text-neutral-500 block truncate">
+                                {msg.product ? "Product Customer" : "General Customer"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Contact Info */}
+                        <td className="py-3.5 px-3">
+                          <div className="space-y-1 min-w-0">
+                            <a
+                              href={`mailto:${msg.email}`}
+                              className="flex items-center gap-1.5 text-lime-400 font-semibold hover:underline text-xs truncate"
+                              title={msg.email}
+                            >
+                              <FiMail size={12} className="shrink-0" />
+                              <span className="truncate">{msg.email}</span>
+                            </a>
+                            <a
+                              href={`tel:${msg.phone}`}
+                              className="flex items-center gap-1.5 text-neutral-300 hover:text-white text-[11px] truncate"
+                            >
+                              <FiPhone size={12} className="text-neutral-500 shrink-0" />
+                              <span className="truncate">{msg.phone}</span>
+                            </a>
+                          </div>
+                        </td>
+
+                        {/* Product Name & Subject */}
+                        <td className="py-3.5 px-3">
+                          {msg.product ? (
+                            <div className="space-y-1 min-w-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/admin/products?search=${encodeURIComponent(msg.product)}`);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 text-[11px] font-extrabold max-w-full transition cursor-pointer group/item min-w-0"
+                                title={`Click to view "${msg.product}" in Admin Supplements catalog`}
+                              >
+                                <FiPackage size={12} className="shrink-0 text-[#f5b800] group-hover/item:scale-110 transition-transform" />
+                                <span className="truncate max-w-[140px] sm:max-w-[160px]">{msg.product}</span>
+                                <FiExternalLink size={10} className="shrink-0 opacity-75 group-hover/item:opacity-100" />
+                              </button>
+                              {msg.subject && msg.subject !== `Enquiry for ${msg.product}` && (
+                                <span className="text-[10px] text-neutral-400 block truncate font-medium">
+                                  Subj: {msg.subject}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="min-w-0">
+                              <span className="font-semibold text-neutral-300 block truncate text-xs">
+                                {msg.subject || "General Contact"}
+                              </span>
+                              <span className="text-[10px] text-neutral-500 block truncate">Contact Form</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Message Preview */}
+                        <td className="py-3.5 px-3">
+                          <div className="bg-neutral-900/80 p-2 rounded-xl border border-neutral-800 min-w-0">
+                            <p className="text-neutral-300 text-xs truncate font-medium" title={msg.message}>
+                              "{msg.message}"
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Status Tag */}
+                        <td className="py-3.5 px-3">
+                          {msg.status === "unread" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              Unread
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700/50 text-[10px] font-bold uppercase">
+                              <FiCheckCircle size={10} />
+                              Read
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setSelectedMessage(msg)}
+                              className="p-2 rounded-xl bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800"
+                              title="View Full Message Details"
+                            >
+                              <FiEye size={15} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border border-neutral-800"
+                              title="Delete Record"
+                            >
+                              <FiTrash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
