@@ -3,6 +3,7 @@ import {
   FiArrowLeft,
   FiCheckCircle,
   FiHeart,
+  FiHelpCircle,
   FiMinus,
   FiPlay,
   FiPlus,
@@ -127,6 +128,12 @@ export default function ProductDetailsPage() {
       () => addToCart(product, quantity, selectedFlavor, selectedSize),
       "Please log in first to add items to your cart."
     );
+  };
+
+  const handleEnquireNow = () => {
+    navigate(`/contact?product=${encodeURIComponent(product.name)}`, {
+      state: { productName: product.name },
+    });
   };
 
   const handleShare = () => {
@@ -441,6 +448,16 @@ export default function ProductDetailsPage() {
                   <FiHeart size={20} fill={isWishlisted ? "currentColor" : "none"} />
                 </button>
               </div>
+
+              {/* Product Enquiry Button */}
+              <button
+                type="button"
+                onClick={handleEnquireNow}
+                className="w-full py-3.5 px-6 rounded-xl font-extrabold uppercase text-xs tracking-wider transition bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 text-[#f5b800] border border-amber-500/40 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 active:scale-[0.99] cursor-pointer"
+              >
+                <FiHelpCircle size={17} />
+                <span>Enquire Now for {product.name}</span>
+              </button>
 
               {/* Dispatch & Security Highlights */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800/80 text-xs">

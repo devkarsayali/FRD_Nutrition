@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FiCheckCircle, FiEye, FiEyeOff, FiLock, FiMail, FiUser, FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -13,6 +13,23 @@ export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose
 
   const [mode, setMode] = useState("login"); // "login" | "signup" | "forgot"
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [isOpen]);
 
   const activeUser = contextUser;
   const isLoggedIn = Boolean(contextUser);

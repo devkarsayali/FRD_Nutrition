@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { FiArrowRight, FiCheckSquare, FiMinus, FiPlus, FiShoppingBag, FiSquare, FiTrash2, FiX } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
 
@@ -16,6 +17,23 @@ export default function CartDrawer() {
     FREE_SHIPPING_THRESHOLD,
     setIsCheckoutOpen,
   } = useCart();
+
+  useEffect(() => {
+    if (isCartOpen) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [isCartOpen]);
 
   if (!isCartOpen) return null;
 

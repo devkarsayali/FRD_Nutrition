@@ -26,6 +26,15 @@ body,
   overflow-x: clip;
 }
 
+html.no-scroll,
+body.no-scroll,
+#root.no-scroll {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  touch-action: none;
+}
+
 /* Custom Utilities */
 .container-custom {
   width: min(100% - 32px, 1280px);

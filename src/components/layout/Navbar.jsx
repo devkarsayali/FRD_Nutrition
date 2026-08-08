@@ -43,6 +43,24 @@ export default function Navbar() {
     };
   }, []);
 
+  // Lock background scrolling when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [isMobileMenuOpen]);
+
   const handleProfileClick = () => {
     if (user) {
       setIsProfileDropdownOpen((prev) => !prev);

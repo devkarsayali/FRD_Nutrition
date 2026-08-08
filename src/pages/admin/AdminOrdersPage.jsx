@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   FiCheckCircle,
   FiClock,
+  FiExternalLink,
   FiEye,
   FiMail,
   FiMapPin,
@@ -16,11 +17,12 @@ import {
 } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
-import { useOutletContext, useLocation, useSearchParams } from "react-router-dom";
+import { useOutletContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AdminOrdersPage({ defaultTab }) {
   const { orders: cartContextOrders } = useCart();
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const outletContext = useOutletContext();
@@ -38,8 +40,26 @@ export default function AdminOrdersPage({ defaultTab }) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [messageFilter, setMessageFilter] = useState("All");
 
   const searchTerm = globalSearch || localSearchTerm;
+
+  useEffect(() => {
+    if (selectedMessage || selectedOrder) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [selectedMessage, selectedOrder]);
 
   useEffect(() => {
     if (
@@ -351,14 +371,30 @@ export default function AdminOrdersPage({ defaultTab }) {
   const unreadCount = contactMessages.filter((m) => m.status === "unread").length;
 
   // Filter logic
-  const filteredMessages = contactMessages.filter(
-    (m) =>
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMessages = contactMessages.filter((m) => {
+    const query = searchTerm.toLowerCase();
+    const searchMatch =
+      (m.name || "").toLowerCase().includes(query) ||
+      (m.email || "").toLowerCase().includes(query) ||
+      (m.phone || "").toLowerCase().includes(query) ||
+      (m.message || "").toLowerCase().includes(query) ||
+      (m.product || "").toLowerCase().includes(query) ||
+      (m.subject || "").toLowerCase().includes(query) ||
+      (m.id || "").toLowerCase().includes(query);
+
+    let filterMatch = true;
+    if (messageFilter === "Product Enquiries") {
+      filterMatch = Boolean(m.product || m.type === "Product Enquiry");
+    } else if (messageFilter === "General Messages") {
+      filterMatch = !m.product && m.type !== "Product Enquiry";
+    } else if (messageFilter === "Unread") {
+      filterMatch = m.status === "unread";
+    } else if (messageFilter === "Read") {
+      filterMatch = m.status === "read";
+    }
+
+    return searchMatch && filterMatch;
+  });
 
   const filteredOrders = allOrders.filter((o) => {
     const statusMatch =
@@ -596,7 +632,49 @@ export default function AdminOrdersPage({ defaultTab }) {
 
       {/* TAB 2: CONTACT MESSAGES DATA TABLE */}
       {activeTab === "messages" && (
-        <div className="bg-[#141813] rounded-3xl border border-neutral-800 overflow-hidden shadow-2xl">
+        <div className="bg-[#141813] rounded-3xl border border-neutral-800 overflow-hidden shadow-2xl space-y-0">
+          {/* Header Controls for Messages */}
+          <div className="p-5 border-b border-neutral-800/80 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-heading text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span>Contact Messages & Enquiries ({filteredMessages.length})</span>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] font-extrabold">
+                    {unreadCount} Unread
+                  </span>
+                )}
+              </h2>
+              <p className="text-[11px] text-neutral-400 mt-1">
+                View, filter, search, and respond to product enquiries and general customer contact messages.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-64">
+                <input
+                  type="text"
+                  value={localSearchTerm}
+                  onChange={(e) => setLocalSearchTerm(e.target.value)}
+                  placeholder="Search name, product, email..."
+                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-lime-500 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition"
+                />
+                <FiSearch className="absolute left-3.5 top-3 text-neutral-500" size={15} />
+              </div>
+              <div>
+                <select
+                  value={messageFilter}
+                  onChange={(e) => setMessageFilter(e.target.value)}
+                  className="w-full bg-[#192218] border border-neutral-800 text-lime-400 text-xs rounded-2xl px-3 py-2.5 focus:outline-none focus:border-lime-500 cursor-pointer font-semibold"
+                >
+                  <option value="All" className="bg-neutral-900 text-white">All Messages</option>
+                  <option value="Product Enquiries" className="bg-neutral-900 text-amber-400">📦 Product Enquiries</option>
+                  <option value="General Messages" className="bg-neutral-900 text-white">💬 General Messages</option>
+                  <option value="Unread" className="bg-neutral-900 text-white">Unread Messages</option>
+                  <option value="Read" className="bg-neutral-900 text-white">Read Messages</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {filteredMessages.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-600 mx-auto">
@@ -604,22 +682,23 @@ export default function AdminOrdersPage({ defaultTab }) {
               </div>
               <h3 className="font-bold text-base text-white">No Contact Messages Found</h3>
               <p className="text-xs text-neutral-400">
-                {searchTerm
-                  ? "No messages match your search criteria."
-                  : "Messages submitted via the store's Contact Us page will appear here."}
+                {searchTerm || messageFilter !== "All"
+                  ? "No messages match your selected search or filter criteria."
+                  : "Messages and product enquiries submitted via the store's Contact Us page will appear here."}
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className="bg-neutral-900/90 text-neutral-400 font-bold uppercase text-[10px] tracking-wider border-b border-neutral-800">
-                    <th className="py-4 px-4">Message ID & Date</th>
-                    <th className="py-4 px-4">Customer Details</th>
-                    <th className="py-4 px-4">Contact Info</th>
-                    <th className="py-4 px-4">Message Preview</th>
-                    <th className="py-4 px-4">Status</th>
-                    <th className="py-4 px-4 text-right">Actions</th>
+                    <th className="py-3.5 px-3 w-[14%]">Message ID & Date</th>
+                    <th className="py-3.5 px-3 w-[16%]">Customer Details</th>
+                    <th className="py-3.5 px-3 w-[20%]">Contact Info</th>
+                    <th className="py-3.5 px-3 w-[22%]">Enquiry / Item</th>
+                    <th className="py-3.5 px-3 w-[16%]">Message Preview</th>
+                    <th className="py-3.5 px-3 w-[10%]">Status</th>
+                    <th className="py-3.5 px-3 w-[12%] text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800/80 text-xs">
@@ -631,53 +710,89 @@ export default function AdminOrdersPage({ defaultTab }) {
                       }`}
                     >
                       {/* ID & Date */}
-                      <td className="py-4 px-4">
+                      <td className="py-3.5 px-3">
                         <div className="space-y-1">
-                          <span className="font-mono text-[11px] font-bold text-lime-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 block w-max">
+                          <span className="font-mono text-[11px] font-bold text-lime-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 inline-block truncate max-w-full">
                             {msg.id}
                           </span>
-                          <span className="text-[10px] text-neutral-400 block whitespace-nowrap">
+                          <span className="text-[10px] text-neutral-400 block truncate">
                             {msg.date}
                           </span>
                         </div>
                       </td>
 
                       {/* Customer Details */}
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-sm shrink-0">
-                            {msg.name.charAt(0).toUpperCase()}
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-xs shrink-0">
+                            {(msg.name || "C").charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <span className="font-bold text-white block text-sm">{msg.name}</span>
-                            <span className="text-[10px] text-neutral-500 block">Customer Inquiry</span>
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-white block text-xs truncate" title={msg.name}>{msg.name}</span>
+                            <span className="text-[10px] text-neutral-500 block truncate">
+                              {msg.product ? "Product Customer" : "General Customer"}
+                            </span>
                           </div>
                         </div>
                       </td>
 
                       {/* Contact Info */}
-                      <td className="py-4 px-4">
-                        <div className="space-y-1">
+                      <td className="py-3.5 px-3">
+                        <div className="space-y-1 min-w-0">
                           <a
                             href={`mailto:${msg.email}`}
-                            className="flex items-center gap-1.5 text-lime-400 font-semibold hover:underline text-xs"
+                            className="flex items-center gap-1.5 text-lime-400 font-semibold hover:underline text-xs truncate"
+                            title={msg.email}
                           >
                             <FiMail size={12} className="shrink-0" />
-                            <span>{msg.email}</span>
+                            <span className="truncate">{msg.email}</span>
                           </a>
                           <a
                             href={`tel:${msg.phone}`}
-                            className="flex items-center gap-1.5 text-neutral-300 hover:text-white text-[11px]"
+                            className="flex items-center gap-1.5 text-neutral-300 hover:text-white text-[11px] truncate"
                           >
                             <FiPhone size={12} className="text-neutral-500 shrink-0" />
-                            <span>{msg.phone}</span>
+                            <span className="truncate">{msg.phone}</span>
                           </a>
                         </div>
                       </td>
 
+                      {/* Product Name & Subject */}
+                      <td className="py-3.5 px-3">
+                        {msg.product ? (
+                          <div className="space-y-1 min-w-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/admin/products?search=${encodeURIComponent(msg.product)}`);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 text-[11px] font-extrabold max-w-full transition cursor-pointer group/item min-w-0"
+                              title={`Click to view "${msg.product}" in Admin Supplements catalog`}
+                            >
+                              <FiPackage size={12} className="shrink-0 text-[#f5b800] group-hover/item:scale-110 transition-transform" />
+                              <span className="truncate max-w-[140px] sm:max-w-[160px]">{msg.product}</span>
+                              <FiExternalLink size={10} className="shrink-0 opacity-75 group-hover/item:opacity-100" />
+                            </button>
+                            {msg.subject && msg.subject !== `Enquiry for ${msg.product}` && (
+                              <span className="text-[10px] text-neutral-400 block truncate font-medium">
+                                Subj: {msg.subject}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="min-w-0">
+                            <span className="font-semibold text-neutral-300 block truncate text-xs">
+                              {msg.subject || "General Contact"}
+                            </span>
+                            <span className="text-[10px] text-neutral-500 block truncate">Contact Form</span>
+                          </div>
+                        )}
+                      </td>
+
                       {/* Message Preview */}
-                      <td className="py-4 px-4 max-w-xs">
-                        <div className="bg-neutral-900/80 p-2.5 rounded-xl border border-neutral-800">
+                      <td className="py-3.5 px-3">
+                        <div className="bg-neutral-900/80 p-2 rounded-xl border border-neutral-800 min-w-0">
                           <p className="text-neutral-300 text-xs truncate font-medium" title={msg.message}>
                             "{msg.message}"
                           </p>
@@ -685,7 +800,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                       </td>
 
                       {/* Status Tag */}
-                      <td className="py-4 px-4">
+                      <td className="py-3.5 px-3">
                         {msg.status === "unread" ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold uppercase">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -700,25 +815,14 @@ export default function AdminOrdersPage({ defaultTab }) {
                       </td>
 
                       {/* Actions */}
-                      <td className="py-4 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="py-3.5 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedMessage(msg)}
                             className="p-2 rounded-xl bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800"
                             title="View Full Message Details"
                           >
                             <FiEye size={15} />
-                          </button>
-
-                          <button
-                            onClick={() => handleToggleRead(msg.id)}
-                            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition cursor-pointer border ${
-                              msg.status === "unread"
-                                ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
-                                : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                            }`}
-                          >
-                            {msg.status === "unread" ? "Mark Read" : "Unread"}
                           </button>
 
                           <button
@@ -742,11 +846,11 @@ export default function AdminOrdersPage({ defaultTab }) {
       {/* FULL MESSAGE DETAILS MODAL */}
       {selectedMessage && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="w-full max-w-lg bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-5 relative shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-base">
-                  {selectedMessage.name.charAt(0).toUpperCase()}
+                  {(selectedMessage.name || "C").charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <h3 className="font-heading text-lg font-bold text-white">
@@ -764,6 +868,46 @@ export default function AdminOrdersPage({ defaultTab }) {
                 <FiX size={18} />
               </button>
             </div>
+
+            {/* Product Enquiry Box (if product present) */}
+            {selectedMessage.product && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-[#f5b800] shrink-0">
+                    <FiPackage size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] font-black text-[#f5b800] uppercase tracking-wider block">
+                      Product Enquiry Item
+                    </span>
+                    <h4 className="text-xs font-extrabold text-white truncate">
+                      {selectedMessage.product}
+                    </h4>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prodName = selectedMessage.product;
+                    setSelectedMessage(null);
+                    navigate(`/admin/products?search=${encodeURIComponent(prodName)}`);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-[11px] font-extrabold hover:bg-amber-400 transition shrink-0 flex items-center gap-1 cursor-pointer shadow-md shadow-amber-500/20"
+                  title="View this product in Admin Supplements list"
+                >
+                  <span>View Product</span>
+                  <FiExternalLink size={12} />
+                </button>
+              </div>
+            )}
+
+            {/* Subject Line if present */}
+            {selectedMessage.subject && (
+              <div className="bg-neutral-900/90 p-3 rounded-2xl border border-neutral-800 text-xs">
+                <span className="text-neutral-500 block text-[10px] uppercase font-bold">Subject / Topic</span>
+                <span className="text-amber-300 font-semibold">{selectedMessage.subject}</span>
+              </div>
+            )}
 
             {/* Quick Contact Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-neutral-900 p-3.5 rounded-2xl border border-neutral-800 text-xs">
@@ -784,35 +928,47 @@ export default function AdminOrdersPage({ defaultTab }) {
             {/* Message Body */}
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block">
-                Full Inquiry Message:
+                Customer Message / Enquiry:
               </span>
-              <div className="bg-neutral-900/90 p-4 rounded-2xl border border-neutral-800 text-xs text-neutral-200 leading-relaxed whitespace-pre-line font-medium max-h-60 overflow-y-auto">
+              <div className="bg-neutral-900/90 p-4 rounded-2xl border border-neutral-800 text-xs text-neutral-200 leading-relaxed whitespace-pre-line font-medium max-h-52 overflow-y-auto">
                 {selectedMessage.message}
               </div>
             </div>
 
             {/* Footer Modal Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
-              <button
-                onClick={() => {
-                  handleToggleRead(selectedMessage.id);
-                  setSelectedMessage((prev) => ({
-                    ...prev,
-                    status: prev.status === "read" ? "unread" : "read",
-                  }));
-                }}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                  selectedMessage.status === "unread"
-                    ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
-                    : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
-                }`}
-              >
-                {selectedMessage.status === "unread" ? "Mark as Read" : "Mark as Unread"}
-              </button>
+            <div className="flex items-center justify-between pt-3 border-t border-neutral-800 gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    handleToggleRead(selectedMessage.id);
+                    setSelectedMessage((prev) => ({
+                      ...prev,
+                      status: prev.status === "read" ? "unread" : "read",
+                    }));
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                    selectedMessage.status === "unread"
+                      ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
+                      : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
+                  }`}
+                >
+                  {selectedMessage.status === "unread" ? "Mark Read" : "Mark Unread"}
+                </button>
+
+                <a
+                  href={`mailto:${selectedMessage.email}?subject=Re: ${encodeURIComponent(selectedMessage.subject || selectedMessage.product || "FRD Nutrition Enquiry")}&body=${encodeURIComponent(`Hi ${selectedMessage.name},\n\nThank you for reaching out regarding ${selectedMessage.product || "your enquiry"}.\n\n`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 hover:bg-amber-400 transition"
+                >
+                  <FiMail size={13} />
+                  <span>Reply via Email</span>
+                </a>
+              </div>
 
               <button
                 onClick={() => setSelectedMessage(null)}
-                className="px-5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
               >
                 Close
               </button>

@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { FiCheck, FiShoppingBag, FiStar, FiX } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { FiCheck, FiHelpCircle, FiShoppingBag, FiStar, FiX } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useUserAuth } from "../../context/UserAuthContext";
 
 export default function QuickViewModal({ product, onClose }) {
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { requireAuth } = useUserAuth();
   const [selectedFlavor, setSelectedFlavor] = useState(
@@ -13,6 +15,23 @@ export default function QuickViewModal({ product, onClose }) {
     product?.sizes ? product.sizes[0] : "Standard"
   );
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (product) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [product]);
 
   if (!product) return null;
 
@@ -24,6 +43,13 @@ export default function QuickViewModal({ product, onClose }) {
       },
       "Please log in first to add items to your cart."
     );
+  };
+
+  const handleEnquireNow = () => {
+    onClose();
+    navigate(`/contact?product=${encodeURIComponent(product.name)}`, {
+      state: { productName: product.name },
+    });
   };
 
   return (
@@ -120,8 +146,8 @@ export default function QuickViewModal({ product, onClose }) {
             )}
           </div>
 
-          {/* Pricing & Add to Cart */}
-          <div className="pt-4 border-t border-neutral-800 space-y-4">
+          {/* Pricing & Actions */}
+          <div className="pt-4 border-t border-neutral-800 space-y-3">
             <div className="flex items-baseline gap-3">
               <span className="font-heading font-black text-2xl text-white">
                 ₹{product.price}
@@ -133,14 +159,25 @@ export default function QuickViewModal({ product, onClose }) {
               )}
             </div>
 
-            <button
-              onClick={handleAdd}
-              disabled={!product.inStock}
-              className="w-full py-3.5 px-4 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition shadow-lg shadow-lime-500/20 flex items-center justify-center gap-2"
-            >
-              <FiShoppingBag size={18} />
-              <span>Add to Shopping Cart</span>
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={handleAdd}
+                disabled={!product.inStock}
+                className="w-full py-3.5 px-4 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition shadow-lg shadow-lime-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FiShoppingBag size={18} />
+                <span>Add to Shopping Cart</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleEnquireNow}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[#f5b800] border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer uppercase tracking-wider"
+              >
+                <FiHelpCircle size={15} />
+                <span>Enquire Now</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

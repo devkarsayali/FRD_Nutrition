@@ -4,13 +4,13 @@ import { FiChevronUp } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
 
 export default function ScrollToTop() {
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
 
-  // Auto scroll to top on route change
+  // Auto scroll to top on route or query parameter change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [pathname]);
+  }, [location.pathname, location.search]);
 
   // Toggle button visibility based on scroll position
   useEffect(() => {

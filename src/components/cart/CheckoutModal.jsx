@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiCheckCircle, FiCreditCard, FiLock, FiShield, FiX } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
 import { useUserAuth } from "../../context/UserAuthContext";
@@ -30,6 +30,23 @@ export default function CheckoutModal() {
   });
 
   const [completedOrder, setCompletedOrder] = useState(null);
+
+  useEffect(() => {
+    if (isCheckoutOpen) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [isCheckoutOpen]);
 
   if (!isCheckoutOpen) return null;
 

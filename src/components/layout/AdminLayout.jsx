@@ -42,6 +42,23 @@ export default function AdminLayout() {
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    if (isPasswordModalOpen || isSidebarOpen) {
+      document.documentElement.classList.add("no-scroll");
+      document.body.classList.add("no-scroll");
+      document.getElementById("root")?.classList.add("no-scroll");
+    } else {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    }
+    return () => {
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      document.getElementById("root")?.classList.remove("no-scroll");
+    };
+  }, [isPasswordModalOpen, isSidebarOpen]);
+
   // Load unread contact messages count for sidebar badge
   const loadUnreadMessagesCount = () => {
     try {
