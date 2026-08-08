@@ -111,30 +111,6 @@ export default function AdminCustomersPage() {
         }
       }
 
-      // If empty, add default demo customers
-      if (customerMap.size === 0) {
-        customerMap.set("rahul.sharma@example.com", {
-          id: "CUST-1001",
-          name: "Rahul Sharma",
-          email: "rahul.sharma@example.com",
-          phone: "+91 98765 43210",
-          totalOrders: 4,
-          totalSpend: 11496,
-          lastOrderDate: "05 August 2026",
-          status: "VIP Customer",
-        });
-        customerMap.set("priya.patel@example.com", {
-          id: "CUST-1002",
-          name: "Priya Patel",
-          email: "priya.patel@example.com",
-          phone: "+91 98123 45678",
-          totalOrders: 2,
-          totalSpend: 5498,
-          lastOrderDate: "02 August 2026",
-          status: "Active Customer",
-        });
-      }
-
       setCustomers(Array.from(customerMap.values()));
     } catch (err) {
       console.error("Failed to load customer list:", err);
