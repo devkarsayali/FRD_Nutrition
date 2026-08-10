@@ -219,7 +219,7 @@ export default function AdminLayout() {
             className="px-3 sm:px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-300 hover:text-white hover:border-lime-500/50 flex items-center justify-center gap-2 transition shrink-0 whitespace-nowrap shadow-sm hover:scale-105"
           >
             <FiHome size={16} />
-            <span className="hidden sm:inline">Storefront</span>
+            <span className="hidden sm:inline">Public Storefront</span>
           </Link>
 
           {/* Topbar Settings Icon Button */}
