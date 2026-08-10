@@ -48,7 +48,7 @@ import Latest3 from "../assets/LATEST3.jpeg";
 import Latest4 from "../assets/LATEST4.jpeg";
 
 export default function HomePage() {
-  const { latestProducts, trendingProducts, popularProducts, setSelectedCategory, setSelectedTag } = useProducts();
+  const { latestProducts, justLaunchedProducts, trendingProducts, popularProducts, setSelectedCategory, setSelectedTag } = useProducts();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   // Hero Slider Auto-Animation
@@ -308,7 +308,7 @@ export default function HomePage() {
         </div>
       </motion.section>
 
-      {/* SECTION 1: LATEST COLLECTION */}
+      {/* SECTION 1: LATEST COLLECTION (AUTOMATIC NEWEST ARRIVALS) */}
       <motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -327,7 +327,7 @@ export default function HomePage() {
               <span className="w-8 sm:w-12 h-0.5 bg-amber-500/40 inline-block" />
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              Fresh arrivals just for you — discover what's new in our store.
+              Automatically sorted by creation date — newest arrivals appear here live as soon as admin creates them.
             </p>
           </div>
 
@@ -342,19 +342,18 @@ export default function HomePage() {
               ))
             ) : (
               <p className="col-span-2 sm:col-span-5 text-center text-slate-500 text-sm py-8">
-                No latest products set yet. Go to Admin → Edit products and enable "Latest".
+                No products found in the catalog.
               </p>
             )}
           </div>
 
-          {/* Centered Button matching screenshot */}
           <div className="flex justify-center pt-2">
             <Link
-              to="/supplements?tag=Just Launched"
-              onClick={() => setSelectedTag("Just Launched")}
+              to="/supplements?tag=Latest Collection"
+              onClick={() => setSelectedTag("Latest Collection")}
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-[#f5b800] to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider transition shadow-xl shadow-amber-500/20 active:scale-98"
             >
-              <span>VIEW ALL PRODUCTS</span>
+              <span>VIEW LATEST COLLECTION</span>
               <FiArrowRight size={18} />
             </Link>
           </div>
@@ -397,21 +396,20 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Centered Button matching screenshot */}
           <div className="flex justify-center pt-2">
             <Link
               to="/supplements?tag=Trending"
               onClick={() => setSelectedTag("Trending")}
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-[#f5b800] to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider transition shadow-xl shadow-amber-500/20 active:scale-98"
             >
-              <span>VIEW ALL PRODUCTS</span>
+              <span>VIEW ALL TRENDING</span>
               <FiArrowRight size={18} />
             </Link>
           </div>
         </div>
       </motion.section>
 
-      {/* SECTION 3: POPULAR SUPPLEMENTS */}
+      {/* SECTION 4: POPULAR SUPPLEMENTS */}
       <motion.section
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -447,14 +445,13 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Centered Button matching screenshot */}
           <div className="flex justify-center pt-2">
             <Link
               to="/supplements?tag=Popular"
               onClick={() => setSelectedTag("Popular")}
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-[#f5b800] to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black uppercase text-xs sm:text-sm tracking-wider transition shadow-xl shadow-amber-500/20 active:scale-98"
             >
-              <span>VIEW ALL PRODUCTS</span>
+              <span>VIEW ALL POPULAR</span>
               <FiArrowRight size={18} />
             </Link>
           </div>

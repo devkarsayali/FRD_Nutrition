@@ -46,16 +46,20 @@ export default function AdminCustomersPage() {
         }
       }
 
-      // 2. Aggregate unique orders per customer email
+      // 2. Aggregate unique orders per real customer email
       const customerMap = new Map();
 
       uniqueOrdersMap.forEach((order) => {
-        const email = (
+        const rawEmail = (
           order.customer?.email ||
           order.shippingAddress?.email ||
-          "guest@frdnutrition.com"
+          ""
         ).toLowerCase().trim();
 
+        // Skip non-existent or invalid mock orders
+        if (!rawEmail && (!order.items || order.items.length === 0)) return;
+
+        const email = rawEmail || "guest@frdnutrition.com";
         const name =
           order.customer?.fullName ||
           order.shippingAddress?.name ||
@@ -88,23 +92,29 @@ export default function AdminCustomersPage() {
         }
       });
 
-      // Add logged in user profile if present
+      // Sync with logged in user profile if present
       const savedUser = localStorage.getItem("frd_user_profile");
       if (savedUser) {
         try {
           const profile = JSON.parse(savedUser);
           const email = (profile.email || "").toLowerCase().trim();
-          if (email && !customerMap.has(email)) {
-            customerMap.set(email, {
-              id: `CUST-REG-${Date.now().toString().slice(-4)}`,
-              name: profile.name || "Registered User",
-              email,
-              phone: profile.phone || "N/A",
-              totalOrders: 0,
-              totalSpend: 0,
-              lastOrderDate: "Registered Member",
-              status: "Active Member",
-            });
+          if (email) {
+            if (customerMap.has(email)) {
+              const existing = customerMap.get(email);
+              if (profile.name) existing.name = profile.name;
+              if (profile.phone) existing.phone = profile.phone;
+            } else if (profile.name) {
+              customerMap.set(email, {
+                id: `CUST-REG-${Date.now().toString().slice(-4)}`,
+                name: profile.name,
+                email,
+                phone: profile.phone || "N/A",
+                totalOrders: 0,
+                totalSpend: 0,
+                lastOrderDate: "Registered Member",
+                status: "Active Member",
+              });
+            }
           }
         } catch (e) {
           // ignore

@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import oipLogo from "../../assets/OIP.png";
 import { useAdminAuth } from "../../context/AdminAuthContext";
-import { getPasswordErrorMessage, isValidEmail, isValidPassword } from "../../utils/validation";
+import { isValidEmail } from "../../utils/validation";
 
 export default function AdminLoginPage() {
   const { loginAdmin, isAdminLoggedIn } = useAdminAuth();
@@ -16,11 +16,6 @@ export default function AdminLoginPage() {
   const [isResetSent, setIsResetSent] = useState(false);
   const navigate = useNavigate();
 
-  const emailError = email && !isValidEmail(email) ? "Please enter a valid email address." : "";
-  const passwordError = password && !isValidPassword(password) ? getPasswordErrorMessage(password) : "";
-  const isLoginValid = isValidEmail(email) && isValidPassword(password);
-  const isResetValid = isValidEmail(resetEmail);
-
   useEffect(() => {
     if (isAdminLoggedIn) {
       navigate("/admin");
@@ -31,10 +26,6 @@ export default function AdminLoginPage() {
     e.preventDefault();
     if (!isValidEmail(email)) {
       toast.error("Please enter a valid email address.");
-      return;
-    }
-    if (!isValidPassword(password)) {
-      toast.error(getPasswordErrorMessage(password));
       return;
     }
     const success = loginAdmin(email, password);
@@ -84,10 +75,9 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter Admin Email"
-                className={`w-full bg-neutral-900 border rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:outline-none transition ${emailError ? "border-red-500 focus:border-red-500" : "border-neutral-800 focus:border-lime-500"}`}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:outline-none focus:border-lime-500 transition"
               />
             </div>
-            {emailError && <p className="mt-1 text-xs text-red-400">{emailError}</p>}
           </div>
 
           <div>
@@ -115,7 +105,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin password"
-                className={`w-full bg-neutral-900 border rounded-xl pl-12 pr-12 py-3 text-sm text-white focus:outline-none transition ${passwordError ? "border-red-500 focus:border-red-500" : "border-neutral-800 focus:border-lime-500"}`}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-12 pr-12 py-3 text-sm text-white focus:outline-none focus:border-lime-500 transition"
               />
               <button
                 type="button"
@@ -125,13 +115,11 @@ export default function AdminLoginPage() {
                 {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </button>
             </div>
-            {passwordError && <p className="mt-1 text-xs text-red-400">{passwordError}</p>}
           </div>
 
           <button
             type="submit"
-            disabled={!isLoginValid}
-            className="w-full py-3.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/20 cursor-pointer"
           >
             <span>Log In to Admin Dashboard</span>
             <FiArrowRight size={18} />
@@ -201,12 +189,9 @@ export default function AdminLoginPage() {
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="admin@ftrnutrition.com"
-                      className={`w-full bg-neutral-900 border rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:outline-none transition ${resetEmail && !isValidEmail(resetEmail) ? "border-red-500 focus:border-red-500" : "border-neutral-800 focus:border-lime-500"}`}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:outline-none focus:border-lime-500 transition"
                     />
                   </div>
-                  {resetEmail && !isValidEmail(resetEmail) && (
-                    <p className="mt-1 text-xs text-red-400">Please enter a valid email address.</p>
-                  )}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
@@ -219,8 +204,7 @@ export default function AdminLoginPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!isResetValid}
-                    className="px-5 py-2.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs shadow-md shadow-lime-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs shadow-md shadow-lime-500/20 cursor-pointer"
                   >
                     Send Reset Link
                   </button>

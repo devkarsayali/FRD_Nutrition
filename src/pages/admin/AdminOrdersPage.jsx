@@ -16,6 +16,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
+import { useProducts } from "../../context/ProductContext";
 import toast from "react-hot-toast";
 import { useOutletContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -113,6 +114,11 @@ export default function AdminOrdersPage({ defaultTab }) {
       // Helper to add order to map cleanly
       const addOrderToMap = (o) => {
         if (!o || !o.id) return;
+        // Validate order structure
+        if (!o.items || o.items.length === 0) {
+          if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
+        }
+
         const existing = orderMap.get(o.id) || {};
         // Merge fields to ensure maximum customer info completeness
         const merged = {
@@ -182,6 +188,8 @@ export default function AdminOrdersPage({ defaultTab }) {
     toast.success("Message deleted.");
   };
 
+  const { decreaseProductStock, restoreProductStock } = useProducts();
+
   const STATUS_STEPS = [
     "Pending",
     "Confirmed",
@@ -189,6 +197,9 @@ export default function AdminOrdersPage({ defaultTab }) {
     "Shipped",
     "Delivered",
     "Cancelled",
+    "Rejected",
+    "Refunded",
+    "Returned",
   ];
 
   const ORDER_STATUS_OPTIONS = [
@@ -199,6 +210,9 @@ export default function AdminOrdersPage({ defaultTab }) {
     "Out for Delivery",
     "Delivered",
     "Cancelled",
+    "Rejected",
+    "Refunded",
+    "Returned",
   ];
 
   const updateOrderData = (orderId, updateFields) => {
@@ -245,8 +259,12 @@ export default function AdminOrdersPage({ defaultTab }) {
     return 0; // Order Placed / Pending
   };
 
+  const RESTORABLE_STATUSES = ["cancelled", "rejected", "refunded", "returned"];
+
   const handleStatusChange = (orderId, newStatus) => {
     const targetIndex = getStatusStepIndex(newStatus);
+    const normNewStatus = (newStatus || "").toLowerCase().trim();
+    const isNewStatusRestorable = RESTORABLE_STATUSES.includes(normNewStatus);
 
     const defaultSteps = [
       { title: "Order Placed", time: "Order Placed", completed: true },
@@ -258,6 +276,8 @@ export default function AdminOrdersPage({ defaultTab }) {
     ];
 
     const currentOrder = allOrders.find((o) => o.id === orderId);
+    if (!currentOrder) return;
+
     const currentSteps =
       currentOrder?.trackingSteps && currentOrder.trackingSteps.length >= 5
         ? currentOrder.trackingSteps
@@ -265,14 +285,28 @@ export default function AdminOrdersPage({ defaultTab }) {
 
     const updatedTrackingSteps = currentSteps.map((step, idx) => ({
       ...step,
-      completed: newStatus === "Cancelled" ? false : idx <= targetIndex,
+      completed: isNewStatusRestorable ? false : idx <= targetIndex,
     }));
+
+    let nextStockRestored = currentOrder.stockRestored ?? false;
+
+    if (isNewStatusRestorable && !currentOrder.stockRestored) {
+      restoreProductStock(currentOrder.items || []);
+      nextStockRestored = true;
+      toast.success(`Order #${orderId} set to "${newStatus}". Product stock automatically restored!`);
+    } else if (!isNewStatusRestorable && currentOrder.stockRestored) {
+      decreaseProductStock(currentOrder.items || []);
+      nextStockRestored = false;
+      toast.success(`Order #${orderId} set to "${newStatus}". Product stock re-deducted!`);
+    } else {
+      toast.success(`Order #${orderId} status updated to "${newStatus}"`);
+    }
 
     updateOrderData(orderId, {
       status: newStatus,
+      stockRestored: nextStockRestored,
       trackingSteps: updatedTrackingSteps,
     });
-    toast.success(`Order status updated to "${newStatus}"`);
   };
 
   const updateOrderInLocalStorage = (orderId, updateFn) => {
@@ -396,10 +430,16 @@ export default function AdminOrdersPage({ defaultTab }) {
     return searchMatch && filterMatch;
   });
 
+  const getNormalizedStatus = (stat) => {
+    const s = (stat || "Order Placed").toLowerCase().trim();
+    if (s === "pending" || s === "order placed" || s === "confirmed") return "order placed";
+    return s;
+  };
+
   const filteredOrders = allOrders.filter((o) => {
     const statusMatch =
       statusFilter === "All" ||
-      (o.status || "Order Placed").toLowerCase().trim() === statusFilter.toLowerCase().trim();
+      getNormalizedStatus(o.status) === getNormalizedStatus(statusFilter);
 
     const searchMatch =
       o.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -586,6 +626,9 @@ export default function AdminOrdersPage({ defaultTab }) {
                             <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
                             <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
                             <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
+                            <option value="Rejected" className="bg-neutral-900 text-red-400">Rejected</option>
+                            <option value="Refunded" className="bg-neutral-900 text-[#f5b800]">Refunded</option>
+                            <option value="Returned" className="bg-neutral-900 text-amber-400">Returned</option>
                           </select>
                         </td>
 
@@ -1105,6 +1148,9 @@ export default function AdminOrdersPage({ defaultTab }) {
                     <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
                     <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
                     <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
+                    <option value="Rejected" className="bg-neutral-900 text-red-400">Rejected</option>
+                    <option value="Refunded" className="bg-neutral-900 text-[#f5b800]">Refunded</option>
+                    <option value="Returned" className="bg-neutral-900 text-amber-400">Returned</option>
                   </select>
                 </div>
                 <span className="text-xs text-neutral-400 block mt-0.5">

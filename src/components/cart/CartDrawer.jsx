@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { FiArrowRight, FiCheckSquare, FiMinus, FiPlus, FiShoppingBag, FiSquare, FiTrash2, FiX } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
+import { useProducts } from "../../context/ProductContext";
+import toast from "react-hot-toast";
 
 export default function CartDrawer() {
   const {
@@ -17,6 +19,7 @@ export default function CartDrawer() {
     FREE_SHIPPING_THRESHOLD,
     setIsCheckoutOpen,
   } = useCart();
+  const { products } = useProducts();
 
   useEffect(() => {
     if (isCartOpen) {
@@ -37,8 +40,29 @@ export default function CartDrawer() {
 
   if (!isCartOpen) return null;
 
+  // Check if any selected item is out of stock or exceeds available stock
+  const hasInvalidStockItem = selectedCartItems.some((item) => {
+    const latestProd = products.find((p) => p.id === item.product.id) || item.product;
+    const availStock = latestProd.inStock ? (Number(latestProd.stockQuantity) || 0) : 0;
+    return item.quantity > availStock || availStock <= 0;
+  });
+
   const handleProceedToCheckout = () => {
     if (selectedCartItems.length === 0) return;
+
+    for (const item of selectedCartItems) {
+      const latestProd = products.find((p) => p.id === item.product.id) || item.product;
+      const availStock = latestProd.inStock ? (Number(latestProd.stockQuantity) || 0) : 0;
+      if (availStock <= 0) {
+        toast.error(`"${latestProd.name}" is out of stock. Please remove it from cart.`);
+        return;
+      }
+      if (item.quantity > availStock) {
+        toast.error(`"${latestProd.name}" exceeds available stock (${availStock} left). Please reduce quantity.`);
+        return;
+      }
+    }
+
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
@@ -147,6 +171,11 @@ export default function CartDrawer() {
 
                 {cartItems.map((item) => {
                   const isSelected = item.selected !== false;
+                  const latestProd = products.find((p) => p.id === item.product.id) || item.product;
+                  const availStock = latestProd.inStock ? (Number(latestProd.stockQuantity) || 0) : 0;
+                  const isOut = availStock <= 0;
+                  const isStockExceeded = item.quantity > availStock;
+
                   return (
                     <div
                       key={item.key}
@@ -174,12 +203,15 @@ export default function CartDrawer() {
                           {item.product.name}
                         </h4>
 
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-neutral-400">
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-neutral-400">
                           <span className="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300">
                             {item.selectedFlavor}
                           </span>
                           <span className="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300">
                             {item.selectedSize}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded font-extrabold text-[10px] ${isOut ? "bg-red-500/20 text-red-400 border border-red-500/30" : isStockExceeded ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-lime-500/10 text-lime-400"}`}>
+                            {isOut ? "Out of Stock" : `Stock: ${availStock}`}
                           </span>
                         </div>
 
@@ -196,7 +228,8 @@ export default function CartDrawer() {
                             </span>
                             <button
                               onClick={() => updateQuantity(item.key, 1)}
-                              className="px-2 py-1 text-neutral-400 hover:text-white"
+                              disabled={item.quantity >= availStock}
+                              className="px-2 py-1 text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                               <FiPlus size={14} />
                             </button>
@@ -247,9 +280,9 @@ export default function CartDrawer() {
               <div className="space-y-2 pt-2">
                 <button
                   onClick={handleProceedToCheckout}
-                  disabled={selectedCartItems.length === 0}
+                  disabled={selectedCartItems.length === 0 || hasInvalidStockItem}
                   className={`w-full py-4 px-6 rounded-2xl font-black transition shadow-xl flex items-center justify-center gap-2.5 text-sm uppercase tracking-wider ${
-                    selectedCartItems.length > 0
+                    selectedCartItems.length > 0 && !hasInvalidStockItem
                       ? "bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 hover:from-amber-400 hover:to-yellow-300 cursor-pointer shadow-amber-500/25"
                       : "bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700"
                   }`}
@@ -258,9 +291,11 @@ export default function CartDrawer() {
                   <span>
                     {selectedCartItems.length === 0
                       ? "SELECT A PRODUCT TO CHECKOUT"
+                      : hasInvalidStockItem
+                      ? "STOCK EXCEEDED - ADJUST QUANTITIES"
                       : `PROCEED TO CHECKOUT (${selectedCartItems.length})`}
                   </span>
-                  {selectedCartItems.length > 0 && <FiArrowRight size={20} />}
+                  {selectedCartItems.length > 0 && !hasInvalidStockItem && <FiArrowRight size={20} />}
                 </button>
               </div>
             </div>

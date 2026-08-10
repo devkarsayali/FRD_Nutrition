@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FiCheckCircle, FiCreditCard, FiLock, FiShield, FiX } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
 import { useUserAuth } from "../../context/UserAuthContext";
+import { useProducts } from "../../context/ProductContext";
 import toast from "react-hot-toast";
 import { isValidEmail, isValidPhone } from "../../utils/validation";
 
@@ -16,6 +17,7 @@ export default function CheckoutModal() {
     placeOrder,
   } = useCart();
   const { user } = useUserAuth();
+  const { products } = useProducts();
 
   const [formData, setFormData] = useState({
     firstName: user?.name ? user.name.split(" ")[0] : "",
@@ -335,6 +337,32 @@ export default function CheckoutModal() {
                     className="w-full bg-[#090d16] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#f5b800] transition"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* ORDER ITEMS STOCK SUMMARY */}
+            <div className="bg-[#090d16] rounded-2xl p-4 border border-slate-800 space-y-2">
+              <h4 className="font-heading text-xs font-black text-[#f5b800] uppercase tracking-wider pb-2 border-b border-slate-800 flex justify-between">
+                <span>Order Items ({selectedCartItems.length})</span>
+                <span>Available Stock</span>
+              </h4>
+              <div className="space-y-2 max-h-36 overflow-y-auto">
+                {selectedCartItems.map((item) => {
+                  const latestProd = products.find((p) => p.id === item.product.id) || item.product;
+                  const availStock = latestProd.inStock ? (Number(latestProd.stockQuantity) || 0) : 0;
+                  return (
+                    <div key={item.key} className="flex items-center justify-between text-xs py-1 border-b border-slate-800/40 last:border-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={item.product.image} alt={item.product.name} className="w-7 h-7 object-contain rounded bg-slate-900 p-1 shrink-0" />
+                        <span className="font-bold text-white truncate max-w-[180px] sm:max-w-[240px]">{item.product.name}</span>
+                        <span className="text-[10px] text-slate-400 font-extrabold">x{item.quantity}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black ${availStock <= 0 ? "bg-red-500/20 text-red-400 border border-red-500/30" : item.quantity > availStock ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-lime-500/10 text-lime-400"}`}>
+                        {availStock <= 0 ? "Out of Stock" : `${availStock} In Stock`}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

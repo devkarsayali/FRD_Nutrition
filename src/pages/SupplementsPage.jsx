@@ -91,9 +91,8 @@ export default function SupplementsPage() {
                 className="bg-slate-900 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-xs text-slate-200 font-bold focus:outline-none focus:border-[#f5b800] transition cursor-pointer shadow-md"
               >
                 <option value="relevance">Sort by: Relevance</option>
-                <option value="price-low">Sort by: Price (Low to High)</option>
-                <option value="price-high">Sort by: Price (High to Low)</option>
-                <option value="rating">Sort by: Top Rated</option>
+                <option value="price-low">Sort by: Low to High</option>
+                <option value="price-high">Sort by: High to Low</option>
               </select>
             </div>
           </div>

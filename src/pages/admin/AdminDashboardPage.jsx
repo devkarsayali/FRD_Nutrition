@@ -40,6 +40,9 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
       const orderMap = new Map();
       const addOrder = (o) => {
         if (!o || !o.id) return;
+        if (!o.items || o.items.length === 0) {
+          if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
+        }
         orderMap.set(o.id, o);
       };
 
@@ -280,13 +283,12 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
                   <td className="p-3 font-bold text-white">₹{prod.price}</td>
                   <td className="p-3">
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        prod.inStock
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${prod.inStock
                           ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           : "bg-red-500/10 text-red-400 border border-red-500/20"
-                      }`}
+                        }`}
                     >
-                      {prod.inStock ? "In Stock" : "Out of Stock"}
+                      {prod.inStock ? `${prod.stockQuantity} in stock` : "Out of Stock (0)"}
                     </span>
                   </td>
                 </tr>

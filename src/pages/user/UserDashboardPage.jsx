@@ -224,6 +224,55 @@ export default function UserDashboardPage() {
     }
   }, [user]);
 
+  const { restoreProductStock } = useProducts();
+
+  const handleCancelOrder = (targetOrder) => {
+    if (!targetOrder || !targetOrder.id) return;
+    const normStatus = (targetOrder.status || "").toLowerCase().trim();
+    if (["cancelled", "rejected", "refunded", "returned"].includes(normStatus)) {
+      toast.error("This order is already cancelled or returned.");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to cancel Order #${targetOrder.id}? Stock will be restored automatically.`)) {
+      return;
+    }
+
+    // 1. Restore product stock automatically
+    restoreProductStock(targetOrder.items || []);
+
+    // 2. Update order status across all localStorage order keys
+    const updateFn = (o) => {
+      if (!o || o.id !== targetOrder.id) return o;
+      return {
+        ...o,
+        status: "Cancelled",
+        stockRestored: true,
+        trackingSteps: (o.trackingSteps || []).map((step) => ({ ...step, completed: false })),
+      };
+    };
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.toLowerCase().includes("order")) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || "[]");
+          if (Array.isArray(data)) {
+            const updated = data.map(updateFn);
+            localStorage.setItem(key, JSON.stringify(updated));
+          } else if (data && typeof data === "object" && data.id === targetOrder.id) {
+            localStorage.setItem(key, JSON.stringify(updateFn(data)));
+          }
+        } catch (e) {
+          // ignore non-json
+        }
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
+    toast.success(`Order #${targetOrder.id} cancelled. Item stock automatically restored!`);
+  };
+
   // Track expanded order card IDs
   const [expandedOrderId, setExpandedOrderId] = useState(ordersList[0]?.id || null);
 
@@ -361,26 +410,43 @@ export default function UserDashboardPage() {
                                 </span>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleOrderDetails(order.id);
-                                }}
-                                className={`p-2.5 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-1.5 text-xs font-bold ${isExpanded
-                                  ? "bg-[#f5b800] text-slate-950 border-amber-400 font-extrabold shadow-lg shadow-amber-500/20"
-                                  : "bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700"
-                                  }`}
-                                aria-label={isExpanded ? "Collapse Order Details" : "Expand Order Details"}
-                              >
-                                <span>{isExpanded ? "Hide Details" : "View Details"}</span>
-                                <motion.div
-                                  animate={{ rotate: isExpanded ? 180 : 0 }}
-                                  transition={{ duration: 0.2 }}
+                              <div className="flex items-center gap-2">
+                                {!["cancelled", "rejected", "refunded", "returned"].includes((order.status || "").toLowerCase()) && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCancelOrder(order);
+                                    }}
+                                    className="px-3 py-2 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-extrabold transition flex items-center gap-1 cursor-pointer"
+                                    title="Cancel order and restore item stock"
+                                  >
+                                    <FiXCircle size={15} />
+                                    <span>Cancel Order</span>
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleOrderDetails(order.id);
+                                  }}
+                                  className={`p-2.5 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-1.5 text-xs font-bold ${isExpanded
+                                    ? "bg-[#f5b800] text-slate-950 border-amber-400 font-extrabold shadow-lg shadow-amber-500/20"
+                                    : "bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700"
+                                    }`}
+                                  aria-label={isExpanded ? "Collapse Order Details" : "Expand Order Details"}
                                 >
-                                  <FiChevronDown size={18} />
-                                </motion.div>
-                              </button>
+                                  <span>{isExpanded ? "Hide Details" : "View Details"}</span>
+                                  <motion.div
+                                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    <FiChevronDown size={18} />
+                                  </motion.div>
+                                </button>
+                              </div>
                             </div>
                           </div>
 

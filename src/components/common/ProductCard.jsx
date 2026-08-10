@@ -8,7 +8,8 @@ export default function ProductCard({ product, onQuickView }) {
   const { addToCart, wishlist = [], toggleWishlist } = useCart();
   const { requireAuth } = useUserAuth();
   const isWishlisted = Array.isArray(wishlist) ? wishlist.includes(product.id) : false;
-  const isOutOfStock = product.inStock === false;
+  const availStock = product?.inStock ? (Number(product.stockQuantity) || 0) : 0;
+  const isOutOfStock = !product.inStock || availStock <= 0;
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
@@ -62,10 +63,16 @@ export default function ProductCard({ product, onQuickView }) {
         </div>
 
         {/* Badge Tag */}
-        {product.badge && (
-          <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black text-[8px] sm:text-[9px] uppercase tracking-wider shadow-md pointer-events-none max-w-[65%] truncate">
-            {product.badge}
+        {isOutOfStock ? (
+          <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-red-600 text-white font-black text-[8px] sm:text-[9px] uppercase tracking-wider shadow-md pointer-events-none">
+            OUT OF STOCK
           </span>
+        ) : (
+          product.badge && (
+            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black text-[8px] sm:text-[9px] uppercase tracking-wider shadow-md pointer-events-none max-w-[65%] truncate">
+              {product.badge}
+            </span>
+          )
         )}
 
         {/* Product Image */}
@@ -73,7 +80,7 @@ export default function ProductCard({ product, onQuickView }) {
           <img
             src={product.image}
             alt={product.name}
-            className="max-h-28 sm:max-h-44 object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
+            className={`max-h-28 sm:max-h-44 object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${isOutOfStock ? "opacity-60" : ""}`}
           />
         </Link>
       </div>
@@ -85,6 +92,11 @@ export default function ProductCard({ product, onQuickView }) {
             {product.name}
           </h3>
         </Link>
+
+        {/* Stock status text under name */}
+        <span className={`text-[10px] font-extrabold block ${isOutOfStock ? "text-red-400" : "text-lime-400"}`}>
+          {isOutOfStock ? "Out of Stock" : `${availStock} units in stock`}
+        </span>
 
         {/* Price & Action Button */}
         <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-slate-800/80 mt-1 sm:mt-2">
@@ -104,7 +116,7 @@ export default function ProductCard({ product, onQuickView }) {
             disabled={isOutOfStock}
             className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all ${
               isOutOfStock
-                ? "bg-slate-700 text-slate-400 cursor-not-allowed shadow-none"
+                ? "bg-slate-700 text-slate-400 cursor-not-allowed shadow-none opacity-50"
                 : "bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 hover:scale-110 shadow-amber-500/20 cursor-pointer"
             }`}
             title={isOutOfStock ? "Out of Stock" : "Add to Cart"}

@@ -270,11 +270,17 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       return;
     }
 
+    const rawQtyExtracted = String(formData.stockQuantity ?? "").replace(/[^\d]/g, "");
+    const parsedStockNum = rawQtyExtracted === "" ? 0 : parseInt(rawQtyExtracted, 10);
+    const finalInStock = formData.inStock !== false && parsedStockNum > 0;
+    const finalStockQty = finalInStock ? parsedStockNum : 0;
+
     const payload = {
       ...formData,
       price: Number(formData.price),
       originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
-      stockQuantity: formData.inStock === false ? "0" : String(formData.stockQuantity ?? "").trim() || "0",
+      inStock: finalInStock,
+      stockQuantity: finalStockQty,
       image: formData.images.length > 0 ? formData.images[0] : formData.image,
       benefits: typeof formData.benefits === "string"
         ? formData.benefits.split("\n").map((b) => b.trim()).filter(Boolean)
@@ -440,12 +446,14 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                     <td className="p-4">
                       <button
                         onClick={() => toggleStockStatus(p.id)}
-                        className={`px-3 py-1 rounded-full text-[10px] font-extrabold transition ${p.inStock
-                          ? "bg-lime-500/20 text-lime-400 border border-lime-500/40"
-                          : "bg-red-500/20 text-red-400 border border-red-500/40"
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold transition cursor-pointer flex items-center gap-1.5 ${p.inStock
+                          ? "bg-lime-500/20 text-lime-400 border border-lime-500/40 hover:bg-lime-500/30"
+                          : "bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30"
                           }`}
+                        title="Click to toggle in-stock / out-of-stock"
                       >
-                        {p.inStock ? "IN STOCK" : "OUT OF STOCK"}
+                        <span className={`w-1.5 h-1.5 rounded-full ${p.inStock ? "bg-lime-400 animate-pulse" : "bg-red-400"}`} />
+                        <span>{p.inStock ? `${p.stockQuantity} IN STOCK` : "OUT OF STOCK (0)"}</span>
                       </button>
                     </td>
 

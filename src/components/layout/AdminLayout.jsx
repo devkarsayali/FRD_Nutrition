@@ -98,6 +98,9 @@ export default function AdminLayout() {
       const orderMap = new Map();
       const addOrder = (o) => {
         if (!o || !o.id) return;
+        if (!o.items || o.items.length === 0) {
+          if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
+        }
         orderMap.set(o.id, o);
       };
 

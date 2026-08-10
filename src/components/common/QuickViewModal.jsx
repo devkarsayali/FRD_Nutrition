@@ -148,26 +148,48 @@ export default function QuickViewModal({ product, onClose }) {
 
           {/* Pricing & Actions */}
           <div className="pt-4 border-t border-neutral-800 space-y-3">
-            <div className="flex items-baseline gap-3">
-              <span className="font-heading font-black text-2xl text-white">
-                ₹{product.price}
-              </span>
-              {product.originalPrice && (
-                <span className="text-sm text-neutral-500 line-through">
-                  ₹{product.originalPrice}
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-3">
+                <span className="font-heading font-black text-2xl text-white">
+                  ₹{product.price}
                 </span>
-              )}
+                {product.originalPrice && (
+                  <span className="text-sm text-neutral-500 line-through">
+                    ₹{product.originalPrice}
+                  </span>
+                )}
+              </div>
+
+              {(() => {
+                const availStock = product?.inStock ? (Number(product.stockQuantity) || 0) : 0;
+                const isOut = !product?.inStock || availStock <= 0;
+                return (
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${isOut ? "bg-red-500/20 text-red-400 border border-red-500/40" : "bg-lime-500/20 text-lime-400 border border-lime-500/40"}`}>
+                    {isOut ? "Out of Stock" : `${availStock} In Stock`}
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="space-y-2">
-              <button
-                onClick={handleAdd}
-                disabled={!product.inStock}
-                className="w-full py-3.5 px-4 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition shadow-lg shadow-lime-500/20 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <FiShoppingBag size={18} />
-                <span>Add to Shopping Cart</span>
-              </button>
+              {(() => {
+                const availStock = product?.inStock ? (Number(product.stockQuantity) || 0) : 0;
+                const isOut = !product?.inStock || availStock <= 0;
+                return (
+                  <button
+                    onClick={handleAdd}
+                    disabled={isOut}
+                    className={`w-full py-3.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 ${
+                      isOut
+                        ? "bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed"
+                        : "bg-lime-500 text-neutral-950 hover:bg-lime-400 shadow-lg shadow-lime-500/20 cursor-pointer"
+                    }`}
+                  >
+                    <FiShoppingBag size={18} />
+                    <span>{isOut ? "OUT OF STOCK" : "Add to Shopping Cart"}</span>
+                  </button>
+                );
+              })()}
 
               <button
                 type="button"

@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useUserAuth } from "./UserAuthContext";
+import { useProducts } from "./ProductContext";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const { user } = useUserAuth();
+  const { decreaseProductStock, products } = useProducts();
 
   const userEmail = user?.email ? user.email.toLowerCase() : "guest";
 
@@ -78,20 +80,39 @@ export function CartProvider({ children }) {
     const selectedSize = size || (product.sizes ? product.sizes[0] : "Standard");
     const itemKey = `${product.id}-${selectedFlavor}-${selectedSize}`;
 
+    // Get latest real-time stock
+    const currentProduct = products.find((p) => p.id === product.id) || product;
+    const availableStock = currentProduct.inStock ? (Number(currentProduct.stockQuantity) || 0) : 0;
+
+    if (availableStock <= 0) {
+      toast.error(`"${product.name}" is currently out of stock.`);
+      return;
+    }
+
     setCartItems((prev) => {
       const existingIndex = prev.findIndex((item) => item.key === itemKey);
 
       if (existingIndex > -1) {
+        const currentQty = prev[existingIndex].quantity;
+        const targetQty = currentQty + quantity;
+        if (targetQty > availableStock) {
+          toast.error(`Cannot add more. Maximum available stock is ${availableStock} units.`);
+          return prev;
+        }
         const updated = [...prev];
-        updated[existingIndex].quantity += quantity;
+        updated[existingIndex].quantity = targetQty;
         updated[existingIndex].selected = true;
         return updated;
       } else {
+        if (quantity > availableStock) {
+          toast.error(`Cannot add more. Maximum available stock is ${availableStock} units.`);
+          return prev;
+        }
         return [
           ...prev,
           {
             key: itemKey,
-            product,
+            product: currentProduct,
             selectedFlavor,
             selectedSize,
             quantity,
@@ -116,6 +137,14 @@ export function CartProvider({ children }) {
         .map((item) => {
           if (item.key === key) {
             const newQty = item.quantity + delta;
+            if (delta > 0) {
+              const latestProd = products.find((p) => p.id === item.product.id) || item.product;
+              const availStock = latestProd.inStock ? (Number(latestProd.stockQuantity) || 0) : 0;
+              if (newQty > availStock) {
+                toast.error(`Cannot increase quantity. Maximum available stock is ${availStock} units.`);
+                return item;
+              }
+            }
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
           return item;
@@ -172,6 +201,21 @@ export function CartProvider({ children }) {
       return null;
     }
 
+    // Check stock for all selected items before placing order
+    for (const item of selectedCartItems) {
+      const prodId = item.product.id;
+      const latestProd = products.find((p) => p.id === prodId) || item.product;
+      const availStock = latestProd.inStock ? (Number(latestProd.stockQuantity) || 0) : 0;
+      if (item.quantity > availStock) {
+        toast.error(
+          availStock <= 0
+            ? `"${latestProd.name}" is out of stock!`
+            : `Cannot place order. "${latestProd.name}" only has ${availStock} units left in stock!`
+        );
+        return null;
+      }
+    }
+
     const shippingFee = cartSubtotal >= 2999 ? 0 : 50;
     const totalPayable = cartSubtotal + shippingFee;
     const nowTimeStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -181,7 +225,8 @@ export function CartProvider({ children }) {
       orderDate: nowTimeStr,
       orderTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
       readStatus: "unread",
-      status: "Pending",
+      status: "Order Placed",
+      stockDeducted: true,
       courierName: "",
       awbTrackingNumber: "",
       deliveryDate: "Expected in 4-8 Business Days",
@@ -227,6 +272,9 @@ export function CartProvider({ children }) {
       ],
     };
 
+    // Deduct stock for all items in the order
+    decreaseProductStock(selectedCartItems);
+
     setOrders((prev) => [newOrder, ...prev]);
 
     // Save to user-specific orders
@@ -260,7 +308,7 @@ export function CartProvider({ children }) {
     setCartItems((prev) => prev.filter((item) => item.selected === false));
 
     setIsCheckoutOpen(false);
-    toast.success(`Order #${newOrder.id} placed successfully!`);
+    toast.success(`Order #${newOrder.id} placed successfully! Stock updated automatically.`);
     return newOrder;
   };
 

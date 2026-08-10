@@ -12,6 +12,7 @@ import {
   FiShoppingBag,
   FiStar,
   FiTruck,
+  FiZap,
 } from "react-icons/fi";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import PincodeChecker from "../components/common/PincodeChecker";
@@ -25,10 +26,13 @@ export default function ProductDetailsPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { products } = useProducts();
-  const { addToCart, wishlist = [], toggleWishlist } = useCart();
+  const { addToCart, wishlist = [], toggleWishlist, setIsCheckoutOpen } = useCart();
   const { requireAuth } = useUserAuth();
 
   const product = (products && products.find((p) => p.id === productId)) || (products && products[0]) || null;
+
+  const availableStock = product?.inStock ? (Number(product.stockQuantity) || 0) : 0;
+  const isOutOfStock = availableStock <= 0;
 
   const [selectedFlavor, setSelectedFlavor] = useState("Standard");
   const [selectedSize, setSelectedSize] = useState("Standard");
@@ -124,6 +128,10 @@ export default function ProductDetailsPage() {
   };
 
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      toast.error(`"${product.name}" is currently out of stock.`);
+      return;
+    }
     requireAuth(
       () => addToCart(product, quantity, selectedFlavor, selectedSize),
       "Please log in first to add items to your cart."
@@ -349,76 +357,50 @@ export default function ProductDetailsPage() {
                 </div>
               )}
 
-              {(() => {
-                const rawStock = String(product.stockQuantity ?? "").trim();
-                const lowerStock = rawStock.toLowerCase();
-                const isNotAvailable =
-                  !product.inStock ||
-                  lowerStock === "0" ||
-                  lowerStock === "not available" ||
-                  lowerStock === "out of stock" ||
-                  lowerStock === "notavailable" ||
-                  lowerStock === "sold out";
+              <div className={`font-extrabold text-xs sm:text-sm flex items-center gap-2 pt-0.5 ${isOutOfStock ? "text-red-400" : "text-lime-400"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${isOutOfStock ? "bg-red-500" : "bg-lime-500 animate-pulse"}`} />
+                <span>{isOutOfStock ? "Out of Stock (0 units left)" : `${availableStock} Units Available in Stock`}</span>
+              </div>
 
-                let displayStockText = rawStock;
-                if (!product.inStock) {
-                  displayStockText = "0 in stock";
-                } else if (!displayStockText) {
-                  displayStockText = isNotAvailable ? "Not Available" : "Available";
-                } else if (/^\d+$/.test(displayStockText)) {
-                  displayStockText = Number(displayStockText) > 0 ? `${displayStockText} in stock` : "0 in stock";
-                }
-
-                return (
-                  <div className={`font-extrabold text-xs sm:text-sm flex items-center gap-2 pt-0.5 ${isNotAvailable ? "text-red-400" : "text-lime-400"}`}>
-                    <span className={`w-2 h-2 rounded-full ${isNotAvailable ? "bg-red-500" : "bg-lime-500 animate-pulse"}`} />
-                    <span>{displayStockText}</span>
-                  </div>
-                );
-              })()}
-
-              <div className="flex items-center gap-2.5 pt-1">
-                <div className="flex items-center justify-between border border-neutral-800 rounded-xl bg-neutral-900 px-3 py-2.5 shrink-0 w-28 sm:w-36">
+              <div className="flex flex-col sm:flex-row items-stretch gap-2.5 pt-1">
+                <div className="flex items-center justify-between border border-neutral-800 rounded-xl bg-neutral-900 px-3 py-2.5 shrink-0 w-full sm:w-32">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="text-neutral-400 hover:text-white"
+                    disabled={isOutOfStock}
+                    className="text-neutral-400 hover:text-white disabled:opacity-30"
                   >
                     <FiMinus size={15} />
                   </button>
-                  <span className="font-bold text-white text-sm sm:text-base">{quantity}</span>
+                  <span className="font-bold text-white text-sm sm:text-base">{isOutOfStock ? 0 : quantity}</span>
                   <button
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="text-neutral-400 hover:text-white"
+                    onClick={() =>
+                      setQuantity((q) => {
+                        if (q >= availableStock) {
+                          toast.error(`Only ${availableStock} units available in stock.`);
+                          return q;
+                        }
+                        return q + 1;
+                      })
+                    }
+                    disabled={isOutOfStock || quantity >= availableStock}
+                    className="text-neutral-400 hover:text-white disabled:opacity-30"
                   >
                     <FiPlus size={15} />
                   </button>
                 </div>
 
-                {(() => {
-                  const rawStock = String(product.stockQuantity ?? "").trim().toLowerCase();
-                  const isOut =
-                    !product.inStock ||
-                    rawStock === "0" ||
-                    rawStock === "not available" ||
-                    rawStock === "out of stock" ||
-                    rawStock === "notavailable" ||
-                    rawStock === "sold out";
-
-                  return (
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={isOut}
-                      className={`flex-1 py-3 sm:py-4 px-4 sm:px-8 rounded-xl font-extrabold uppercase text-xs sm:text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 min-w-0 ${
-                        isOut
-                          ? "bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none"
-                          : "bg-lime-500 hover:bg-lime-400 text-neutral-950 shadow-lime-500/20"
-                      }`}
-                    >
-                      <FiShoppingBag size={17} className="shrink-0" />
-                      <span className="truncate">{isOut ? "NOT AVAILABLE" : "ADD TO CART"}</span>
-                    </button>
-                  );
-                })()}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock}
+                  className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-extrabold uppercase text-xs sm:text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 min-w-0 ${
+                    isOutOfStock
+                      ? "bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none border border-neutral-700"
+                      : "bg-lime-500 hover:bg-lime-400 text-neutral-950 shadow-lime-500/20 cursor-pointer"
+                  }`}
+                >
+                  <FiShoppingBag size={17} className="shrink-0" />
+                  <span className="truncate">{isOutOfStock ? "OUT OF STOCK" : "ADD TO CART"}</span>
+                </button>
 
                 <button
                   onClick={() => toggleWishlist(product.id)}

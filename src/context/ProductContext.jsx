@@ -4,38 +4,74 @@ import { CATEGORIES, INITIAL_PRODUCTS } from "../data/initialProducts";
 const ProductContext = createContext();
 const STORAGE_KEY = "frd_products_inventory_v7";
 
-const normalizeStockValue = (product) => {
+const normalizeStockValue = (product, index = 0) => {
   if (!product) return product;
 
   const nextInStock = product.inStock ?? true;
-  const rawStock = product.stockQuantity === undefined || product.stockQuantity === null ? "" : String(product.stockQuantity).trim();
+  let rawStock = product.stockQuantity;
+  let parsedQty;
 
-  const normalizedStock = nextInStock === false
-    ? "0"
-    : rawStock || "36";
+  if (rawStock === undefined || rawStock === null || String(rawStock).trim() === "") {
+    parsedQty = nextInStock === false ? 0 : 36;
+  } else {
+    const extracted = String(rawStock).replace(/[^\d]/g, "");
+    parsedQty = extracted === "" ? (nextInStock === false ? 0 : 36) : parseInt(extracted, 10);
+  }
+
+  const finalInStock = nextInStock !== false && parsedQty > 0;
+  const finalStockQty = finalInStock ? parsedQty : 0;
+
+  // Infer or preserve creation timestamp for strict creation-date ordering
+  let createdAt = product.createdAt || product.created_at;
+  if (!createdAt) {
+    if (typeof product.id === "string" && product.id.startsWith("frd-custom-")) {
+      const tsNum = Number(product.id.replace("frd-custom-", ""));
+      if (!isNaN(tsNum) && tsNum > 0) {
+        createdAt = new Date(tsNum).toISOString();
+      }
+    }
+  }
+  if (!createdAt) {
+    // Fallback timestamp for initial catalog items
+    createdAt = new Date(1770000000000 - index * 86400000).toISOString();
+  }
 
   return {
     ...product,
-    inStock: nextInStock,
-    stockQuantity: normalizedStock,
+    createdAt,
+    inStock: finalInStock,
+    stockQuantity: finalStockQty,
   };
 };
 
 const normalizeProducts = (productsList) => {
-  if (!Array.isArray(productsList)) return INITIAL_PRODUCTS;
-  return productsList.map(normalizeStockValue);
+  if (!Array.isArray(productsList)) return INITIAL_PRODUCTS.map((p, idx) => normalizeStockValue(p, idx));
+  return productsList.map((p, idx) => normalizeStockValue(p, idx));
+};
+
+export const getProductCategoryKey = (prod) => {
+  if (!prod || !prod.category) return "Protein";
+  const cat = prod.category.toLowerCase().trim();
+
+  if (cat.includes("creatine")) return "Creatine";
+  if (cat.includes("bcaa") || cat.includes("eaa")) return "BCAA";
+  if (cat.includes("mass") || cat.includes("gainer")) return "Mass Gainer";
+  if (cat.includes("pre workout") || cat.includes("pre-workout") || cat.includes("pump")) return "Pre Workout";
+  if (cat.includes("post workout") || cat.includes("post-workout")) return "Post Workout";
+  if (cat.includes("vitamin") || cat.includes("fat burner") || cat.includes("carnitine")) return "Vitamins";
+  return "Protein";
 };
 
 export const TAGS = [
   "All Tags",
   "Popular",
   "Just Launched",
-  "Editor's Choice",
   "Trending",
+  "Editor's Choice",
 ];
 
 export function ProductProvider({ children }) {
-  const [products, setProducts] = useState(() => {
+  const loadStoredProducts = () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -48,7 +84,9 @@ export function ProductProvider({ children }) {
       console.error("Failed to load products from localStorage", error);
     }
     return normalizeProducts(INITIAL_PRODUCTS);
-  });
+  };
+
+  const [products, setProducts] = useState(loadStoredProducts);
 
   const [categoriesList, setCategoriesList] = useState([
     "All Categories",
@@ -66,6 +104,20 @@ export function ProductProvider({ children }) {
   const [maxPrice, setMaxPrice] = useState(50000);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("relevance"); // relevance, price-low, price-high, rating
+
+  // Real-time listener for products updated from other components or tabs
+  useEffect(() => {
+    const handleProductsUpdated = () => {
+      setProducts(loadStoredProducts());
+    };
+
+    window.addEventListener("frd_products_updated", handleProductsUpdated);
+    window.addEventListener("storage", handleProductsUpdated);
+    return () => {
+      window.removeEventListener("frd_products_updated", handleProductsUpdated);
+      window.removeEventListener("storage", handleProductsUpdated);
+    };
+  }, []);
 
   const loadCategories = () => {
     try {
@@ -125,10 +177,15 @@ export function ProductProvider({ children }) {
       images: imagesArray,
       videos: videosArray,
       inStock: newProduct.inStock ?? true,
-      stockQuantity: newProduct.stockQuantity || "36",
+      stockQuantity: newProduct.stockQuantity !== undefined ? newProduct.stockQuantity : 36,
     });
 
-    setProducts((prev) => [createdProduct, ...prev]);
+    setProducts((prev) => {
+      const updated = [createdProduct, ...prev];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
   };
 
   const updateProduct = (updatedProduct) => {
@@ -140,8 +197,8 @@ export function ProductProvider({ children }) {
 
     const videosArray = Array.isArray(updatedProduct.videos) ? updatedProduct.videos : [];
 
-    setProducts((prev) =>
-      prev.map((p) => {
+    setProducts((prev) => {
+      const updated = prev.map((p) => {
         if (p.id !== updatedProduct.id) return p;
 
         return normalizeStockValue({
@@ -151,62 +208,162 @@ export function ProductProvider({ children }) {
           images: imagesArray.length > 0 ? imagesArray : p.images,
           videos: videosArray,
         });
-      })
-    );
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
   };
 
   const deleteProduct = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    setProducts((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
   };
 
   const toggleStockStatus = (id) => {
-    setProducts((prev) =>
-      prev.map((p) => {
+    setProducts((prev) => {
+      const updated = prev.map((p) => {
         if (p.id !== id) return p;
 
         const nextInStock = !p.inStock;
+        const nextQty = nextInStock
+          ? (p.stockQuantity > 0 ? p.stockQuantity : 36)
+          : 0;
+
         return normalizeStockValue({
           ...p,
           inStock: nextInStock,
-          stockQuantity: nextInStock
-            ? (p.stockQuantity && String(p.stockQuantity).trim() !== "0" ? String(p.stockQuantity).trim() : "36")
-            : "0",
+          stockQuantity: nextQty,
         });
-      })
-    );
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
+  };
+
+  // Automatic Stock Management Helpers
+  const decreaseProductStock = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    setProducts((prev) => {
+      let hasChanges = false;
+      const updated = prev.map((p) => {
+        const matched = items.find(
+          (item) => (item.productId || item.product?.id || item.id) === p.id
+        );
+        if (!matched) return p;
+
+        const qty = Number(matched.quantity) || 1;
+        const currentQty = Number(p.stockQuantity) || 0;
+        const newQty = Math.max(0, currentQty - qty);
+        hasChanges = true;
+
+        return normalizeStockValue({
+          ...p,
+          stockQuantity: newQty,
+          inStock: newQty > 0,
+        });
+      });
+
+      if (hasChanges) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        setTimeout(() => window.dispatchEvent(new CustomEvent("frd_products_updated")), 0);
+      }
+      return updated;
+    });
+  };
+
+  const restoreProductStock = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    setProducts((prev) => {
+      let hasChanges = false;
+      const updated = prev.map((p) => {
+        const matched = items.find(
+          (item) => (item.productId || item.product?.id || item.id) === p.id
+        );
+        if (!matched) return p;
+
+        const qty = Number(matched.quantity) || 1;
+        const currentQty = Number(p.stockQuantity) || 0;
+        const newQty = currentQty + qty;
+        hasChanges = true;
+
+        return normalizeStockValue({
+          ...p,
+          stockQuantity: newQty,
+          inStock: newQty > 0,
+        });
+      });
+
+      if (hasChanges) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        setTimeout(() => window.dispatchEvent(new CustomEvent("frd_products_updated")), 0);
+      }
+      return updated;
+    });
   };
 
   const resetToDefaultData = () => {
     const normalizedDefaults = normalizeProducts(INITIAL_PRODUCTS);
     setProducts(normalizedDefaults);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedDefaults));
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
   };
 
-  // Section-specific dynamic lists (driven by admin flags)
-  const latestProducts = products.filter((p) => p.isLatest && p.inStock);
-  const trendingProducts = products.filter((p) => p.isTrending && p.inStock);
-  const popularProducts = products.filter((p) => p.isPopular && p.inStock);
+  // Section-specific independent product lists
+  // 1. Latest Collection: Determined strictly by product creation date/time (newest first)
+  const latestProducts = [...products].sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+
+  // 2. Just Launched: Explicitly marked by admin or tagged as Just Launched
+  const justLaunchedProducts = products.filter(
+    (p) => p.isJustLaunched || p.badge === "JUST LAUNCHED" || p.badge === "NEW" || p.isLatest
+  );
+
+  // 3. Trending Products: Products marked as trending or best sellers
+  const trendingProducts = products.filter(
+    (p) => p.isTrending || p.badge === "TRENDING" || p.badge === "BEST SELLER"
+  );
+
+  // 4. Popular Supplements: Most popular or top seller products
+  const popularProducts = products.filter(
+    (p) => p.isPopular || p.isTopSeller || p.badge === "POPULAR"
+  );
 
   // Filtered & Sorted Products
   const filteredProducts = products.filter((product) => {
     const normCategory = selectedCategory.toLowerCase().trim();
     const prodCatRaw = (product.category || "").toLowerCase().trim();
+    const prodCatKey = getProductCategoryKey(product).toLowerCase().trim();
 
     const matchesCategory =
       normCategory === "all categories" ||
       normCategory === "all" ||
+      prodCatKey === normCategory ||
       prodCatRaw === normCategory ||
       prodCatRaw.includes(normCategory) ||
       normCategory.includes(prodCatRaw);
 
     const matchesPrice = product.price <= maxPrice;
 
-    const normTag = selectedTag.toLowerCase();
+    const normTag = selectedTag.toLowerCase().trim();
     let matchesTag = true;
-    if (normTag === "popular") matchesTag = Boolean(product.isPopular || product.isTopSeller);
-    else if (normTag === "just launched") matchesTag = Boolean(product.isLatest || product.isJustLaunched || product.badge === "NEW");
-    else if (normTag === "editor's choice") matchesTag = Boolean(product.isEditorsChoice);
-    else if (normTag === "trending") matchesTag = Boolean(product.isTrending || product.badge === "BEST SELLER");
+    if (normTag === "just launched") {
+      matchesTag = Boolean(product.isJustLaunched || product.badge === "JUST LAUNCHED" || product.badge === "NEW" || product.isLatest);
+    } else if (normTag === "trending") {
+      matchesTag = Boolean(product.isTrending || product.badge === "TRENDING" || product.badge === "BEST SELLER");
+    } else if (normTag === "popular") {
+      matchesTag = Boolean(product.isPopular || product.isTopSeller || product.badge === "POPULAR");
+    } else if (normTag === "editor's choice") {
+      matchesTag = Boolean(product.isEditorsChoice);
+    }
 
     const matchesSearch =
       !searchQuery ||
@@ -217,6 +374,9 @@ export function ProductProvider({ children }) {
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortBy === "newest") {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    }
     if (sortBy === "price-low") return a.price - b.price;
     if (sortBy === "price-high") return b.price - a.price;
     if (sortBy === "rating") return b.rating - a.rating;
@@ -228,6 +388,7 @@ export function ProductProvider({ children }) {
       value={{
         products,
         latestProducts,
+        justLaunchedProducts,
         trendingProducts,
         popularProducts,
         categories: categoriesList,
@@ -247,6 +408,8 @@ export function ProductProvider({ children }) {
         updateProduct,
         deleteProduct,
         toggleStockStatus,
+        decreaseProductStock,
+        restoreProductStock,
         resetToDefaultData,
       }}
     >
@@ -262,3 +425,4 @@ export function useProducts() {
   }
   return context;
 }
+
