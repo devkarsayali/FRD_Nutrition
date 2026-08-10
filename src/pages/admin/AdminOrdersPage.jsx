@@ -950,8 +950,9 @@ export default function AdminOrdersPage({ defaultTab }) {
 
       {/* FULL MESSAGE DETAILS MODAL */}
       {selectedMessage && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-5 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-lg bg-[#141813] border border-neutral-800 rounded-3xl p-4 sm:p-8 space-y-5 relative shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto my-auto">
+
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-base">
@@ -1084,8 +1085,9 @@ export default function AdminOrdersPage({ defaultTab }) {
 
       {/* FULL ORDER DETAILS MODAL */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-xl bg-[#141813] border border-neutral-800 rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6 relative shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto my-auto">
+
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div>
                 <div className="flex items-center gap-2">
