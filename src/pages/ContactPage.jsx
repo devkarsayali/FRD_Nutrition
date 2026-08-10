@@ -16,6 +16,7 @@ import {
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useUserAuth } from "../context/UserAuthContext";
+import { isValidEmail, isValidPhone } from "../utils/validation";
 
 export default function ContactPage() {
   const [searchParams] = useSearchParams();
@@ -70,6 +71,16 @@ export default function ContactPage() {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      toast.error("Please enter a valid email address (e.g. name@example.com).");
+      return;
+    }
+
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      toast.error("Please enter a valid 10-digit mobile number (e.g. 9876543210).");
       return;
     }
 

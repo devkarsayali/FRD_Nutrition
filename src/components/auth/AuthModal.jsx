@@ -4,6 +4,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FiCheckCircle, FiEye, FiEyeOff, FiLock, FiMail, FiUser, FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useUserAuth } from "../../context/UserAuthContext";
+import { isValidEmail, isValidPhone } from "../../utils/validation";
 
 export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose }) {
   const { isAuthOpen, setIsAuthOpen, loginUser, logoutUser, user: contextUser } = useUserAuth();
@@ -76,6 +77,10 @@ export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose
       toast.error("Please enter both email and password.");
       return;
     }
+    if (!isValidEmail(formData.email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
     const registeredUsers = getRegisteredUsers();
     const cleanEmail = formData.email.trim().toLowerCase();
     const foundUser = registeredUsers.find(
@@ -100,6 +105,10 @@ export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.password) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+    if (!isValidEmail(formData.email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 

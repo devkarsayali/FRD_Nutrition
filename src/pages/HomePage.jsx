@@ -58,83 +58,83 @@ export default function HomePage() {
     {
       id: 1,
       image: Home1,
-      tagline: "26G PROTEIN | 0G CARBS & FAT",
-      title: "DIESEL 100% WHEY ISOLATE",
-      subtitle: "Ultra-Filtered Pure Whey Isolate for Fast Muscle Recovery",
-      btnText: "SHOP ISOLATE NOW",
-      category: "Protein",
+      tagline: "390 CALORIES | 66G CARBS | 18G PROTEIN",
+      title: "LEGENDARY MASS GAINER FORMULA",
+      subtitle: "Power-packed mass gainer with USA Whey to support lean muscle growth, rapid recovery, and enhanced strength.",
+      btnText: "SHOP MASS GAINER NOW",
+      category: "Mass Gainer",
     },
     {
       id: 2,
       image: Home2,
-      tagline: "PREMIUM SPORTS NUTRITION",
-      title: "FUEL YOUR PERFORMANCE",
-      subtitle: "Lab Certified Supplements Direct from Official Store",
-      btnText: "EXPLORE CATALOG",
+      tagline: "PREMIUM WELLNESS NUTRITION",
+      title: "BOOST YOUR HEALTH NATURALLY",
+      subtitle: "Discover high-quality vitamins, immunity boosters, and wellness supplements crafted for everyday health and vitality.",
+      btnText: "EXPLORE WELLNESS",
       category: "All",
     },
     {
       id: 3,
       image: Home3,
-      tagline: "PURE CREATINE MONOHYDRATE",
-      title: "MAXIMIZE YOUR STRENGTH",
-      subtitle: "Clinically Dosed Creatine for Power, Strength & Explosive Gains",
-      btnText: "SHOP CREATINE",
-      category: "Creatine",
+      tagline: "DAILY HEALTH ESSENTIALS",
+      title: "POWER YOUR HEALTH NATURALLY",
+      subtitle: "Fuel your body with premium vitamins, balanced nutrition, and wellness supplements for everyday vitality.",
+      btnText: "EXPLORE WELLNESS",
+      category: "All",
     },
     {
       id: 4,
       image: Home4,
-      tagline: "BCAA AMINO ACIDS",
-      title: "RECOVER FASTER, TRAIN HARDER",
-      subtitle: "Essential Amino Acids to Reduce Muscle Soreness & Speed Recovery",
-      btnText: "SHOP BCAA",
-      category: "BCAA",
+      tagline: "PURE WHEY | FAST ABSORPTION",
+      title: "FUEL EVERY REP WITH WHEY",
+      subtitle: "Premium Whey Protein with fast-digesting formula to support muscle recovery, strength, and lean gains.",
+      btnText: "SHOP WHEY NOW",
+      category: "Protein",
     },
     {
       id: 5,
       image: Home5,
-      tagline: "MASS GAINER FORMULA",
-      title: "BULK UP WITH POWER",
-      subtitle: "High Calorie Mass Gainer for Serious Size & Strength Goals",
-      btnText: "SHOP MASS GAINER",
-      category: "Mass Gainer",
+      tagline: "100% PURE WHEY ISOLATE",
+      title: "UNLEASH YOUR ULTIMATE POWER",
+      subtitle: "Premium New Zealand Whey Isolate with 26g Protein for Faster Recovery, Lean Muscle Building & Peak Performance.",
+      btnText: "SHOP ISOLATE NOW",
+      category: "Protein",
     },
     {
       id: 6,
       image: Home6,
-      tagline: "PRE-WORKOUT ENERGY",
-      title: "UNLEASH YOUR BEAST MODE",
-      subtitle: "Explosive Energy & Laser Focus for Every Training Session",
-      btnText: "SHOP PRE WORKOUT",
-      category: "Pre Workout",
+      tagline: "HIGH CALORIE MASS GAINER",
+      title: "LEGENDARY GAINS, LEGENDARY TASTE",
+      subtitle: "Fuel your bulk with 390 calories, 66g carbs, and 18g protein for maximum size, strength, and performance.",
+      btnText: "SHOP MASS GAINER NOW",
+      category: "Mass Gainer",
     },
     {
       id: 7,
       image: Home7,
-      tagline: "FRD NUTRITION OFFICIAL",
-      title: "TRUSTED BY ATHLETES",
-      subtitle: "Premium Quality Supplements Trusted by Thousands of Fitness Enthusiasts",
-      btnText: "SHOP NOW",
-      category: "All",
+      tagline: "100% WHEY PROTEIN ISOLATE",
+      title: "LEGENDARY TASTE. ELITE PERFORMANCE.",
+      subtitle: "Fuel your fitness with 27g protein, zero carbs, and zero sugar for clean muscle gains and faster recovery.",
+      btnText: "SHOP PROTEIN NOW",
+      category: "Protein",
     },
     {
       id: 8,
       image: Home8,
-      tagline: "100% AUTHENTIC PRODUCTS",
-      title: "QUALITY YOU CAN TRUST",
-      subtitle: "Every Product Lab Tested & Quality Certified for Your Safety",
-      btnText: "EXPLORE ALL",
-      category: "All",
+      tagline: "MAXIMUM ENERGY | LASER FOCUS",
+      title: "TRAIN HARDER. LIFT STRONGER.",
+      subtitle: "Experience explosive energy, enhanced endurance, and skin-tearing pumps with our premium pre-workout formula.",
+      btnText: "SHOP PRE WORKOUT NOW",
+      category: "Pre Workout",
     },
     {
       id: 9,
       image: Home9,
-      tagline: "VISIT OUR OFFICIAL STORE",
-      title: "FRD NUTRITION STOREFRONT & HUB",
-      subtitle: "Experience 100% Authentic Products & Expert Consultation Live in Rohtak",
-      btnText: "VISIT STORE",
-      category: "All",
+      tagline: "MAXIMUM STRENGTH | MAXIMUM PERFORMANCE",
+      title: "POWER EVERY REP WITH CREATINE",
+      subtitle: "Scientifically formulated Creatine Monohydrate to increase strength, training energy, and muscle performance.",
+      btnText: "SHOP CREATINE NOW",
+      category: "Creatine",
     },
   ];
 
@@ -181,17 +181,16 @@ export default function HomePage() {
           {heroSlides.map((slide, index) => (
             <div
               key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 flex items-center justify-center ${
-                index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
-              }`}
+              className={`absolute inset-0 transition-opacity duration-1000 flex items-center justify-center ${index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+                }`}
             >
-              <div className="container-custom grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center h-full py-4 sm:py-8">
-                <div className="lg:col-span-6 space-y-3 sm:space-y-4 text-center lg:text-left z-20">
+              <div className="container-custom grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center h-full py-4 sm:py-8">
+                <div className="lg:col-span-6 space-y-2.5 sm:space-y-4 text-center lg:text-left z-20">
                   <span className="inline-block px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[#f5b800] font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-md">
                     ⚡ {slide.tagline}
                   </span>
 
-                  <h1 className="font-heading text-2xl sm:text-5xl font-black leading-tight tracking-tight text-white">
+                  <h1 className="font-heading text-xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-white">
                     {slide.title}
                   </h1>
 
@@ -199,7 +198,19 @@ export default function HomePage() {
                     {slide.subtitle}
                   </p>
 
-                  <div className="pt-2">
+                  {/* MOBILE IMAGE DISPLAY (Appears after Subtitle and before CTA Button on Mobile!) */}
+                  <div className="lg:hidden my-2 flex justify-center">
+                    <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900/50 p-2 shadow-2xl max-w-full">
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        className="max-h-[170px] w-full object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(245,184,0,0.2)]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ACTION BUTTON (Appears below image on Mobile, below text on Desktop) */}
+                  <div className="pt-1 sm:pt-2">
                     <Link
                       to="/supplements"
                       onClick={() => setSelectedCategory(slide.category)}
@@ -211,34 +222,48 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-6 flex justify-center items-center h-full">
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    className="max-h-[160px] sm:max-h-[400px] object-contain drop-shadow-[0_25px_35px_rgba(245,184,0,0.2)] hover:scale-105 transition-transform duration-700"
-                  />
+                {/* DESKTOP HERO IMAGE (Right Column on Desktop Only) */}
+                <div className="hidden lg:flex lg:col-span-6 justify-center items-center h-full">
+                  <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900/50 p-4 shadow-2xl max-w-full">
+                    <img
+                      src={slide.image}
+                      alt={slide.title}
+                      className="max-h-[380px] w-full object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(245,184,0,0.2)] hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Slider Controls */}
-          <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-30 flex items-center gap-2">
-            <button
-              onClick={prevSlide}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl"
-              aria-label="Previous Slide"
-            >
-              <FiChevronLeft size={18} />
-            </button>
+          {/* Slider Controls (Left / Right Side Edge Arrows) */}
+          <button
+            onClick={prevSlide}
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl backdrop-blur-sm cursor-pointer"
+            aria-label="Previous Slide"
+          >
+            <FiChevronLeft size={18} />
+          </button>
 
-            <button
-              onClick={nextSlide}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl"
-              aria-label="Next Slide"
-            >
-              <FiChevronRight size={18} />
-            </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl backdrop-blur-sm cursor-pointer"
+            aria-label="Next Slide"
+          >
+            <FiChevronRight size={18} />
+          </button>
+
+          {/* Bottom Pagination Dots */}
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
+            {heroSlides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentSlide(idx)}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${idx === currentSlide ? "w-6 bg-[#f5b800]" : "w-1.5 bg-slate-700 hover:bg-slate-500"
+                  }`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>

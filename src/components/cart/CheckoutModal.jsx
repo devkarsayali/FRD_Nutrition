@@ -3,6 +3,7 @@ import { FiCheckCircle, FiCreditCard, FiLock, FiShield, FiX } from "react-icons/
 import { useCart } from "../../context/CartContext";
 import { useUserAuth } from "../../context/UserAuthContext";
 import toast from "react-hot-toast";
+import { isValidEmail, isValidPhone } from "../../utils/validation";
 
 export default function CheckoutModal() {
   const {
@@ -80,6 +81,16 @@ export default function CheckoutModal() {
       !formData.phone
     ) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      toast.error("Please enter a valid email address (e.g. name@example.com).");
+      return;
+    }
+
+    if (!isValidPhone(formData.phone)) {
+      toast.error("Please enter a valid 10-digit mobile number (e.g. 9876543210).");
       return;
     }
 

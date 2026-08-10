@@ -152,14 +152,13 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="bg-[#10130f] text-white min-h-screen py-8">
-      <div className="container-custom max-w-7xl mx-auto space-y-6 sm:space-y-10 px-3 sm:px-6">
-        {/* Breadcrumb Navigation */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-neutral-400">
+      <div className="container-custom max-w-7xl mx-auto space-y-4 sm:space-y-8 px-3 sm:px-6">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-neutral-400">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-neutral-400 hover:text-white transition shrink-0"
           >
-            <FiArrowLeft size={14} />
+            <FiArrowLeft size={13} />
             <span>Back</span>
           </button>
           <span>/</span>
@@ -167,35 +166,30 @@ export default function ProductDetailsPage() {
             Supplements
           </Link>
           <span>/</span>
-          <span className="text-lime-400 font-semibold truncate max-w-[150px] sm:max-w-none">
+          <span className="text-lime-400 font-semibold truncate max-w-[140px] sm:max-w-none">
             {product.name}
           </span>
         </div>
 
-        {/* Main Product Showcase Box */}
-        <div className="bg-[#141813] rounded-2xl sm:rounded-3xl border border-neutral-800 p-4 sm:p-8 shadow-2xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-start">
+        <div className="bg-[#141813] rounded-2xl sm:rounded-3xl border border-neutral-800 p-3.5 sm:p-8 shadow-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 lg:gap-12 items-start">
             
-            {/* LEFT COLUMN: Media Gallery (Main Viewport + Thumbnails) */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="bg-[#191e19] rounded-2xl border border-neutral-800 p-3 sm:p-6 relative flex items-center justify-center min-h-[280px] sm:min-h-[460px] overflow-hidden group">
-                {/* Share Button Overlay */}
+            <div className="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div className="bg-[#191e19] rounded-xl sm:rounded-2xl border border-neutral-800 p-2.5 sm:p-6 relative flex items-center justify-center min-h-[200px] sm:min-h-[440px] overflow-hidden group">
                 <button
                   onClick={handleShare}
-                  className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full bg-neutral-900/80 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-700/60 transition z-10"
+                  className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full bg-neutral-900/80 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-700/60 transition z-10"
                   title="Share Product"
                 >
-                  <FiShare2 size={16} />
+                  <FiShare2 size={15} />
                 </button>
 
-                {/* Badge Tag */}
                 {product.badge && (
-                  <span className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 py-1 rounded-md bg-lime-500 text-neutral-950 font-black text-[10px] sm:text-[11px] uppercase tracking-wider z-10">
+                  <span className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md bg-lime-500 text-neutral-950 font-black text-[10px] sm:text-[11px] uppercase tracking-wider z-10">
                     {product.badge}
                   </span>
                 )}
 
-                {/* Active Main Display (Image or Video) */}
                 {isVideo ? (
                   <div className="w-full h-full flex items-center justify-center">
                     {isYouTube ? (
@@ -211,7 +205,7 @@ export default function ProductDetailsPage() {
                         controls
                         autoPlay
                         loop
-                        className="w-full max-h-[320px] sm:max-h-[420px] rounded-xl object-contain"
+                        className="w-full max-h-[220px] sm:max-h-[420px] rounded-xl object-contain"
                       />
                     )}
                   </div>
@@ -219,19 +213,18 @@ export default function ProductDetailsPage() {
                   <img
                     src={currentUrl}
                     alt={product.name || "Supplement"}
-                    className="w-full max-h-[300px] sm:max-h-[420px] object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105"
+                    className="w-full max-h-[210px] sm:max-h-[420px] object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105"
                   />
                 )}
               </div>
 
-              {/* Photos & Videos Thumbnails Row */}
               {allMedia.length > 1 && (
-                <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1 scrollbar-thin">
                   {allMedia.map((item, idx) => (
                     <button
                       key={idx}
                       onClick={() => setSelectedMediaIndex(idx)}
-                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${
+                      className={`relative w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${
                         selectedMediaIndex === idx
                           ? "border-lime-500 ring-2 ring-lime-500/30"
                           : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
@@ -239,8 +232,8 @@ export default function ProductDetailsPage() {
                     >
                       {item.type === "video" ? (
                         <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center text-lime-400">
-                          <FiPlay size={20} fill="currentColor" />
-                          <span className="text-[9px] font-bold mt-0.5 uppercase text-white">Video</span>
+                          <FiPlay size={16} fill="currentColor" />
+                          <span className="text-[8px] font-bold mt-0.5 uppercase text-white">Video</span>
                         </div>
                       ) : (
                         <img
@@ -255,21 +248,18 @@ export default function ProductDetailsPage() {
               )}
             </div>
 
-            {/* RIGHT COLUMN: Product Title, Rating, Price, Options & Stock */}
-            <div className="lg:col-span-6 space-y-6">
-              {/* Header Title & Ratings */}
-              <div className="space-y-3 border-b border-neutral-800/80 pb-5">
-                <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white uppercase tracking-tight leading-tight">
+            <div className="lg:col-span-6 space-y-4 sm:space-y-6">
+              <div className="space-y-2 border-b border-neutral-800/80 pb-3 sm:pb-5">
+                <h1 className="font-heading text-lg sm:text-2xl lg:text-3xl font-extrabold text-white uppercase tracking-tight leading-snug">
                   {product.name}
                 </h1>
 
-                {/* Rating & Reviews */}
                 <div className="flex items-center gap-2 text-xs text-neutral-400">
-                  <div className="flex items-center text-amber-400 gap-1">
+                  <div className="flex items-center text-amber-400 gap-0.5 sm:gap-1">
                     {[...Array(5)].map((_, i) => (
                       <FiStar
                         key={i}
-                        size={14}
+                        size={13}
                         fill={i < Math.floor(Number(product.rating) || 5) ? "currentColor" : "none"}
                       />
                     ))}
@@ -280,8 +270,7 @@ export default function ProductDetailsPage() {
                   <span>({product.reviewsCount || 0})</span>
                 </div>
 
-                {/* Category & Subcategory line */}
-                <div className="flex items-center gap-4 text-xs font-semibold pt-1">
+                <div className="flex items-center gap-3 text-[11px] sm:text-xs font-semibold pt-0.5">
                   <div>
                     <span className="text-neutral-400">Category: </span>
                     <span className="text-lime-400 hover:underline font-bold">{product.category || "Supplements"}</span>
@@ -296,39 +285,37 @@ export default function ProductDetailsPage() {
                 </div>
               </div>
 
-              {/* Price & Savings Pill Section */}
-              <div className="flex items-center gap-4 py-2 border-b border-neutral-800/80">
-                <span className="font-heading font-black text-3xl sm:text-4xl text-lime-400">
+              <div className="flex items-center gap-3 py-1.5 border-b border-neutral-800/80">
+                <span className="font-heading font-black text-2xl sm:text-4xl text-lime-400">
                   ₹{productPrice * quantity}
                 </span>
 
                 {productOriginalPrice > 0 && (
-                  <span className="text-xl text-neutral-400 line-through">
+                  <span className="text-base sm:text-xl text-neutral-400 line-through">
                     ₹{productOriginalPrice * quantity}
                   </span>
                 )}
 
                 {discountPercent > 0 && (
-                  <span className="px-3 py-1.5 rounded-md bg-[#ef4444] text-white text-xs font-black uppercase tracking-wide shadow-md shadow-red-500/20">
+                  <span className="px-2.5 py-1 rounded bg-[#ef4444] text-white text-[10px] sm:text-xs font-black uppercase tracking-wide shadow-md shadow-red-500/20">
                     SAVE {discountPercent}%
                   </span>
                 )}
               </div>
 
-              {/* Flavor Selector (Clicking a flavor button updates selected flavor & displays corresponding flavor photo!) */}
               {Array.isArray(product.flavors) && product.flavors.length > 0 && (
-                <div className="space-y-2.5">
-                  <label className="block text-xs font-extrabold text-neutral-300 uppercase tracking-wider">
+                <div className="space-y-1.5 sm:space-y-2.5">
+                  <label className="block text-[11px] sm:text-xs font-extrabold text-neutral-300 uppercase tracking-wider">
                     {String(selectedFlavor || "CHOCOLATE").toUpperCase()} :
                   </label>
-                  <div className="flex flex-wrap gap-2.5">
+                  <div className="flex flex-wrap gap-2">
                     {product.flavors.map((flavor, fIdx) => (
                       <button
                         key={fIdx}
                         onClick={() => handleFlavorSelect(flavor, fIdx)}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase transition ${
+                        className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold uppercase transition ${
                           selectedFlavor === String(flavor)
-                            ? "bg-lime-500 text-neutral-950 font-black shadow-lg shadow-lime-500/20"
+                            ? "bg-lime-500 text-neutral-950 font-black shadow-md shadow-lime-500/20"
                             : "bg-neutral-900 border border-neutral-800 text-neutral-300 hover:border-neutral-700"
                         }`}
                       >
@@ -339,18 +326,17 @@ export default function ProductDetailsPage() {
                 </div>
               )}
 
-              {/* Package Sizes Selector */}
               {Array.isArray(product.sizes) && product.sizes.length > 0 && (
-                <div className="space-y-2.5">
-                  <label className="block text-xs font-extrabold text-neutral-300 uppercase tracking-wider">
+                <div className="space-y-1.5 sm:space-y-2.5">
+                  <label className="block text-[11px] sm:text-xs font-extrabold text-neutral-300 uppercase tracking-wider">
                     Package Size:
                   </label>
-                  <div className="flex flex-wrap gap-2.5">
+                  <div className="flex flex-wrap gap-2">
                     {product.sizes.map((size, sIdx) => (
                       <button
                         key={sIdx}
                         onClick={() => setSelectedSize(String(size))}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
+                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold border transition ${
                           selectedSize === String(size)
                             ? "border-lime-500 bg-lime-500/10 text-lime-400"
                             : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700"
@@ -363,7 +349,6 @@ export default function ProductDetailsPage() {
                 </div>
               )}
 
-              {/* Stock Status Indicator */}
               {(() => {
                 const rawStock = String(product.stockQuantity ?? "").trim();
                 const lowerStock = rawStock.toLowerCase();
@@ -385,28 +370,27 @@ export default function ProductDetailsPage() {
                 }
 
                 return (
-                  <div className={`font-extrabold text-sm flex items-center gap-2 pt-1 ${isNotAvailable ? "text-red-400" : "text-lime-400"}`}>
-                    <span className={`w-2.5 h-2.5 rounded-full ${isNotAvailable ? "bg-red-500" : "bg-lime-500 animate-pulse"}`} />
+                  <div className={`font-extrabold text-xs sm:text-sm flex items-center gap-2 pt-0.5 ${isNotAvailable ? "text-red-400" : "text-lime-400"}`}>
+                    <span className={`w-2 h-2 rounded-full ${isNotAvailable ? "bg-red-500" : "bg-lime-500 animate-pulse"}`} />
                     <span>{displayStockText}</span>
                   </div>
                 );
               })()}
 
-              {/* Quantity Counter & ADD TO CART Button */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <div className="flex items-center justify-between border border-neutral-800 rounded-xl bg-neutral-900 px-4 py-3 shrink-0 sm:w-36">
+              <div className="flex items-center gap-2.5 pt-1">
+                <div className="flex items-center justify-between border border-neutral-800 rounded-xl bg-neutral-900 px-3 py-2.5 shrink-0 w-28 sm:w-36">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     className="text-neutral-400 hover:text-white"
                   >
-                    <FiMinus size={16} />
+                    <FiMinus size={15} />
                   </button>
-                  <span className="font-bold text-white text-base">{quantity}</span>
+                  <span className="font-bold text-white text-sm sm:text-base">{quantity}</span>
                   <button
                     onClick={() => setQuantity((q) => q + 1)}
                     className="text-neutral-400 hover:text-white"
                   >
-                    <FiPlus size={16} />
+                    <FiPlus size={15} />
                   </button>
                 </div>
 
@@ -424,62 +408,59 @@ export default function ProductDetailsPage() {
                     <button
                       onClick={handleAddToCart}
                       disabled={isOut}
-                      className={`flex-1 py-4 px-8 rounded-xl font-extrabold uppercase text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 ${
+                      className={`flex-1 py-3 sm:py-4 px-4 sm:px-8 rounded-xl font-extrabold uppercase text-xs sm:text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 min-w-0 ${
                         isOut
                           ? "bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none"
                           : "bg-lime-500 hover:bg-lime-400 text-neutral-950 shadow-lime-500/20"
                       }`}
                     >
-                      <FiShoppingBag size={18} />
-                      <span>{isOut ? "NOT AVAILABLE" : "ADD TO CART"}</span>
+                      <FiShoppingBag size={17} className="shrink-0" />
+                      <span className="truncate">{isOut ? "NOT AVAILABLE" : "ADD TO CART"}</span>
                     </button>
                   );
                 })()}
 
                 <button
                   onClick={() => toggleWishlist(product.id)}
-                  className={`p-4 rounded-xl border transition ${
+                  className={`p-3 sm:p-4 rounded-xl border transition shrink-0 ${
                     isWishlisted
                       ? "border-red-500/40 bg-red-500/10 text-red-400"
                       : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-white"
                   }`}
                   title="Wishlist"
                 >
-                  <FiHeart size={20} fill={isWishlisted ? "currentColor" : "none"} />
+                  <FiHeart size={18} fill={isWishlisted ? "currentColor" : "none"} />
                 </button>
               </div>
 
-              {/* Product Enquiry Button */}
               <button
                 type="button"
                 onClick={handleEnquireNow}
-                className="w-full py-3.5 px-6 rounded-xl font-extrabold uppercase text-xs tracking-wider transition bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 text-[#f5b800] border border-amber-500/40 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 active:scale-[0.99] cursor-pointer"
+                className="w-full py-2.5 sm:py-3.5 px-4 rounded-xl font-extrabold uppercase text-xs tracking-wider transition bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 text-[#f5b800] border border-amber-500/40 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 active:scale-[0.99] cursor-pointer"
               >
-                <FiHelpCircle size={17} className="shrink-0" />
+                <FiHelpCircle size={16} className="shrink-0" />
                 <span className="truncate">Enquire Now for {product.name}</span>
               </button>
 
-              {/* Dispatch & Security Highlights */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800/80 text-xs">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
-                  <FiTruck className="text-lime-400 shrink-0" size={20} />
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-2 sm:pt-4 border-t border-neutral-800/80 text-[11px] sm:text-xs">
+                <div className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
+                  <FiTruck className="text-lime-400 shrink-0" size={18} />
                   <div>
                     <span className="font-bold text-white block">Express Dispatch</span>
-                    <span className="text-[11px] text-neutral-400">Delivery in 24-48 Hours</span>
+                    <span className="text-[10px] sm:text-[11px] text-neutral-400">Delivery in 24-48 Hours</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
-                  <FiShield className="text-lime-400 shrink-0" size={20} />
+                <div className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
+                  <FiShield className="text-lime-400 shrink-0" size={18} />
                   <div>
                     <span className="font-bold text-white block">100% Authentic</span>
-                    <span className="text-[11px] text-neutral-400">Direct Importer Seal</span>
+                    <span className="text-[10px] sm:text-[11px] text-neutral-400">Direct Importer Seal</span>
                   </div>
                 </div>
               </div>
 
-              {/* Delivery Pincode Serviceability Checker Widget */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <PincodeChecker />
               </div>
 
@@ -487,9 +468,7 @@ export default function ProductDetailsPage() {
           </div>
         </div>
 
-        {/* Large Product Info Tabs ("Large Info" Section) */}
-        <div className="bg-[#141813] rounded-3xl border border-neutral-800 p-6 sm:p-8 space-y-6 shadow-xl">
-          {/* Tab Selection Navigation Bar */}
+        <div className="bg-[#141813] rounded-2xl sm:rounded-3xl border border-neutral-800 p-4 sm:p-8 space-y-4 sm:space-y-6 shadow-xl">
           <div className="flex items-center gap-4 sm:gap-8 border-b border-neutral-800 overflow-x-auto pb-3 scrollbar-thin">
             {[
               { id: "overview", label: "Product Description" },
@@ -513,15 +492,14 @@ export default function ProductDetailsPage() {
             ))}
           </div>
 
-          {/* TAB 1: Product Description */}
           {activeTab === "overview" && (
-            <div className="space-y-4 text-neutral-300 leading-relaxed text-sm max-w-4xl">
-              <h3 className="font-heading font-extrabold text-lg text-white">
+            <div className="space-y-3 sm:space-y-4 text-neutral-300 leading-relaxed text-xs sm:text-sm max-w-4xl">
+              <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">
                 Detailed Product Overview
               </h3>
               <p>{product.description || "High quality sports supplement formulated for optimal performance and muscle recovery."}</p>
               {product.subtitle && (
-                <div className="p-4 rounded-2xl bg-neutral-900/80 border border-neutral-800 text-xs text-neutral-300 space-y-1">
+                <div className="p-3 sm:p-4 rounded-2xl bg-neutral-900/80 border border-neutral-800 text-xs text-neutral-300 space-y-1">
                   <span className="font-bold text-lime-400 block uppercase">Formula Highlight:</span>
                   <p>{product.subtitle}</p>
                 </div>
@@ -529,18 +507,17 @@ export default function ProductDetailsPage() {
             </div>
           )}
 
-          {/* TAB 5: 100% Authenticity Guarantee */}
           {activeTab === "authenticity" && (
-            <div className="space-y-4 max-w-3xl">
-              <h3 className="font-heading font-extrabold text-lg text-white">
+            <div className="space-y-3 sm:space-y-4 max-w-3xl">
+              <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">
                 100% Direct Importer & Authenticity Seal Guarantee
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-neutral-300">
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs text-neutral-300">
+                <div className="p-3 sm:p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-1.5">
                   <span className="font-bold text-lime-400 block">Direct Importer Sourced</span>
                   <p>All supplements are imported directly from authorized brand distributors with genuine hologram scratch codes.</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-1.5">
+                <div className="p-3 sm:p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-1.5">
                   <span className="font-bold text-lime-400 block">Scan Scratch Code</span>
                   <p>Verify your product authenticity instant SMS/QR code on the official manufacturer website.</p>
                 </div>
@@ -548,35 +525,33 @@ export default function ProductDetailsPage() {
             </div>
           )}
 
-          {/* TAB 6: Verified Reviews */}
           {activeTab === "reviews" && (
-            <div className="space-y-4 max-w-3xl text-xs text-neutral-300">
-              <h3 className="font-heading font-extrabold text-lg text-white">
+            <div className="space-y-3 sm:space-y-4 max-w-3xl text-xs text-neutral-300">
+              <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">
                 Verified Customer Reviews & Feedback
               </h3>
-              <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
+              <div className="p-3 sm:p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
                 <div>
-                  <span className="text-2xl font-black text-white">{Number(product.rating || 4.9).toFixed(1)} / 5.0</span>
-                  <span className="block text-[11px] text-neutral-400">Based on {product.reviewsCount || 180}+ verified buyer orders</span>
+                  <span className="text-xl sm:text-2xl font-black text-white">{Number(product.rating || 4.9).toFixed(1)} / 5.0</span>
+                  <span className="block text-[10px] sm:text-[11px] text-neutral-400">Based on {product.reviewsCount || 180}+ verified buyer orders</span>
                 </div>
                 <button
                   onClick={() => toast.success("Review form submitted!")}
-                  className="px-4 py-2 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition"
+                  className="px-3.5 py-2 rounded-xl bg-lime-500 text-neutral-950 font-bold text-xs hover:bg-lime-400 transition"
                 >
-                  Write a Review
+                  Write Review
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Related Products Carousel / Grid */}
         {relatedProducts.length > 0 && (
-          <div className="space-y-6 pt-4">
-            <h2 className="font-heading text-2xl font-extrabold text-white">
+          <div className="space-y-4 sm:space-y-6 pt-2 sm:pt-4">
+            <h2 className="font-heading text-xl sm:text-2xl font-extrabold text-white">
               Related Supplements You Might Like
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {relatedProducts.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
