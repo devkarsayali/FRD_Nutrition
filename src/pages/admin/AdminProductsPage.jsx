@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import WheyIsolate from "../../assets/whey-isolate.png";
 import {
+  FiBox,
   FiCheck,
   FiEdit2,
   FiPlus,
@@ -25,13 +27,23 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
     products,
     categories,
     addProduct,
- updateProduct,
+    updateProduct,
     deleteProduct,
     toggleStockStatus,
+    updateInitialStock,
   } = useProducts();
 
+  const setGlobalSearch = outletContext?.setSearchQuery;
+
   const [localSearch, setLocalSearch] = useState(searchUrlParam || "");
-  const search = globalSearch || localSearch;
+  const search = localSearch || globalSearch;
+
+  const handleSearchChange = (value) => {
+    setLocalSearch(value);
+    if (setGlobalSearch) {
+      setGlobalSearch(value);
+    }
+  };
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState(
     categoryUrlParam || "All"
   );
@@ -44,8 +56,26 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
   );
   const [editingProduct, setEditingProduct] = useState(null);
 
+  // Stock Management Modal State
+  const [stockProduct, setStockProduct] = useState(null);
+  const [editInitialStock, setEditInitialStock] = useState("");
+
+  const handleOpenStockModal = (product) => {
+    setStockProduct(product);
+    setEditInitialStock(product.initialStock !== undefined ? product.initialStock : 50);
+  };
+
+  const handleSaveStock = (e) => {
+    e.preventDefault();
+    if (!stockProduct) return;
+    const initialQtyNum = Math.max(0, parseInt(editInitialStock, 10) || 0);
+    updateInitialStock(stockProduct.id, initialQtyNum);
+    toast.success(`Stock details updated for "${stockProduct.name}".`);
+    setStockProduct(null);
+  };
+
   useEffect(() => {
-    if (isAddModalOpen) {
+    if (isAddModalOpen || stockProduct) {
       document.documentElement.classList.add("no-scroll");
       document.body.classList.add("no-scroll");
       document.getElementById("root")?.classList.add("no-scroll");
@@ -59,7 +89,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       document.body.classList.remove("no-scroll");
       document.getElementById("root")?.classList.remove("no-scroll");
     };
-  }, [isAddModalOpen]);
+  }, [isAddModalOpen, stockProduct]);
 
   useEffect(() => {
     if (searchUrlParam) {
@@ -347,9 +377,19 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
             type="text"
             placeholder="Search supplements by title or category..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-lime-500"
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white focus:outline-none focus:border-lime-500"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => handleSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 cursor-pointer"
+              title="Clear Search"
+            >
+              <FiX size={14} />
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
@@ -459,6 +499,13 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
 
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenStockModal(p)}
+                          className="p-2 rounded-xl bg-neutral-900 text-neutral-300 hover:text-lime-400 hover:border-lime-500/50 border border-neutral-800 transition cursor-pointer"
+                          title="Manage Stock Details"
+                        >
+                          <FiBox size={16} />
+                        </button>
                         <button
                           onClick={() => handleOpenEdit(p)}
                           className="p-2 rounded-xl bg-neutral-900 text-neutral-300 hover:text-lime-400 hover:border-lime-500/50 border border-neutral-800 transition"
@@ -911,6 +958,175 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                   className="px-6 py-2.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 shadow-lg shadow-lime-500/20"
                 >
                   {editingProduct ? "Save Changes" : "Create Supplement"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* STOCK MANAGEMENT MODAL POPUP */}
+      {stockProduct && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            onClick={() => setStockProduct(null)}
+          />
+
+          <div className="relative w-full max-w-md bg-[#141813] text-white rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-2xl p-6 sm:p-8 z-10 space-y-6 animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-lime-500/20 text-lime-400 font-bold flex items-center justify-center border border-lime-500/30">
+                  <FiBox size={20} />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-white">
+                    Stock Management
+                  </h3>
+                  <span className="text-xs text-neutral-400 block">
+                    Product Stock Details & Inventory Control
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setStockProduct(null)}
+                className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Product Summary Header Card */}
+            <div className="flex items-center gap-3.5 bg-neutral-900/80 p-3.5 rounded-2xl border border-neutral-800">
+              <img
+                src={stockProduct.image}
+                alt={stockProduct.name}
+                className="w-12 h-12 object-contain bg-neutral-950 p-1.5 rounded-xl border border-neutral-800 shrink-0"
+              />
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="font-bold text-white text-sm truncate" title={stockProduct.name}>
+                  {stockProduct.name}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="px-2 py-0.5 rounded-md bg-neutral-950 text-lime-400 border border-neutral-800 font-semibold">
+                    {stockProduct.category}
+                  </span>
+                  <span className="font-black text-white">
+                    ₹{stockProduct.price}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveStock} className="space-y-4 text-xs">
+              {/* Read-Only Details Grid */}
+              <div className="grid grid-cols-2 gap-3 bg-neutral-950/60 p-3.5 rounded-2xl border border-neutral-800">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-1">
+                    Product Name (Read-Only)
+                  </span>
+                  <span className="font-bold text-white text-xs block truncate" title={stockProduct.name}>
+                    {stockProduct.name}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-1">
+                    Category (Read-Only)
+                  </span>
+                  <span className="font-bold text-lime-400 text-xs block">
+                    {stockProduct.category}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-1">
+                    Price (₹) (Read-Only)
+                  </span>
+                  <span className="font-black text-white text-xs block">
+                    ₹{stockProduct.price}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-1">
+                    Quantity Sold (Read-Only)
+                  </span>
+                  <span className="font-black text-emerald-400 text-xs block">
+                    {stockProduct.quantitySold || 0} Units
+                  </span>
+                </div>
+              </div>
+
+              {/* Editable Initial Stock Quantity */}
+              <div>
+                <label className="block text-neutral-200 font-bold mb-1.5 text-xs">
+                  Initial Stock Quantity * <span className="text-lime-400 font-normal">(Editable)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={editInitialStock}
+                  onChange={(e) => setEditInitialStock(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-lime-500 transition shadow-inner"
+                  placeholder="Enter total initial stock quantity..."
+                />
+                <p className="text-[10px] text-neutral-400 mt-1">
+                  Adjust initial stock quantity to update available stock automatically.
+                </p>
+              </div>
+
+              {/* Auto-Calculated Available Stock */}
+              {(() => {
+                const initQty = parseInt(editInitialStock, 10) || 0;
+                const soldQty = Number(stockProduct.quantitySold) || 0;
+                const availableCalc = Math.max(0, initQty - soldQty);
+
+                return (
+                  <div className="bg-neutral-900/90 border border-neutral-800 p-4 rounded-2xl space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-extrabold tracking-wider text-neutral-400">
+                        Available Stock (Auto-Calculated)
+                      </span>
+                      <span className="text-[10px] font-mono text-neutral-500">
+                        Initial ({initQty}) − Sold ({soldQty})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-2xl font-black text-lime-400">
+                        {availableCalc} <span className="text-xs font-bold text-neutral-400">Units Available</span>
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${
+                        availableCalc === 0
+                          ? "bg-red-500/20 text-red-400 border-red-500/30"
+                          : availableCalc < 10
+                          ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                          : "bg-lime-500/20 text-lime-400 border-lime-500/30"
+                      }`}>
+                        {availableCalc === 0 ? "Out of Stock" : availableCalc < 10 ? "Low Stock" : "In Stock"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setStockProduct(null)}
+                  className="px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-300 hover:text-white transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition cursor-pointer text-xs shadow-md shadow-lime-500/20"
+                >
+                  Save Stock Updates
                 </button>
               </div>
             </form>

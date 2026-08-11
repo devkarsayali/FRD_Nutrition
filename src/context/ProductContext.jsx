@@ -4,7 +4,53 @@ import { CATEGORIES, INITIAL_PRODUCTS } from "../data/initialProducts";
 const ProductContext = createContext();
 const STORAGE_KEY = "frd_products_inventory_v7";
 
-const normalizeStockValue = (product, index = 0) => {
+export const calculateQuantitySoldMap = () => {
+  const soldMap = {};
+  const RESTORABLE_STATUSES = ["cancelled", "rejected", "refunded", "returned"];
+  try {
+    const orderMap = new Map();
+    const addOrder = (o) => {
+      if (!o || !o.id) return;
+      orderMap.set(o.id, o);
+    };
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.toLowerCase().includes("order")) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+          if (Array.isArray(parsed)) {
+            parsed.forEach(addOrder);
+          } else if (parsed && parsed.id) {
+            addOrder(parsed);
+          }
+        } catch {
+          // ignore non-JSON
+        }
+      }
+    }
+
+    const allOrders = Array.from(orderMap.values());
+    allOrders.forEach((order) => {
+      const status = (order.status || "").toLowerCase().trim();
+      if (RESTORABLE_STATUSES.some((s) => status.includes(s))) return;
+
+      if (Array.isArray(order.items)) {
+        order.items.forEach((item) => {
+          const pId = item.productId || item.product?.id || item.id;
+          if (!pId) return;
+          const qty = Number(item.quantity) || 1;
+          soldMap[pId] = (soldMap[pId] || 0) + qty;
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error computing quantity sold:", err);
+  }
+  return soldMap;
+};
+
+const normalizeStockValue = (product, index = 0, soldMap = {}) => {
   if (!product) return product;
 
   const nextInStock = product.inStock ?? true;
@@ -18,8 +64,17 @@ const normalizeStockValue = (product, index = 0) => {
     parsedQty = extracted === "" ? (nextInStock === false ? 0 : 36) : parseInt(extracted, 10);
   }
 
-  const finalInStock = nextInStock !== false && parsedQty > 0;
-  const finalStockQty = finalInStock ? parsedQty : 0;
+  const pId = product.id;
+  const initialStock = Number(product.initialStock) >= 0
+    ? Number(product.initialStock)
+    : Math.max(parsedQty, 50);
+
+  const calculatedSold = soldMap[pId] !== undefined ? soldMap[pId] : (Number(product.quantitySold) || 0);
+  const quantitySold = Math.max(0, calculatedSold);
+  const availableStock = Math.max(0, initialStock - quantitySold);
+
+  const finalInStock = nextInStock !== false && availableStock > 0;
+  const finalStockQty = finalInStock ? availableStock : 0;
 
   // Infer or preserve creation timestamp for strict creation-date ordering
   let createdAt = product.createdAt || product.created_at;
@@ -39,14 +94,18 @@ const normalizeStockValue = (product, index = 0) => {
   return {
     ...product,
     createdAt,
+    initialStock,
+    quantitySold,
+    availableStock,
     inStock: finalInStock,
     stockQuantity: finalStockQty,
   };
 };
 
 const normalizeProducts = (productsList) => {
-  if (!Array.isArray(productsList)) return INITIAL_PRODUCTS.map((p, idx) => normalizeStockValue(p, idx));
-  return productsList.map((p, idx) => normalizeStockValue(p, idx));
+  const soldMap = calculateQuantitySoldMap();
+  if (!Array.isArray(productsList)) return INITIAL_PRODUCTS.map((p, idx) => normalizeStockValue(p, idx, soldMap));
+  return productsList.map((p, idx) => normalizeStockValue(p, idx, soldMap));
 };
 
 export const getProductCategoryKey = (prod) => {
@@ -307,6 +366,27 @@ export function ProductProvider({ children }) {
     });
   };
 
+  const updateInitialStock = (productId, newInitialStock) => {
+    const nextInitial = Math.max(0, parseInt(newInitialStock, 10) || 0);
+    setProducts((prev) => {
+      const soldMap = calculateQuantitySoldMap();
+      const updated = prev.map((p) => {
+        if (p.id !== productId) return p;
+        return normalizeStockValue(
+          {
+            ...p,
+            initialStock: nextInitial,
+          },
+          0,
+          soldMap
+        );
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
+  };
+
   const resetToDefaultData = () => {
     const normalizedDefaults = normalizeProducts(INITIAL_PRODUCTS);
     setProducts(normalizedDefaults);
@@ -408,6 +488,7 @@ export function ProductProvider({ children }) {
         updateProduct,
         deleteProduct,
         toggleStockStatus,
+        updateInitialStock,
         decreaseProductStock,
         restoreProductStock,
         resetToDefaultData,
