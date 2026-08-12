@@ -5,6 +5,7 @@ import {
   FiChevronDown,
   FiGrid,
   FiHome,
+  FiLayers,
   FiLock,
   FiLogOut,
   FiMenu,
@@ -156,7 +157,7 @@ export default function AdminLayout() {
   // SEPARATE SIDEBAR NAVIGATION LINKS IN OPTIMAL WORKFLOW SEQUENCE
   const adminNav = [
     { name: "Dashboard", path: "/admin", icon: FiGrid },
-    { name: "Categories", path: "/admin/categories", icon: FiGrid },
+    { name: "Categories", path: "/admin/categories", icon: FiLayers },
     { name: "Supplements", path: "/admin/products", icon: FiBox },
     { name: "Customer Orders", path: "/admin/orders", icon: FiShoppingBag },
     { name: "Customers", path: "/admin/customers", icon: FiUsers },

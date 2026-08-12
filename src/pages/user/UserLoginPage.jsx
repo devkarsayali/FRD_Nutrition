@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import oipLogo from "../../assets/OIP.png";
 import { useUserAuth } from "../../context/UserAuthContext";
+import { isValidEmail } from "../../utils/validation";
 
 export default function UserLoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,6 +74,10 @@ export default function UserLoginPage() {
       toast.error("Please enter both email and password.");
       return;
     }
+    if (!isValidEmail(formData.email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
     const registeredUsers = getRegisteredUsers();
     const cleanEmail = formData.email.trim().toLowerCase();
     const foundUser = registeredUsers.find(
@@ -97,6 +102,11 @@ export default function UserLoginPage() {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.password) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
@@ -254,6 +264,7 @@ export default function UserLoginPage() {
             {/* LOGIN & SIGNUP FORM */}
             <form
               onSubmit={mode === "login" ? handleLoginSubmit : handleSignUpSubmit}
+              autoComplete="off"
               className="space-y-4"
             >
               {/* Full Name (Sign Up Only) */}
@@ -268,6 +279,7 @@ export default function UserLoginPage() {
                       type="text"
                       name="name"
                       required
+                      autoComplete="off"
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="Enter your full name"
@@ -288,6 +300,7 @@ export default function UserLoginPage() {
                     type="email"
                     name="email"
                     required
+                    autoComplete="off"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email"
@@ -318,6 +331,7 @@ export default function UserLoginPage() {
                     type={showPassword ? "text" : "password"}
                     name="password"
                     required
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter your password"

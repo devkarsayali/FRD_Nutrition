@@ -28,6 +28,7 @@ import toast from "react-hot-toast";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
 import { useUserAuth } from "../../context/UserAuthContext";
+import { isValidPhone } from "../../utils/validation";
 
 const STATUS_STEPS = [
   "Order Placed",
@@ -282,6 +283,10 @@ export default function UserDashboardPage() {
 
   const handleProfileSave = (e) => {
     e.preventDefault();
+    if (profileForm.phone && !isValidPhone(profileForm.phone)) {
+      toast.error("Please enter a valid 10-digit mobile number.");
+      return;
+    }
     updateUserProfile(profileForm);
     setIsEditingProfile(false);
     toast.success("Profile details updated successfully!");
@@ -874,10 +879,17 @@ export default function UserDashboardPage() {
                         Phone Number *
                       </label>
                       <input
-                        type="text"
+                        type="tel"
                         required
+                        maxLength={10}
+                        inputMode="numeric"
+                        pattern="[0-9]{10}"
                         value={profileForm.phone}
-                        onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                        onChange={(e) => {
+                          const numericDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setProfileForm({ ...profileForm, phone: numericDigits });
+                        }}
+                        placeholder="9876543210 (10 digits)"
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#f5b800]"
                       />
                     </div>

@@ -54,7 +54,13 @@ export default function CheckoutModal() {
   if (!isCheckoutOpen) return null;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "phone") {
+      const numericDigits = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, phone: numericDigits }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Calculations for totals
@@ -249,9 +255,12 @@ export default function CheckoutModal() {
                     type="tel"
                     name="phone"
                     required
+                    maxLength={10}
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210 (10 digits)"
                     className="w-full bg-[#090d16] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#f5b800] transition"
                   />
                 </div>

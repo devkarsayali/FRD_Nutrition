@@ -53,27 +53,36 @@ export const calculateQuantitySoldMap = () => {
 const normalizeStockValue = (product, index = 0, soldMap = {}) => {
   if (!product) return product;
 
-  const nextInStock = product.inStock ?? true;
-  let rawStock = product.stockQuantity;
-  let parsedQty;
-
-  if (rawStock === undefined || rawStock === null || String(rawStock).trim() === "") {
-    parsedQty = nextInStock === false ? 0 : 36;
-  } else {
-    const extracted = String(rawStock).replace(/[^\d]/g, "");
-    parsedQty = extracted === "" ? (nextInStock === false ? 0 : 36) : parseInt(extracted, 10);
-  }
-
   const pId = product.id;
-  const initialStock = Number(product.initialStock) >= 0
-    ? Number(product.initialStock)
-    : Math.max(parsedQty, 50);
-
   const calculatedSold = soldMap[pId] !== undefined ? soldMap[pId] : (Number(product.quantitySold) || 0);
   const quantitySold = Math.max(0, calculatedSold);
-  const availableStock = Math.max(0, initialStock - quantitySold);
 
-  const finalInStock = nextInStock !== false && availableStock > 0;
+  const nextInStock = product.inStock;
+  let initialStock = Number(product.initialStock);
+
+  if (isNaN(initialStock) || initialStock < 0) {
+    let rawStock = product.stockQuantity;
+    let parsedQty = 50;
+    if (rawStock !== undefined && rawStock !== null && String(rawStock).trim() !== "") {
+      const extracted = String(rawStock).replace(/[^\d]/g, "");
+      if (extracted !== "") parsedQty = parseInt(extracted, 10);
+    }
+    initialStock = quantitySold + Math.max(parsedQty, 50);
+  }
+
+  // If explicitly requested inStock = true, ensure initialStock > quantitySold
+  if (nextInStock === true && initialStock <= quantitySold) {
+    const defaultAdd = Number(product.stockQuantity) > 0 ? Number(product.stockQuantity) : 50;
+    initialStock = quantitySold + defaultAdd;
+  }
+
+  // If explicitly requested inStock = false, initialStock = quantitySold so availableStock = 0
+  if (nextInStock === false) {
+    initialStock = quantitySold;
+  }
+
+  const availableStock = Math.max(0, initialStock - quantitySold);
+  const finalInStock = nextInStock === false ? false : availableStock > 0;
   const finalStockQty = finalInStock ? availableStock : 0;
 
   // Infer or preserve creation timestamp for strict creation-date ordering
@@ -87,7 +96,6 @@ const normalizeStockValue = (product, index = 0, soldMap = {}) => {
     }
   }
   if (!createdAt) {
-    // Fallback timestamp for initial catalog items
     createdAt = new Date(1770000000000 - index * 86400000).toISOString();
   }
 
@@ -285,19 +293,34 @@ export function ProductProvider({ children }) {
 
   const toggleStockStatus = (id) => {
     setProducts((prev) => {
+      const soldMap = calculateQuantitySoldMap();
       const updated = prev.map((p) => {
         if (p.id !== id) return p;
 
         const nextInStock = !p.inStock;
-        const nextQty = nextInStock
-          ? (p.stockQuantity > 0 ? p.stockQuantity : 36)
-          : 0;
+        const currentSold = soldMap[id] !== undefined ? soldMap[id] : (Number(p.quantitySold) || 0);
 
-        return normalizeStockValue({
-          ...p,
-          inStock: nextInStock,
-          stockQuantity: nextQty,
-        });
+        let nextInitialStock;
+        let nextQty;
+
+        if (nextInStock) {
+          nextQty = Number(p.stockQuantity) > 0 ? Number(p.stockQuantity) : 50;
+          nextInitialStock = currentSold + nextQty;
+        } else {
+          nextQty = 0;
+          nextInitialStock = currentSold;
+        }
+
+        return normalizeStockValue(
+          {
+            ...p,
+            inStock: nextInStock,
+            initialStock: nextInitialStock,
+            stockQuantity: nextQty,
+          },
+          0,
+          soldMap
+        );
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
@@ -372,10 +395,13 @@ export function ProductProvider({ children }) {
       const soldMap = calculateQuantitySoldMap();
       const updated = prev.map((p) => {
         if (p.id !== productId) return p;
+        const currentSold = soldMap[productId] !== undefined ? soldMap[productId] : (Number(p.quantitySold) || 0);
+        const shouldBeInStock = nextInitial > currentSold;
         return normalizeStockValue(
           {
             ...p,
             initialStock: nextInitial,
+            inStock: shouldBeInStock,
           },
           0,
           soldMap
@@ -394,31 +420,39 @@ export function ProductProvider({ children }) {
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
   };
 
+  // Guarantee safe product list (falling back to INITIAL_PRODUCTS if empty or corrupted)
+  const safeProducts = Array.isArray(products) && products.length > 0
+    ? products
+    : normalizeProducts(INITIAL_PRODUCTS);
+
   // Section-specific independent product lists
   // 1. Latest Collection: Determined strictly by product creation date/time (newest first)
-  const latestProducts = [...products].sort((a, b) => {
+  const latestProducts = [...safeProducts].sort((a, b) => {
     const timeA = new Date(a.createdAt || 0).getTime();
     const timeB = new Date(b.createdAt || 0).getTime();
     return timeB - timeA;
   });
 
-  // 2. Just Launched: Explicitly marked by admin or tagged as Just Launched
-  const justLaunchedProducts = products.filter(
+  // 2. Just Launched: Explicitly marked by admin or tagged as Just Launched (with fallback to all products)
+  const justLaunchedFiltered = safeProducts.filter(
     (p) => p.isJustLaunched || p.badge === "JUST LAUNCHED" || p.badge === "NEW" || p.isLatest
   );
+  const justLaunchedProducts = justLaunchedFiltered.length > 0 ? justLaunchedFiltered : safeProducts;
 
-  // 3. Trending Products: Products marked as trending or best sellers
-  const trendingProducts = products.filter(
+  // 3. Trending Products: Products marked as trending or best sellers (with fallback to all products)
+  const trendingFiltered = safeProducts.filter(
     (p) => p.isTrending || p.badge === "TRENDING" || p.badge === "BEST SELLER"
   );
+  const trendingProducts = trendingFiltered.length > 0 ? trendingFiltered : safeProducts;
 
-  // 4. Popular Supplements: Most popular or top seller products
-  const popularProducts = products.filter(
+  // 4. Popular Supplements: Most popular or top seller products (with fallback to all products)
+  const popularFiltered = safeProducts.filter(
     (p) => p.isPopular || p.isTopSeller || p.badge === "POPULAR"
   );
+  const popularProducts = popularFiltered.length > 0 ? popularFiltered : safeProducts;
 
   // Filtered & Sorted Products
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = safeProducts.filter((product) => {
     const normCategory = selectedCategory.toLowerCase().trim();
     const prodCatRaw = (product.category || "").toLowerCase().trim();
     const prodCatKey = getProductCategoryKey(product).toLowerCase().trim();

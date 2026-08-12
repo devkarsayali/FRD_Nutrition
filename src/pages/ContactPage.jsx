@@ -64,7 +64,13 @@ export default function ContactPage() {
   }, [user]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "phone") {
+      const numericDigits = value.replace(/\D/g, "").slice(0, 10);
+      setFormData({ ...formData, phone: numericDigits });
+      return;
+    }
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = (e) => {
@@ -315,9 +321,12 @@ export default function ContactPage() {
                         <input
                           type="tel"
                           name="phone"
+                          maxLength={10}
+                          inputMode="numeric"
+                          pattern="[0-9]{10}"
                           value={formData.phone}
                           onChange={handleChange}
-                          placeholder="+91 9975117277"
+                          placeholder="9876543210 (10 digits)"
                           className="w-full bg-[#090d16] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#f5b800] transition"
                         />
                       </div>
