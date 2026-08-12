@@ -1,10 +1,10 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { auth, db } from "../firebase/firebase.config";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
 const AdminAuthContext = createContext();
-
-const DEFAULT_ADMIN_EMAIL = "admin@ftrnutrition.com";
-const DEFAULT_ADMIN_PASSCODE = "admin123";
 
 export function AdminAuthProvider({ children }) {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
@@ -12,79 +12,148 @@ export function AdminAuthProvider({ children }) {
   });
 
   const [adminEmail, setAdminEmail] = useState(() => {
-    return sessionStorage.getItem("frd_admin_email") || DEFAULT_ADMIN_EMAIL;
+    return sessionStorage.getItem("frd_admin_email") || "";
   });
 
-  const [adminPasscode, setAdminPasscode] = useState(() => {
-    return localStorage.getItem("frd_admin_passcode") || DEFAULT_ADMIN_PASSCODE;
-  });
+  const [loading, setLoading] = useState(false);
 
-  const loginAdmin = (emailOrPasscode, passcodeArg) => {
-    let email = emailOrPasscode;
-    let passcode = passcodeArg;
+  // Clear stale local fallback passcode to ensure strict Firebase database auth
+  useEffect(() => {
+    localStorage.removeItem("frd_admin_passcode");
+  }, []);
 
-    if (passcodeArg === undefined && typeof emailOrPasscode === "string") {
-      if (emailOrPasscode.includes("@")) {
-        email = emailOrPasscode;
-        passcode = "";
-      } else {
-        passcode = emailOrPasscode;
-        email = DEFAULT_ADMIN_EMAIL;
+  // Sync Firebase Auth state if user signed in via Firebase Auth
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        sessionStorage.setItem("frd_admin_auth", "true");
+        sessionStorage.setItem("frd_admin_email", user.email || "");
+        setIsAdminLoggedIn(true);
+        setAdminEmail(user.email || "");
       }
-    }
+    });
+    return () => unsubscribe();
+  }, []);
 
-    if (!email || !email.trim() || !email.includes("@")) {
+  const loginAdmin = async (emailInput, passwordInput) => {
+    let email = (emailInput || "").trim();
+    let password = (passwordInput || "").trim();
+
+    if (!email || !email.includes("@")) {
       toast.error("Please enter a valid Admin Email address");
       return false;
     }
 
-    const trimmedPasscode = (passcode || "").trim();
-    if (!trimmedPasscode) {
+    if (!password) {
       toast.error("Please enter your Admin Password");
       return false;
     }
 
-    const activeStoredPass = localStorage.getItem("frd_admin_passcode") || DEFAULT_ADMIN_PASSCODE;
+    setLoading(true);
 
-    // STRICT PASSWORD CHECK: Only allow login if entered password matches the active admin password
-    if (trimmedPasscode === activeStoredPass || trimmedPasscode === adminPasscode) {
-      sessionStorage.setItem("frd_admin_auth", "true");
-      sessionStorage.setItem("frd_admin_email", email.trim());
-      setIsAdminLoggedIn(true);
-      setAdminEmail(email.trim());
-      toast.success("Welcome, Administrator!");
-      return true;
-    } else {
-      toast.error("Incorrect Admin Password! Please enter the correct password.");
-      return false;
+    // 1. Try Firebase Authentication (Email / Password)
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (userCredential && userCredential.user) {
+        sessionStorage.setItem("frd_admin_auth", "true");
+        sessionStorage.setItem("frd_admin_email", email);
+        setIsAdminLoggedIn(true);
+        setAdminEmail(email);
+        toast.success("Welcome, Administrator!");
+        setLoading(false);
+        return true;
+      }
+    } catch (firebaseAuthErr) {
+      console.log("Firebase Auth check completed:", firebaseAuthErr?.code || firebaseAuthErr?.message);
     }
+
+    // 2. Try Firestore Database ("admins", "admin", or "users" collections)
+    const lowerEmail = email.toLowerCase();
+    const collectionsToSearch = ["admins", "admin", "users"];
+
+    for (const colName of collectionsToSearch) {
+      try {
+        const colRef = collection(db, colName);
+        
+        // Query matching email
+        const qDoc = query(colRef, where("email", "==", email));
+        let snap = await getDocs(qDoc);
+
+        if (snap.empty) {
+          const qLower = query(colRef, where("email", "==", lowerEmail));
+          snap = await getDocs(qLower);
+        }
+
+        if (!snap.empty) {
+          let authenticated = false;
+          snap.forEach((docSnap) => {
+            const data = docSnap.data();
+            const storedPass = data.password || data.passcode || data.pass;
+            if (storedPass && String(storedPass).trim() === password) {
+              authenticated = true;
+            } else if (!storedPass && (data.role === "admin" || colName === "admins" || colName === "admin")) {
+              authenticated = true;
+            }
+          });
+
+          if (authenticated) {
+            sessionStorage.setItem("frd_admin_auth", "true");
+            sessionStorage.setItem("frd_admin_email", email);
+            setIsAdminLoggedIn(true);
+            setAdminEmail(email);
+            toast.success("Welcome, Administrator!");
+            setLoading(false);
+            return true;
+          }
+        }
+
+        // Direct doc ID check (e.g. doc ID = email address)
+        const docRef1 = doc(db, colName, email);
+        const docRef2 = doc(db, colName, lowerEmail);
+        const [snap1, snap2] = await Promise.all([
+          getDoc(docRef1).catch(() => null),
+          getDoc(docRef2).catch(() => null),
+        ]);
+
+        const docData = (snap1 && snap1.exists() ? snap1.data() : null) || (snap2 && snap2.exists() ? snap2.data() : null);
+        if (docData) {
+          const storedPass = docData.password || docData.passcode || docData.pass;
+          if (!storedPass || String(storedPass).trim() === password) {
+            sessionStorage.setItem("frd_admin_auth", "true");
+            sessionStorage.setItem("frd_admin_email", email);
+            setIsAdminLoggedIn(true);
+            setAdminEmail(email);
+            toast.success("Welcome, Administrator!");
+            setLoading(false);
+            return true;
+          }
+        }
+      } catch (colErr) {
+        console.warn(`Firestore lookup warning for '${colName}':`, colErr);
+      }
+    }
+
+    // STRICT: Reject if credentials are not found in Firebase Auth or Firestore
+    setLoading(false);
+    toast.error("Invalid Admin Email or Password in Firebase database!");
+    return false;
   };
 
   const changeAdminPassword = (currentPass, newPass) => {
-    const activeStoredPass = localStorage.getItem("frd_admin_passcode") || DEFAULT_ADMIN_PASSCODE;
-
-    if (currentPass !== activeStoredPass && currentPass !== adminPasscode) {
-      toast.error("Current admin password is incorrect.");
-      return false;
-    }
-
-    if (!newPass || newPass.trim().length < 4) {
-      toast.error("New password must be at least 4 characters.");
-      return false;
-    }
-
-    const updatedPass = newPass.trim();
-    setAdminPasscode(updatedPass);
-    localStorage.setItem("frd_admin_passcode", updatedPass);
-    toast.success("Admin password changed successfully! Use your new password to log in.");
-    return true;
+    toast.error("To change your Firebase Admin password, please update it in your Firebase Console or profile.");
+    return false;
   };
 
-  const logoutAdmin = () => {
+  const logoutAdmin = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.log("Firebase signOut error:", e);
+    }
     sessionStorage.removeItem("frd_admin_auth");
     sessionStorage.removeItem("frd_admin_email");
     setIsAdminLoggedIn(false);
-    setAdminEmail(DEFAULT_ADMIN_EMAIL);
+    setAdminEmail("");
     toast("Logged out of Admin Panel", { icon: "🔒" });
   };
 
@@ -93,11 +162,10 @@ export function AdminAuthProvider({ children }) {
       value={{
         isAdminLoggedIn,
         adminEmail,
-        adminPasscode,
+        loading,
         loginAdmin,
         logoutAdmin,
         changeAdminPassword,
-        defaultAdminEmail: DEFAULT_ADMIN_EMAIL,
       }}
     >
       {children}

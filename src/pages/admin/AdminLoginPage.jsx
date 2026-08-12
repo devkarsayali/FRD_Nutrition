@@ -22,13 +22,17 @@ export default function AdminLoginPage() {
     }
   }, [isAdminLoggedIn, navigate]);
 
-  const handleSubmit = (e) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValidEmail(email)) {
       toast.error("Please enter a valid email address.");
       return;
     }
-    const success = loginAdmin(email, password);
+    setSubmitting(true);
+    const success = await loginAdmin(email, password);
+    setSubmitting(false);
     if (success) {
       navigate("/admin");
     }
@@ -119,10 +123,11 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            className="w-full py-3.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/20 cursor-pointer"
+            disabled={submitting}
+            className="w-full py-3.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 disabled:opacity-50 transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/20 cursor-pointer"
           >
-            <span>Log In to Admin Dashboard</span>
-            <FiArrowRight size={18} />
+            <span>{submitting ? "Authenticating with Firebase..." : "Log In to Admin Dashboard"}</span>
+            {!submitting && <FiArrowRight size={18} />}
           </button>
         </form>
 
