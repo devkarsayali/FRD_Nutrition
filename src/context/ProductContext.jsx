@@ -201,7 +201,7 @@ export function ProductProvider({ children }) {
           catNames = nonDemo.map((c) => c.name).filter(Boolean);
         }
       }
-      
+
       const productCats = products.map((p) => p.category).filter(Boolean);
       const allCats = [...catNames, ...productCats];
 
