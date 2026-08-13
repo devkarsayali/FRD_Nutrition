@@ -3,6 +3,8 @@ import { FiEdit2, FiFolderPlus, FiGrid, FiPackage, FiPlus, FiTrash2, FiX } from 
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { INITIAL_PRODUCTS } from "../../data/initialProducts";
+import { db } from "../../firebase/firebase.config";
+import { doc, setDoc, deleteDoc } from "firebase/firestore";
 
 export default function AdminCategoriesPage() {
   const navigate = useNavigate();
@@ -63,31 +65,38 @@ export default function AdminCategoriesPage() {
     const saved = localStorage.getItem("frd_admin_categories_v2");
     if (saved) {
       try {
-        setCategories(JSON.parse(saved));
-        return;
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const nonDemo = parsed.filter(
+            (c) => c && !["cat-1", "cat-2", "cat-3", "cat-4", "cat-5", "cat-6", "cat-7"].includes(c.id)
+          );
+          setCategories(nonDemo);
+          localStorage.setItem("frd_admin_categories_v2", JSON.stringify(nonDemo));
+          return;
+        }
       } catch (e) {
         // ignore
       }
     }
 
-    const defaultCats = [
-      { id: "cat-1", name: "Protein", slug: "protein", description: "Whey Isolate, Concentrates & Plant Proteins", badge: "Core Lineup" },
-      { id: "cat-2", name: "Creatine", slug: "creatine", description: "100% Pure Micronized Creatine Monohydrate", badge: "Best Seller" },
-      { id: "cat-3", name: "BCAA", slug: "bcaa", description: "Essential Amino Acids & Intra-Workout Recovery", badge: "Popular" },
-      { id: "cat-4", name: "Mass Gainer", slug: "mass-gainer", description: "High-Calorie Muscle Building & Bulk Formulas", badge: "Bulk Line" },
-      { id: "cat-5", name: "Pre Workout", slug: "pre-workout", description: "High Energy, Nitric Oxide Pump & Focus Boosters", badge: "High Energy" },
-      { id: "cat-6", name: "Post Workout", slug: "post-workout", description: "Muscle Repair & Muscle Recovery Complexes", badge: "Recovery" },
-      { id: "cat-7", name: "Vitamins", slug: "vitamins", description: "Multivitamins, Omega-3 & Health Essentials", badge: "Daily Care" },
-    ];
-
-    setCategories(defaultCats);
-    localStorage.setItem("frd_admin_categories_v2", JSON.stringify(defaultCats));
+    setCategories([]);
+    localStorage.setItem("frd_admin_categories_v2", JSON.stringify([]));
   };
 
-  const saveCategories = (updated) => {
+  const saveCategories = async (updated) => {
     setCategories(updated);
     localStorage.setItem("frd_admin_categories_v2", JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("frd_categories_updated"));
+
+    try {
+      for (const cat of updated) {
+        if (cat.id) {
+          await setDoc(doc(db, "categories", cat.id), cat);
+        }
+      }
+    } catch (err) {
+      console.error("Firebase store category sync error:", err);
+    }
   };
 
   const handleOpenModal = (category = null) => {
@@ -142,10 +151,15 @@ export default function AdminCategoriesPage() {
     setIsModalOpen(false);
   };
 
-  const handleDelete = (id, name) => {
+  const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete the category "${name}"?`)) {
       const updated = categories.filter((c) => c.id !== id);
       saveCategories(updated);
+      try {
+        await deleteDoc(doc(db, "categories", id));
+      } catch (err) {
+        console.error("Firebase delete category sync error:", err);
+      }
       toast.success(`Category "${name}" removed.`);
     }
   };

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { CATEGORIES, INITIAL_PRODUCTS } from "../data/initialProducts";
+import { db } from "../firebase/firebase.config";
+import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
 
 const ProductContext = createContext();
 const STORAGE_KEY = "frd_products_inventory_v7";
@@ -137,34 +139,34 @@ export const TAGS = [
   "Editor's Choice",
 ];
 
+const DEMO_PRODUCT_PREFIXES = [
+  "frd-hydro-", "frd-pump-", "frd-combo-", "frd-warcore-", "frd-athletic-",
+  "frd-carnitine-", "frd-peanut-", "frd-musli-", "frd-oats-", "frd-glucose-"
+];
+
 export function ProductProvider({ children }) {
   const loadStoredProducts = () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return normalizeProducts(parsed);
+        if (Array.isArray(parsed)) {
+          const nonDemo = parsed.filter(
+            (p) => p && typeof p.id === "string" && !DEMO_PRODUCT_PREFIXES.some((prefix) => p.id.startsWith(prefix))
+          );
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(nonDemo));
+          return normalizeProducts(nonDemo);
         }
       }
     } catch (error) {
       console.error("Failed to load products from localStorage", error);
     }
-    return normalizeProducts(INITIAL_PRODUCTS);
+    return [];
   };
 
   const [products, setProducts] = useState(loadStoredProducts);
 
-  const [categoriesList, setCategoriesList] = useState([
-    "All Categories",
-    "Protein",
-    "Creatine",
-    "BCAA",
-    "Mass Gainer",
-    "Pre Workout",
-    "Post Workout",
-    "Vitamins",
-  ]);
+  const [categoriesList, setCategoriesList] = useState(["All Categories"]);
 
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [selectedTag, setSelectedTag] = useState("All Tags");
@@ -192,18 +194,21 @@ export function ProductProvider({ children }) {
       let catNames = [];
       if (savedCats) {
         const parsed = JSON.parse(savedCats);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          catNames = parsed.map((c) => c.name);
+        if (Array.isArray(parsed)) {
+          const nonDemo = parsed.filter(
+            (c) => c && !["cat-1", "cat-2", "cat-3", "cat-4", "cat-5", "cat-6", "cat-7"].includes(c.id)
+          );
+          catNames = nonDemo.map((c) => c.name).filter(Boolean);
         }
       }
-      if (catNames.length === 0) {
-        catNames = ["Protein", "Creatine", "BCAA", "Mass Gainer", "Pre Workout", "Post Workout", "Vitamins"];
-      }
+      
+      const productCats = products.map((p) => p.category).filter(Boolean);
+      const allCats = [...catNames, ...productCats];
 
-      const uniqueCats = ["All Categories", ...Array.from(new Set(catNames))];
+      const uniqueCats = ["All Categories", ...Array.from(new Set(allCats))];
       setCategoriesList(uniqueCats);
     } catch {
-      setCategoriesList(["All Categories", "Protein", "Creatine", "BCAA", "Mass Gainer", "Pre Workout", "Post Workout", "Vitamins"]);
+      setCategoriesList(["All Categories"]);
     }
   };
 
@@ -225,8 +230,62 @@ export function ProductProvider({ children }) {
     }
   }, [products]);
 
+  // Real-time Firebase Firestore Sync for Products
+  useEffect(() => {
+    try {
+      const colRef = collection(db, "products");
+      const unsubscribe = onSnapshot(
+        colRef,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const fbProducts = snapshot.docs.map((docSnap) => ({
+              id: docSnap.id,
+              ...docSnap.data(),
+            }));
+            const normalized = normalizeProducts(fbProducts);
+            setProducts(normalized);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+          }
+        },
+        (err) => {
+          console.warn("Firebase products listener notice:", err?.message || err);
+        }
+      );
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn("Firebase products sync setup error:", e);
+    }
+  }, []);
+
+  // Real-time Firebase Firestore Sync for Categories
+  useEffect(() => {
+    try {
+      const colRef = collection(db, "categories");
+      const unsubscribe = onSnapshot(
+        colRef,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const fbCats = snapshot.docs.map((docSnap) => ({
+              id: docSnap.id,
+              ...docSnap.data(),
+            }));
+            localStorage.setItem("frd_admin_categories_v2", JSON.stringify(fbCats));
+            const names = fbCats.map((c) => c.name).filter(Boolean);
+            setCategoriesList(["All Categories", ...Array.from(new Set(names))]);
+          }
+        },
+        (err) => {
+          console.warn("Firebase categories listener notice:", err?.message || err);
+        }
+      );
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn("Firebase categories sync setup error:", e);
+    }
+  }, []);
+
   // Admin CRUD Functions
-  const addProduct = (newProduct) => {
+  const addProduct = async (newProduct) => {
     const imagesArray = Array.isArray(newProduct.images) && newProduct.images.length > 0
       ? newProduct.images
       : newProduct.image
@@ -237,7 +296,7 @@ export function ProductProvider({ children }) {
 
     const createdProduct = normalizeStockValue({
       ...newProduct,
-      id: `frd-custom-${Date.now()}`,
+      id: newProduct.id || `frd-custom-${Date.now()}`,
       rating: newProduct.rating || 5.0,
       reviewsCount: newProduct.reviewsCount || 1,
       image: imagesArray[0] || newProduct.image,
@@ -253,9 +312,15 @@ export function ProductProvider({ children }) {
       return updated;
     });
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
+
+    try {
+      await setDoc(doc(db, "products", createdProduct.id), createdProduct);
+    } catch (err) {
+      console.error("Firebase store product sync error:", err);
+    }
   };
 
-  const updateProduct = (updatedProduct) => {
+  const updateProduct = async (updatedProduct) => {
     const imagesArray = Array.isArray(updatedProduct.images) && updatedProduct.images.length > 0
       ? updatedProduct.images
       : updatedProduct.image
@@ -264,31 +329,48 @@ export function ProductProvider({ children }) {
 
     const videosArray = Array.isArray(updatedProduct.videos) ? updatedProduct.videos : [];
 
+    let targetProduct = null;
+
     setProducts((prev) => {
       const updated = prev.map((p) => {
         if (p.id !== updatedProduct.id) return p;
 
-        return normalizeStockValue({
+        targetProduct = normalizeStockValue({
           ...p,
           ...updatedProduct,
           image: imagesArray[0] || updatedProduct.image || p.image,
           images: imagesArray.length > 0 ? imagesArray : p.images,
           videos: videosArray,
         });
+        return targetProduct;
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
+
+    if (targetProduct) {
+      try {
+        await setDoc(doc(db, "products", targetProduct.id), targetProduct);
+      } catch (err) {
+        console.error("Firebase update product sync error:", err);
+      }
+    }
   };
 
-  const deleteProduct = (id) => {
+  const deleteProduct = async (id) => {
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
+
+    try {
+      await deleteDoc(doc(db, "products", id));
+    } catch (err) {
+      console.error("Firebase delete product sync error:", err);
+    }
   };
 
   const toggleStockStatus = (id) => {
