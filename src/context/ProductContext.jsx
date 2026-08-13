@@ -237,7 +237,10 @@ export function ProductProvider({ children }) {
       const unsubscribe = onSnapshot(
         colRef,
         (snapshot) => {
-          if (!snapshot.empty) {
+          if (snapshot.empty) {
+            setProducts([]);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+          } else {
             const fbProducts = snapshot.docs.map((docSnap) => ({
               id: docSnap.id,
               ...docSnap.data(),
@@ -264,7 +267,10 @@ export function ProductProvider({ children }) {
       const unsubscribe = onSnapshot(
         colRef,
         (snapshot) => {
-          if (!snapshot.empty) {
+          if (snapshot.empty) {
+            localStorage.setItem("frd_admin_categories_v2", JSON.stringify([]));
+            setCategoriesList(["All Categories"]);
+          } else {
             const fbCats = snapshot.docs.map((docSnap) => ({
               id: docSnap.id,
               ...docSnap.data(),
@@ -359,17 +365,35 @@ export function ProductProvider({ children }) {
   };
 
   const deleteProduct = async (id) => {
+    const targetId = String(id);
     setProducts((prev) => {
-      const updated = prev.filter((p) => p.id !== id);
+      const updated = prev.filter((p) => String(p.id) !== targetId);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
 
     try {
-      await deleteDoc(doc(db, "products", id));
+      await deleteDoc(doc(db, "products", targetId));
     } catch (err) {
       console.error("Firebase delete product sync error:", err);
+    }
+  };
+
+  const clearAllProducts = async () => {
+    const toDelete = [...products];
+    setProducts([]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    window.dispatchEvent(new CustomEvent("frd_products_updated"));
+
+    try {
+      for (const p of toDelete) {
+        if (p && p.id) {
+          await deleteDoc(doc(db, "products", String(p.id)));
+        }
+      }
+    } catch (err) {
+      console.error("Firebase clear all products sync error:", err);
     }
   };
 
@@ -502,10 +526,8 @@ export function ProductProvider({ children }) {
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
   };
 
-  // Guarantee safe product list (falling back to INITIAL_PRODUCTS if empty or corrupted)
-  const safeProducts = Array.isArray(products) && products.length > 0
-    ? products
-    : normalizeProducts(INITIAL_PRODUCTS);
+  // Guarantee safe product list
+  const safeProducts = Array.isArray(products) ? products : [];
 
   // Section-specific independent product lists
   // 1. Latest Collection: Determined strictly by product creation date/time (newest first)
@@ -515,23 +537,23 @@ export function ProductProvider({ children }) {
     return timeB - timeA;
   });
 
-  // 2. Just Launched: Explicitly marked by admin or tagged as Just Launched (with fallback to all products)
+  // 2. Just Launched: Explicitly marked by admin or tagged as Just Launched
   const justLaunchedFiltered = safeProducts.filter(
     (p) => p.isJustLaunched || p.badge === "JUST LAUNCHED" || p.badge === "NEW" || p.isLatest
   );
-  const justLaunchedProducts = justLaunchedFiltered.length > 0 ? justLaunchedFiltered : safeProducts;
+  const justLaunchedProducts = safeProducts.length > 0 ? (justLaunchedFiltered.length > 0 ? justLaunchedFiltered : safeProducts) : [];
 
-  // 3. Trending Products: Products marked as trending or best sellers (with fallback to all products)
+  // 3. Trending Products: Products marked as trending or best sellers
   const trendingFiltered = safeProducts.filter(
     (p) => p.isTrending || p.badge === "TRENDING" || p.badge === "BEST SELLER"
   );
-  const trendingProducts = trendingFiltered.length > 0 ? trendingFiltered : safeProducts;
+  const trendingProducts = safeProducts.length > 0 ? (trendingFiltered.length > 0 ? trendingFiltered : safeProducts) : [];
 
-  // 4. Popular Supplements: Most popular or top seller products (with fallback to all products)
+  // 4. Popular Supplements: Most popular or top seller products
   const popularFiltered = safeProducts.filter(
     (p) => p.isPopular || p.isTopSeller || p.badge === "POPULAR"
   );
-  const popularProducts = popularFiltered.length > 0 ? popularFiltered : safeProducts;
+  const popularProducts = safeProducts.length > 0 ? (popularFiltered.length > 0 ? popularFiltered : safeProducts) : [];
 
   // Filtered & Sorted Products
   const filteredProducts = safeProducts.filter((product) => {
@@ -603,6 +625,7 @@ export function ProductProvider({ children }) {
         addProduct,
         updateProduct,
         deleteProduct,
+        clearAllProducts,
         toggleStockStatus,
         updateInitialStock,
         decreaseProductStock,

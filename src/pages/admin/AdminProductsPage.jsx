@@ -29,6 +29,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
     addProduct,
     updateProduct,
     deleteProduct,
+    clearAllProducts,
     toggleStockStatus,
     updateInitialStock,
   } = useProducts();
@@ -54,6 +55,10 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       ? "In Stock"
       : "All"
   );
+
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   // Stock Management Modal State
@@ -326,9 +331,30 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
     setIsAddModalOpen(false);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this supplement?")) {
-      deleteProduct(id);
+  const confirmDeleteSingle = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteProduct(productToDelete.id);
+      toast.success(`"${productToDelete.name}" deleted successfully!`);
+    } catch (err) {
+      toast.error("Failed to delete supplement.");
+    } finally {
+      setIsDeleting(false);
+      setProductToDelete(null);
+    }
+  };
+
+  const confirmClearAll = async () => {
+    setIsDeleting(true);
+    try {
+      await clearAllProducts();
+      toast.success("All supplements cleared successfully! You can now add new supplements.");
+    } catch (err) {
+      toast.error("Failed to clear supplements.");
+    } finally {
+      setIsDeleting(false);
+      setIsClearAllModalOpen(false);
     }
   };
 
@@ -415,9 +441,20 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
             <option value="Out of Stock">Stock: Out of Stock Only</option>
           </select>
 
+          {products.length > 0 && (
+            <button
+              onClick={() => setIsClearAllModalOpen(true)}
+              className="w-full sm:w-auto justify-center whitespace-nowrap px-4 py-2.5 sm:py-3 rounded-xl bg-red-600/20 text-red-400 border border-red-500/40 hover:bg-red-600 hover:text-white transition text-xs font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+              title="Delete all existing supplements from LocalStorage and Firebase"
+            >
+              <FiTrash2 size={16} />
+              <span>Clear All Supplements</span>
+            </button>
+          )}
+
           <button
             onClick={handleOpenAdd}
-            className="w-full sm:w-auto justify-center whitespace-nowrap px-5 py-2.5 sm:py-3 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs flex items-center gap-2 shadow-lg shadow-lime-500/20"
+            className="w-full sm:w-auto justify-center whitespace-nowrap px-5 py-2.5 sm:py-3 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs flex items-center gap-2 shadow-lg shadow-lime-500/20 cursor-pointer"
           >
             <FiPlus size={18} />
             <span>Add New Supplement</span>
@@ -514,8 +551,8 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                           <FiEdit2 size={16} />
                         </button>
                         <button
-                          onClick={() => handleDelete(p.id)}
-                          className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-red-400 hover:border-red-500/50 border border-neutral-800 transition"
+                          onClick={() => setProductToDelete(p)}
+                          className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-red-400 hover:border-red-500/50 border border-neutral-800 transition cursor-pointer"
                           title="Delete Supplement"
                         >
                           <FiTrash2 size={16} />
@@ -1130,6 +1167,78 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Single Product Confirmation Modal */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md" onClick={() => setProductToDelete(null)} />
+          <div className="relative w-full max-w-md bg-[#141813] text-white rounded-3xl border border-neutral-800 shadow-2xl p-6 z-10 space-y-5">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30">
+                <FiTrash2 size={20} />
+              </div>
+              <h3 className="font-heading text-lg font-bold">Delete Supplement</h3>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              Are you sure you want to delete <strong className="text-white">"{productToDelete.name}"</strong>? This will permanently remove it from both Local Storage and Firebase.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setProductToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-300 hover:text-white transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteSingle}
+                disabled={isDeleting}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition text-xs shadow-lg shadow-red-600/20 cursor-pointer flex items-center gap-2"
+              >
+                {isDeleting ? "Deleting..." : "Delete Supplement"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear All Products Confirmation Modal */}
+      {isClearAllModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsClearAllModalOpen(false)} />
+          <div className="relative w-full max-w-md bg-[#141813] text-white rounded-3xl border border-neutral-800 shadow-2xl p-6 z-10 space-y-5">
+            <div className="flex items-center gap-3 text-red-500">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30">
+                <FiTrash2 size={20} />
+              </div>
+              <h3 className="font-heading text-lg font-bold">Clear All Supplements</h3>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              Are you sure you want to delete <strong className="text-red-400">ALL supplements ({products.length})</strong>? This will purge all products from Local Storage and Firebase so you can start fresh.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsClearAllModalOpen(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-300 hover:text-white transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmClearAll}
+                disabled={isDeleting}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition text-xs shadow-lg shadow-red-600/20 cursor-pointer flex items-center gap-2"
+              >
+                {isDeleting ? "Clearing All..." : "Yes, Clear All Supplements"}
+              </button>
+            </div>
           </div>
         </div>
       )}
