@@ -112,8 +112,8 @@ export default function AdminLayout() {
     };
   }, [isSidebarOpen]);
 
-  // Load unread customer orders count for sidebar badge
-  const loadUnreadOrdersCount = () => {
+  // Load unread customer orders count for sidebar badge from Firebase & LocalStorage
+  const loadUnreadOrdersCount = (providedFirestoreOrders = null) => {
     try {
       const orderMap = new Map();
       const addOrder = (o) => {
@@ -123,6 +123,10 @@ export default function AdminLayout() {
         }
         orderMap.set(o.id, o);
       };
+
+      if (Array.isArray(providedFirestoreOrders)) {
+        providedFirestoreOrders.forEach(addOrder);
+      }
 
       if (Array.isArray(cartContextOrders)) {
         cartContextOrders.forEach(addOrder);
@@ -145,7 +149,9 @@ export default function AdminLayout() {
       }
 
       const rawOrders = Array.from(orderMap.values());
-      const unreadOrders = rawOrders.filter((o) => o.readStatus === "unread");
+      const unreadOrders = rawOrders.filter(
+        (o) => o.readStatus === "unread" || (o.status || "").toLowerCase() === "ordered"
+      );
 
       setNewOrdersCount(unreadOrders.length);
     } catch {
@@ -155,9 +161,28 @@ export default function AdminLayout() {
 
   useEffect(() => {
     loadUnreadOrdersCount();
+
+    let unsubscribeOrders = () => {};
+    try {
+      unsubscribeOrders = onSnapshot(
+        collection(db, "orders"),
+        (snapshot) => {
+          const firestoreOrders = [];
+          snapshot.forEach((docSnap) => {
+            firestoreOrders.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          loadUnreadOrdersCount(firestoreOrders);
+        },
+        (err) => {
+          console.warn("Firestore order badge warning:", err);
+        }
+      );
+    } catch (e) {}
+
     window.addEventListener("frd_orders_updated", loadUnreadOrdersCount);
     window.addEventListener("storage", loadUnreadOrdersCount);
     return () => {
+      if (typeof unsubscribeOrders === "function") unsubscribeOrders();
       window.removeEventListener("frd_orders_updated", loadUnreadOrdersCount);
       window.removeEventListener("storage", loadUnreadOrdersCount);
     };
