@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
 import AdminDoughnutChart from "../../components/admin/AdminDoughnutChart";
+import { db } from "../../firebase/firebase.config";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const COLOR_PALETTE = [
   "#84cc16", // Lime
@@ -26,28 +28,21 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
   const [ordersCount, setOrdersCount] = useState(0);
   const [activeCategories, setActiveCategories] = useState([]);
 
-  const loadCountsAndCategories = () => {
-    // 1. Messages count
-    try {
-      const savedMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
-      setMessagesCount(savedMsgs.length);
-    } catch {
-      setMessagesCount(0);
-    }
+  useEffect(() => {
+    // 1. Subscribe to Firestore orders collection for live count
+    const unsubOrders = onSnapshot(collection(db, "orders"), (snap) => {
+      const firestoreOrdersMap = new Map();
+      snap.forEach((doc) => {
+        firestoreOrdersMap.set(doc.id, doc.data());
+      });
 
-    // 2. Customer Orders count
-    try {
-      const orderMap = new Map();
-      const addOrder = (o) => {
-        if (!o || !o.id) return;
-        if (!o.items || o.items.length === 0) {
-          if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
-        }
-        orderMap.set(o.id, o);
-      };
-
+      // Also merge with context orders & local storage fallback
       if (Array.isArray(orders)) {
-        orders.forEach(addOrder);
+        orders.forEach((o) => {
+          if (o && o.id && !firestoreOrdersMap.has(o.id)) {
+            firestoreOrdersMap.set(o.id, o);
+          }
+        });
       }
 
       for (let i = 0; i < localStorage.length; i++) {
@@ -55,52 +50,68 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
         if (key && key.toLowerCase().includes("order")) {
           try {
             const parsed = JSON.parse(localStorage.getItem(key) || "[]");
-            if (Array.isArray(parsed)) {
-              parsed.forEach(addOrder);
-            } else if (parsed && parsed.id) {
-              addOrder(parsed);
-            }
-          } catch {
-            // ignore non-json
+            const list = Array.isArray(parsed) ? parsed : [parsed];
+            list.forEach((o) => {
+              if (o && o.id && !firestoreOrdersMap.has(o.id)) {
+                firestoreOrdersMap.set(o.id, o);
+              }
+            });
+          } catch (e) {}
+        }
+      }
+
+      setOrdersCount(firestoreOrdersMap.size);
+    });
+
+    // 2. Subscribe to Firestore contact_messages collection for live count
+    const unsubMsgs = onSnapshot(collection(db, "contact_messages"), (snap) => {
+      let count = snap.size;
+      try {
+        const savedMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
+        if (savedMsgs.length > count) count = savedMsgs.length;
+      } catch (e) {}
+      setMessagesCount(count);
+    });
+
+    // 3. Subscribe to Firestore categories collection
+    const unsubCats = onSnapshot(collection(db, "categories"), (snap) => {
+      const catList = [];
+      snap.forEach((doc) => {
+        const d = doc.data();
+        if (d.name) catList.push(d.name);
+      });
+
+      try {
+        const savedCats = localStorage.getItem("frd_admin_categories_v2");
+        if (savedCats) {
+          const parsed = JSON.parse(savedCats);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((c) => {
+              if (c.name && !catList.includes(c.name)) catList.push(c.name);
+            });
           }
         }
-      }
-
-      setOrdersCount(orderMap.size);
-    } catch {
-      setOrdersCount(0);
-    }
-
-    // 3. Dynamic Categories from localStorage
-    try {
-      const savedCats = localStorage.getItem("frd_admin_categories_v2");
-      let catList = [];
-      if (savedCats) {
-        const parsed = JSON.parse(savedCats);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          catList = parsed.map((c) => c.name).filter(Boolean);
-        }
-      }
+      } catch (e) {}
 
       setActiveCategories(Array.from(new Set(catList)));
-    } catch {
-      setActiveCategories([]);
-    }
-  };
+    });
 
-  useEffect(() => {
-    loadCountsAndCategories();
-
-    window.addEventListener("frd_orders_updated", loadCountsAndCategories);
-    window.addEventListener("frd_contact_messages_updated", loadCountsAndCategories);
-    window.addEventListener("frd_categories_updated", loadCountsAndCategories);
-    window.addEventListener("storage", loadCountsAndCategories);
+    const handleStorage = () => {
+      // triggers re-evaluation if needed
+    };
+    window.addEventListener("frd_orders_updated", handleStorage);
+    window.addEventListener("frd_contact_messages_updated", handleStorage);
+    window.addEventListener("frd_categories_updated", handleStorage);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
-      window.removeEventListener("frd_orders_updated", loadCountsAndCategories);
-      window.removeEventListener("frd_contact_messages_updated", loadCountsAndCategories);
-      window.removeEventListener("frd_categories_updated", loadCountsAndCategories);
-      window.removeEventListener("storage", loadCountsAndCategories);
+      unsubOrders();
+      unsubMsgs();
+      unsubCats();
+      window.removeEventListener("frd_orders_updated", handleStorage);
+      window.removeEventListener("frd_contact_messages_updated", handleStorage);
+      window.removeEventListener("frd_categories_updated", handleStorage);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [orders, products]);
 
