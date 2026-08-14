@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { db } from "../firebase/firebase.config";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const UserAuthContext = createContext();
 const USER_STORAGE_KEY = "frd_user_session_v1";
@@ -7,7 +9,7 @@ const USER_STORAGE_KEY = "frd_user_session_v1";
 export function UserAuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem(USER_STORAGE_KEY);
+      const saved = sessionStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem(USER_STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch (e) {
       return null;
@@ -20,41 +22,40 @@ export function UserAuthProvider({ children }) {
   useEffect(() => {
     try {
       if (user) {
+        sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-        if (user.email) {
-          localStorage.setItem("frd_last_user_email", user.email.toLowerCase());
-        }
       } else {
+        sessionStorage.removeItem(USER_STORAGE_KEY);
         localStorage.removeItem(USER_STORAGE_KEY);
-        localStorage.removeItem("frd_last_user_email");
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }, [user]);
 
-  const loginUser = (userData) => {
+  const loginUser = async (userData) => {
     const userEmail = (userData.email || "").toLowerCase().trim();
     const userId = userData.id || `usr_${userEmail.replace(/[^a-z0-9]/g, "_") || Date.now()}`;
-    
-    // Check if user has saved profile details in localStorage
-    let savedProfile = {};
-    try {
-      const rawProfile = localStorage.getItem(`frd_user_profile_${userEmail}`);
-      if (rawProfile) savedProfile = JSON.parse(rawProfile);
-    } catch (e) {}
 
     const fullUser = {
       id: userId,
       name: userData.name || userEmail.split("@")[0] || "Athlete",
       email: userEmail,
-      phone: userData.phone || savedProfile.phone || "",
-      address: userData.address || savedProfile.address || "",
-      city: userData.city || savedProfile.city || "",
-      state: userData.state || savedProfile.state || "",
-      pincode: userData.pincode || savedProfile.pincode || "",
-      country: userData.country || savedProfile.country || "India",
+      phone: userData.phone || "",
+      address: userData.address || "",
+      city: userData.city || "",
+      state: userData.state || "",
+      pincode: userData.pincode || "",
+      country: userData.country || "India",
     };
+
+    // Save user profile to Firebase Firestore database
+    try {
+      await setDoc(doc(db, "users", userEmail), {
+        ...fullUser,
+        lastLoginAt: new Date().toISOString(),
+      });
+    } catch (firebaseErr) {
+      console.warn("Firestore user sync warning:", firebaseErr);
+    }
 
     setUser(fullUser);
     toast.success(`Welcome, ${fullUser.name}! Logged in successfully.`);
@@ -72,23 +73,28 @@ export function UserAuthProvider({ children }) {
     setUser(null);
     setPendingAction(null);
     try {
+      sessionStorage.removeItem(USER_STORAGE_KEY);
       localStorage.removeItem(USER_STORAGE_KEY);
-      localStorage.removeItem("frd_last_user_email");
     } catch (e) {}
     toast.success("Logged out successfully.");
   };
 
-  const updateUserProfile = (updatedData) => {
-    setUser((prev) => {
-      const next = prev ? { ...prev, ...updatedData } : updatedData;
+  const updateUserProfile = async (updatedData) => {
+    const next = user ? { ...user, ...updatedData } : updatedData;
+    setUser(next);
+
+    if (next.email) {
+      const email = next.email.toLowerCase().trim();
       try {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(next));
-        if (next.email) {
-          localStorage.setItem(`frd_user_profile_${next.email.toLowerCase()}`, JSON.stringify(next));
-        }
-      } catch (e) {}
-      return next;
-    });
+        await setDoc(doc(db, "users", email), {
+          ...next,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn("Firestore profile update warning:", err);
+      }
+    }
+
     toast.success("Account details updated successfully!");
   };
 

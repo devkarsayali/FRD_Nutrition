@@ -241,8 +241,14 @@ export function ProductProvider({ children }) {
         colRef,
         (snapshot) => {
           if (snapshot.empty) {
-            setProducts([]);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+            // Upload initial default products to Firebase Firestore database
+            const normalized = normalizeProducts(INITIAL_PRODUCTS);
+            setProducts(normalized);
+            normalized.forEach((p) => {
+              if (p.id) {
+                setDoc(doc(db, "products", p.id), p).catch(() => {});
+              }
+            });
           } else {
             const fbProducts = snapshot.docs.map((docSnap) => ({
               id: docSnap.id,

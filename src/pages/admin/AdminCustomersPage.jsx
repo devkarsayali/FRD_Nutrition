@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { FiCheckCircle, FiMail, FiPhone, FiSearch, FiShoppingBag, FiUser, FiUsers } from "react-icons/fi";
 import { useOutletContext } from "react-router-dom";
+import { db } from "../../firebase/firebase.config";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 
 export default function AdminCustomersPage() {
   const outletContext = useOutletContext();
@@ -13,42 +15,82 @@ export default function AdminCustomersPage() {
   useEffect(() => {
     loadCustomers();
 
+    let unsubscribeUsers = () => {};
+    let unsubscribeOrders = () => {};
+
+    try {
+      unsubscribeUsers = onSnapshot(collection(db, "users"), () => loadCustomers());
+      unsubscribeOrders = onSnapshot(collection(db, "orders"), () => loadCustomers());
+    } catch (e) {}
+
     const handleStorageUpdate = () => loadCustomers();
     window.addEventListener("storage", handleStorageUpdate);
     window.addEventListener("frd_orders_updated", handleStorageUpdate);
 
     return () => {
+      if (typeof unsubscribeUsers === "function") unsubscribeUsers();
+      if (typeof unsubscribeOrders === "function") unsubscribeOrders();
       window.removeEventListener("storage", handleStorageUpdate);
       window.removeEventListener("frd_orders_updated", handleStorageUpdate);
     };
   }, []);
 
-  const loadCustomers = () => {
+  const loadCustomers = async () => {
     try {
-      // 1. Deduplicate all orders by order.id across all localStorage keys
+      const customerMap = new Map();
+
+      // 1. Fetch registered users from Firebase Firestore
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        usersSnap.forEach((docSnap) => {
+          const u = docSnap.data();
+          const email = (u.email || docSnap.id || "").toLowerCase().trim();
+          if (!email) return;
+
+          customerMap.set(email, {
+            id: u.id || `CUST-${email.slice(0, 4)}`,
+            name: u.name || "Customer",
+            email,
+            phone: u.phone || "N/A",
+            totalOrders: 0,
+            totalSpend: 0,
+            lastOrderDate: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "Registered User",
+            status: "Active Customer",
+          });
+        });
+      } catch (fErr) {
+        console.warn("Firestore users load warning:", fErr);
+      }
+
+      // 2. Fetch all orders from Firebase Firestore to calculate spend
       const uniqueOrdersMap = new Map();
 
+      try {
+        const ordersSnap = await getDocs(collection(db, "orders"));
+        ordersSnap.forEach((docSnap) => {
+          uniqueOrdersMap.set(docSnap.id, docSnap.data());
+        });
+      } catch (fErr) {
+        console.warn("Firestore orders load warning:", fErr);
+      }
+
+      // Scan local storage for extra orders fallback
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.toLowerCase().includes("order")) {
           try {
             const data = JSON.parse(localStorage.getItem(key) || "[]");
             const orderList = Array.isArray(data) ? data : [data];
-
             orderList.forEach((order) => {
-              if (order && order.id) {
+              if (order && order.id && !uniqueOrdersMap.has(order.id)) {
                 uniqueOrdersMap.set(order.id, order);
               }
             });
-          } catch (e) {
-            // ignore non-JSON items
-          }
+          } catch (e) {}
         }
       }
 
-      // 2. Aggregate unique orders per real customer email
-      const customerMap = new Map();
-
+      // 3. Aggregate unique orders per customer email
       uniqueOrdersMap.forEach((order) => {
         const rawEmail = (
           order.customer?.email ||
@@ -56,20 +98,11 @@ export default function AdminCustomersPage() {
           ""
         ).toLowerCase().trim();
 
-        // Skip non-existent or invalid mock orders
         if (!rawEmail && (!order.items || order.items.length === 0)) return;
 
         const email = rawEmail || "guest@frdnutrition.com";
-        const name =
-          order.customer?.fullName ||
-          order.shippingAddress?.name ||
-          "Customer";
-
-        const phone =
-          order.customer?.phone ||
-          order.shippingAddress?.phone ||
-          "N/A";
-
+        const name = order.customer?.fullName || order.shippingAddress?.name || "Customer";
+        const phone = order.customer?.phone || order.shippingAddress?.phone || "N/A";
         const amount = Number(order.total || order.totalAmount || 0);
 
         if (!customerMap.has(email)) {
@@ -89,6 +122,7 @@ export default function AdminCustomersPage() {
           existing.totalSpend += amount;
           if (name && name !== "Customer") existing.name = name;
           if (phone && phone !== "N/A") existing.phone = phone;
+          if (order.date || order.orderDate) existing.lastOrderDate = order.date || order.orderDate;
         }
       });
 

@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { DEFAULT_ADMIN_CATEGORIES, INITIAL_PRODUCTS } from "../../data/initialProducts";
 import { db } from "../../firebase/firebase.config";
-import { doc, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 
 export default function AdminCategoriesPage() {
   const navigate = useNavigate();
@@ -53,7 +53,23 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const loadCategories = () => {
+  const loadCategories = async () => {
+    try {
+      let firestoreCats = [];
+      try {
+        const snap = await getDocs(collection(db, "categories"));
+        snap.forEach((docSnap) => firestoreCats.push({ id: docSnap.id, ...docSnap.data() }));
+      } catch (fErr) {
+        console.warn("Firestore categories load warning:", fErr);
+      }
+
+      if (firestoreCats.length > 0) {
+        setCategories(firestoreCats);
+        localStorage.setItem("frd_admin_categories_v2", JSON.stringify(firestoreCats));
+        return;
+      }
+    } catch (err) {}
+
     const saved = localStorage.getItem("frd_admin_categories_v2");
     if (saved) {
       try {
@@ -62,13 +78,18 @@ export default function AdminCategoriesPage() {
           setCategories(parsed);
           return;
         }
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
 
     setCategories(DEFAULT_ADMIN_CATEGORIES);
     localStorage.setItem("frd_admin_categories_v2", JSON.stringify(DEFAULT_ADMIN_CATEGORIES));
+
+    // Upload defaults to Firebase Firestore if collection is empty
+    try {
+      for (const cat of DEFAULT_ADMIN_CATEGORIES) {
+        setDoc(doc(db, "categories", cat.id), cat).catch(() => {});
+      }
+    } catch (e) {}
   };
 
   const saveCategories = async (updated) => {
