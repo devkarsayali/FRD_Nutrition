@@ -28,6 +28,8 @@ import toast from "react-hot-toast";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
 import { useUserAuth } from "../../context/UserAuthContext";
+import { db } from "../../firebase/firebase.config";
+import { collection, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { isValidPhone } from "../../utils/validation";
 
 const STATUS_STEPS = [
@@ -194,10 +196,41 @@ export default function UserDashboardPage() {
     const updateOrders = () => setOrdersList(getUserOrders());
     updateOrders();
 
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onSnapshot(
+        collection(db, "orders"),
+        (snapshot) => {
+          const firestoreOrders = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const orderEmail = (data.customer?.email || data.shippingAddress?.email || "").toLowerCase();
+            const currentUserEmail = (user?.email || "").toLowerCase();
+
+            if (!user?.email || orderEmail === currentUserEmail || currentUserEmail.includes("admin")) {
+              firestoreOrders.push({ id: docSnap.id, ...data });
+            }
+          });
+
+          // Merge with local storage orders
+          const local = getUserOrders();
+          const map = new Map();
+          firestoreOrders.forEach((o) => map.set(o.id, o));
+          local.forEach((o) => {
+            if (!map.has(o.id)) map.set(o.id, o);
+          });
+
+          setOrdersList(Array.from(map.values()));
+        },
+        () => {}
+      );
+    } catch (e) {}
+
     window.addEventListener("frd_orders_updated", updateOrders);
     window.addEventListener("storage", updateOrders);
 
     return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
       window.removeEventListener("frd_orders_updated", updateOrders);
       window.removeEventListener("storage", updateOrders);
     };

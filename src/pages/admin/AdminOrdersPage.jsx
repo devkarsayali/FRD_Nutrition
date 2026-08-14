@@ -119,6 +119,26 @@ export default function AdminOrdersPage({ defaultTab }) {
       console.warn("Firestore listener setup error:", err);
     }
 
+    // Live Firebase Firestore listener for orders across all origins (Vercel & Localhost)
+    let unsubscribeOrders = () => {};
+    try {
+      unsubscribeOrders = onSnapshot(
+        collection(db, "orders"),
+        (snapshot) => {
+          const firestoreOrders = [];
+          snapshot.forEach((docSnap) => {
+            firestoreOrders.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          loadOrders(firestoreOrders);
+        },
+        (err) => {
+          console.warn("Firestore orders snapshot warning:", err);
+        }
+      );
+    } catch (err) {
+      console.warn("Firestore orders listener setup error:", err);
+    }
+
     const handleOrdersUpdate = () => loadOrders();
     const handleMessagesUpdate = () => loadMessages();
 
@@ -129,6 +149,7 @@ export default function AdminOrdersPage({ defaultTab }) {
 
     return () => {
       if (typeof unsubscribeFirestore === "function") unsubscribeFirestore();
+      if (typeof unsubscribeOrders === "function") unsubscribeOrders();
       window.removeEventListener("frd_orders_updated", handleOrdersUpdate);
       window.removeEventListener("frd_contact_messages_updated", handleMessagesUpdate);
       window.removeEventListener("storage", handleOrdersUpdate);
@@ -166,20 +187,18 @@ export default function AdminOrdersPage({ defaultTab }) {
     }
   };
 
-  const loadOrders = () => {
+  const loadOrders = async (providedFirestoreOrders = null) => {
     try {
       const orderMap = new Map();
 
       // Helper to add order to map cleanly
       const addOrderToMap = (o) => {
         if (!o || !o.id) return;
-        // Validate order structure
         if (!o.items || o.items.length === 0) {
           if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
         }
 
         const existing = orderMap.get(o.id) || {};
-        // Merge fields to ensure maximum customer info completeness
         const merged = {
           ...existing,
           ...o,
@@ -196,12 +215,24 @@ export default function AdminOrdersPage({ defaultTab }) {
         orderMap.set(o.id, merged);
       };
 
-      // 1. Add context orders
+      // 1. Add Firestore orders
+      if (Array.isArray(providedFirestoreOrders)) {
+        providedFirestoreOrders.forEach(addOrderToMap);
+      } else {
+        try {
+          const snap = await getDocs(collection(db, "orders"));
+          snap.forEach((docSnap) => addOrderToMap({ id: docSnap.id, ...docSnap.data() }));
+        } catch (fErr) {
+          console.warn("Firestore loadOrders warning:", fErr);
+        }
+      }
+
+      // 2. Add context orders
       if (Array.isArray(cartContextOrders)) {
         cartContextOrders.forEach(addOrderToMap);
       }
 
-      // 2. Scan ALL localStorage keys containing 'orders' or 'order'
+      // 3. Scan ALL localStorage keys containing 'orders' or 'order'
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.toLowerCase().includes("order")) {
@@ -295,6 +326,15 @@ export default function AdminOrdersPage({ defaultTab }) {
 
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder((prev) => ({ ...prev, ...updateFields }));
+    }
+
+    // Persist to Firebase Firestore
+    try {
+      updateDoc(doc(db, "orders", orderId), updateFields).catch((err) => {
+        console.warn("Firestore order update warning:", err);
+      });
+    } catch (fErr) {
+      console.warn("Firestore error:", fErr);
     }
 
     // Persist to all localStorage order keys

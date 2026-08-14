@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useUserAuth } from "./UserAuthContext";
 import { useProducts } from "./ProductContext";
+import { db } from "../firebase/firebase.config";
+import { collection, doc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
 
 const CartContext = createContext();
 
@@ -277,7 +279,17 @@ export function CartProvider({ children }) {
 
     setOrders((prev) => [newOrder, ...prev]);
 
-    // Save to user-specific orders
+    // 1. Save live order to Firebase Firestore database
+    try {
+      setDoc(doc(db, "orders", newOrder.id), {
+        ...newOrder,
+        createdAt: new Date().toISOString(),
+      }).catch((e) => console.warn("Firebase order save warning:", e));
+    } catch (fErr) {
+      console.warn("Firebase Firestore order error:", fErr);
+    }
+
+    // 2. Save to user-specific local orders
     if (orderUserEmail) {
       try {
         const normalizedEmail = orderUserEmail.toLowerCase();
@@ -292,7 +304,7 @@ export function CartProvider({ children }) {
       }
     }
 
-    // Save to global admin orders collection
+    // 3. Save to global admin orders local collection
     try {
       const savedAdmin = localStorage.getItem("frd_all_admin_orders");
       const existingAdminOrders = savedAdmin ? JSON.parse(savedAdmin) : [];
