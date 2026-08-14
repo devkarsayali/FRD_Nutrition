@@ -19,6 +19,8 @@ import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from "react
 import OIPLogo from "../../assets/OIP.png";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { useCart } from "../../context/CartContext";
+import { db } from "../../firebase/firebase.config";
+import { collection, onSnapshot } from "firebase/firestore";
 
 export default function AdminLayout() {
   const { isAdminLoggedIn, logoutAdmin, adminEmail, changeAdminPassword } = useAdminAuth();
@@ -60,7 +62,7 @@ export default function AdminLayout() {
     };
   }, [isPasswordModalOpen, isSidebarOpen]);
 
-  // Load unread contact messages count for sidebar badge
+  // Load unread contact messages count for sidebar badge from Firebase & LocalStorage
   const loadUnreadMessagesCount = () => {
     try {
       const saved = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
@@ -73,9 +75,26 @@ export default function AdminLayout() {
 
   useEffect(() => {
     loadUnreadMessagesCount();
+
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onSnapshot(
+        collection(db, "contact_messages"),
+        (snapshot) => {
+          let unreadCount = 0;
+          snapshot.forEach((docSnap) => {
+            if (docSnap.data().status === "unread") unreadCount++;
+          });
+          setUnreadMessagesCount(unreadCount);
+        },
+        () => {}
+      );
+    } catch (e) {}
+
     window.addEventListener("frd_contact_messages_updated", loadUnreadMessagesCount);
     window.addEventListener("storage", loadUnreadMessagesCount);
     return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
       window.removeEventListener("frd_contact_messages_updated", loadUnreadMessagesCount);
       window.removeEventListener("storage", loadUnreadMessagesCount);
     };

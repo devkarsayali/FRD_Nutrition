@@ -15,6 +15,8 @@ import {
 } from "react-icons/fi";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { db } from "../firebase/firebase.config";
+import { doc, setDoc } from "firebase/firestore";
 import { useUserAuth } from "../context/UserAuthContext";
 import { isValidEmail, isValidPhone } from "../utils/validation";
 
@@ -109,12 +111,23 @@ export default function ContactPage() {
       type: formData.product ? "Product Enquiry" : "General Contact",
     };
 
+    // 1. Save live message into Firebase Firestore database
+    try {
+      setDoc(doc(db, "contact_messages", newMessage.id), {
+        ...newMessage,
+        createdAt: new Date().toISOString(),
+      }).catch((e) => console.warn("Firebase message save warning:", e));
+    } catch (firebaseErr) {
+      console.warn("Firebase Firestore error:", firebaseErr);
+    }
+
+    // 2. Save locally for instant offline fallback
     try {
       const existingMessages = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
       localStorage.setItem("frd_contact_messages", JSON.stringify([newMessage, ...existingMessages]));
       window.dispatchEvent(new CustomEvent("frd_contact_messages_updated"));
     } catch (err) {
-      console.error("Error saving contact message:", err);
+      console.error("Error saving contact message locally:", err);
     }
 
     setTimeout(() => {

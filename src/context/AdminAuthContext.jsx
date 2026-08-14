@@ -51,9 +51,8 @@ export function AdminAuthProvider({ children }) {
 
     setLoading(true);
 
-    // 1. Try Firebase Authentication (Email / Password)
-    let firebaseCode = null;
     try {
+      // Authenticate strictly with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential && userCredential.user) {
         sessionStorage.setItem("frd_admin_auth", "true");
@@ -65,100 +64,28 @@ export function AdminAuthProvider({ children }) {
         return true;
       }
     } catch (firebaseAuthErr) {
-      firebaseCode = firebaseAuthErr?.code || "";
-      console.log("Firebase Auth check status:", firebaseCode, firebaseAuthErr?.message);
-    }
-
-    // 2. Try Firestore Database ("admins", "admin", or "users" collections)
-    const lowerEmail = email.toLowerCase();
-    const collectionsToSearch = ["admins", "admin", "users"];
-
-    for (const colName of collectionsToSearch) {
-      try {
-        const colRef = collection(db, colName);
-        
-        // Query matching email
-        const qDoc = query(colRef, where("email", "==", email));
-        let snap = await getDocs(qDoc);
-
-        if (snap.empty) {
-          const qLower = query(colRef, where("email", "==", lowerEmail));
-          snap = await getDocs(qLower);
-        }
-
-        if (!snap.empty) {
-          let authenticated = false;
-          snap.forEach((docSnap) => {
-            const data = docSnap.data();
-            const storedPass = data.password || data.passcode || data.pass;
-            if (storedPass && String(storedPass).trim() === password) {
-              authenticated = true;
-            } else if (!storedPass && (data.role === "admin" || colName === "admins" || colName === "admin")) {
-              authenticated = true;
-            }
-          });
-
-          if (authenticated) {
-            sessionStorage.setItem("frd_admin_auth", "true");
-            sessionStorage.setItem("frd_admin_email", email);
-            setIsAdminLoggedIn(true);
-            setAdminEmail(email);
-            toast.success("Welcome, Administrator!");
-            setLoading(false);
-            return true;
-          }
-        }
-
-        // Direct doc ID check (e.g. doc ID = email address)
-        const docRef1 = doc(db, colName, email);
-        const docRef2 = doc(db, colName, lowerEmail);
-        const [snap1, snap2] = await Promise.all([
-          getDoc(docRef1).catch(() => null),
-          getDoc(docRef2).catch(() => null),
-        ]);
-
-        const docData = (snap1 && snap1.exists() ? snap1.data() : null) || (snap2 && snap2.exists() ? snap2.data() : null);
-        if (docData) {
-          const storedPass = docData.password || docData.passcode || docData.pass;
-          if (!storedPass || String(storedPass).trim() === password) {
-            sessionStorage.setItem("frd_admin_auth", "true");
-            sessionStorage.setItem("frd_admin_email", email);
-            setIsAdminLoggedIn(true);
-            setAdminEmail(email);
-            toast.success("Welcome, Administrator!");
-            setLoading(false);
-            return true;
-          }
-        }
-      } catch (colErr) {
-        console.warn(`Firestore lookup warning for '${colName}':`, colErr);
-      }
-    }
-
-    // 3. Fallback Admin Auth for admin emails (e.g. skmana2806@gmail.com, admin@frdnutrition.com)
-    const isRecognizedAdminEmail =
-      lowerEmail === "skmana2806@gmail.com" ||
-      lowerEmail === "admin@frdnutrition.com" ||
-      lowerEmail.includes("admin");
-
-    if (isRecognizedAdminEmail && password.length >= 4) {
-      sessionStorage.setItem("frd_admin_auth", "true");
-      sessionStorage.setItem("frd_admin_email", email);
-      setIsAdminLoggedIn(true);
-      setAdminEmail(email);
-      toast.success("Welcome, Administrator!");
       setLoading(false);
-      return true;
-    }
+      const errorCode = firebaseAuthErr?.code || "";
+      console.error("Firebase Auth Error:", errorCode, firebaseAuthErr?.message);
 
-    setLoading(false);
-
-    if (firebaseCode === "auth/configuration-not-found") {
-      toast.error("Firebase Auth Email/Password is disabled in your Firebase Console! Please enable Email/Password under Authentication -> Sign-in method.", { duration: 6000 });
-    } else {
-      toast.error("Invalid Admin Email or Password in Firebase database!");
+      if (errorCode === "auth/configuration-not-found") {
+        toast.error(
+          "Email/Password provider is not enabled in Firebase Console! Go to Firebase Console -> Authentication -> Sign-in method and enable Email/Password.",
+          { duration: 6000 }
+        );
+      } else if (
+        errorCode === "auth/user-not-found" ||
+        errorCode === "auth/wrong-password" ||
+        errorCode === "auth/invalid-credential"
+      ) {
+        toast.error("Invalid Firebase Admin Email or Password!");
+      } else if (errorCode === "auth/too-many-requests") {
+        toast.error("Too many failed attempts. Please try again later.");
+      } else {
+        toast.error(`Firebase Auth Error: ${firebaseAuthErr?.message || errorCode}`);
+      }
+      return false;
     }
-    return false;
   };
 
   const changeAdminPassword = (currentPass, newPass) => {

@@ -19,6 +19,8 @@ import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
 import toast from "react-hot-toast";
 import { useOutletContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { db } from "../../firebase/firebase.config";
+import { collection, doc, getDocs, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 export default function AdminOrdersPage({ defaultTab }) {
   const { orders: cartContextOrders } = useCart();
@@ -82,6 +84,41 @@ export default function AdminOrdersPage({ defaultTab }) {
     loadMessages();
     loadOrders();
 
+    // Live Firebase Firestore listener for contact messages across all origins (Vercel & Localhost)
+    let unsubscribeFirestore = () => {};
+    try {
+      unsubscribeFirestore = onSnapshot(
+        collection(db, "contact_messages"),
+        (snapshot) => {
+          const firestoreMsgs = [];
+          snapshot.forEach((docSnap) => {
+            firestoreMsgs.push({ id: docSnap.id, ...docSnap.data() });
+          });
+
+          // Merge Firestore messages with local fallback
+          let localMsgs = [];
+          try {
+            localMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
+          } catch {}
+
+          const msgMap = new Map();
+          firestoreMsgs.forEach((m) => msgMap.set(m.id, m));
+          localMsgs.forEach((m) => {
+            if (!msgMap.has(m.id)) msgMap.set(m.id, m);
+          });
+
+          const merged = Array.from(msgMap.values());
+          merged.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+          setContactMessages(merged);
+        },
+        (err) => {
+          console.warn("Firestore snapshot warning:", err);
+        }
+      );
+    } catch (err) {
+      console.warn("Firestore listener setup error:", err);
+    }
+
     const handleOrdersUpdate = () => loadOrders();
     const handleMessagesUpdate = () => loadMessages();
 
@@ -91,6 +128,7 @@ export default function AdminOrdersPage({ defaultTab }) {
     window.addEventListener("storage", handleMessagesUpdate);
 
     return () => {
+      if (typeof unsubscribeFirestore === "function") unsubscribeFirestore();
       window.removeEventListener("frd_orders_updated", handleOrdersUpdate);
       window.removeEventListener("frd_contact_messages_updated", handleMessagesUpdate);
       window.removeEventListener("storage", handleOrdersUpdate);
@@ -98,10 +136,31 @@ export default function AdminOrdersPage({ defaultTab }) {
     };
   }, [cartContextOrders]);
 
-  const loadMessages = () => {
+  const loadMessages = async () => {
     try {
-      const saved = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
-      setContactMessages(saved);
+      let firestoreMsgs = [];
+      try {
+        const snap = await getDocs(collection(db, "contact_messages"));
+        snap.forEach((docSnap) => {
+          firestoreMsgs.push({ id: docSnap.id, ...docSnap.data() });
+        });
+      } catch (fErr) {
+        console.warn("Firebase messages load warning:", fErr);
+      }
+
+      let localMsgs = [];
+      try {
+        localMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
+      } catch {}
+
+      const msgMap = new Map();
+      firestoreMsgs.forEach((m) => msgMap.set(m.id, m));
+      localMsgs.forEach((m) => {
+        if (!msgMap.has(m.id)) msgMap.set(m.id, m);
+      });
+
+      const merged = Array.from(msgMap.values());
+      setContactMessages(merged);
     } catch (err) {
       console.error("Failed to load contact messages:", err);
     }
@@ -166,23 +225,39 @@ export default function AdminOrdersPage({ defaultTab }) {
     }
   };
 
-  const handleToggleRead = (id) => {
+  const handleToggleRead = async (id) => {
+    let newStat = "read";
     const updated = contactMessages.map((msg) => {
       if (msg.id === id) {
-        return { ...msg, status: msg.status === "read" ? "unread" : "read" };
+        newStat = msg.status === "read" ? "unread" : "read";
+        return { ...msg, status: newStat };
       }
       return msg;
     });
     setContactMessages(updated);
     localStorage.setItem("frd_contact_messages", JSON.stringify(updated));
+
+    try {
+      await updateDoc(doc(db, "contact_messages", id), { status: newStat });
+    } catch (err) {
+      console.warn("Firestore update warning:", err);
+    }
+
     window.dispatchEvent(new CustomEvent("frd_contact_messages_updated"));
     toast.success("Message status updated.");
   };
 
-  const handleDeleteMessage = (id) => {
+  const handleDeleteMessage = async (id) => {
     const updated = contactMessages.filter((msg) => msg.id !== id);
     setContactMessages(updated);
     localStorage.setItem("frd_contact_messages", JSON.stringify(updated));
+
+    try {
+      await deleteDoc(doc(db, "contact_messages", id));
+    } catch (err) {
+      console.warn("Firestore delete warning:", err);
+    }
+
     if (selectedMessage?.id === id) setSelectedMessage(null);
     window.dispatchEvent(new CustomEvent("frd_contact_messages_updated"));
     toast.success("Message deleted.");
