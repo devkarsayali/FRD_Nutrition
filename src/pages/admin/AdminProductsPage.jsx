@@ -689,12 +689,13 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                     Stock Quantity (Items in Stock)
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
                     value={formData.stockQuantity}
                     onChange={(e) =>
                       setFormData({ ...formData, stockQuantity: e.target.value })
                     }
-                    placeholder="e.g. Available, Not Available, 38 in stock"
+                    placeholder="36"
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-lime-500"
                   />
                 </div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { FiCheckCircle, FiMail, FiPhone, FiSearch, FiShoppingBag, FiUser, FiUsers } from "react-icons/fi";
+import { FiCheckCircle, FiMail, FiPhone, FiSearch, FiShoppingBag, FiTrash2, FiUser, FiUsers } from "react-icons/fi";
 import { useOutletContext } from "react-router-dom";
+import toast from "react-hot-toast";
 import { db } from "../../firebase/firebase.config";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 
 export default function AdminCustomersPage() {
   const outletContext = useOutletContext();
@@ -155,10 +156,31 @@ export default function AdminCustomersPage() {
         }
       }
 
-      setCustomers(Array.from(customerMap.values()));
+      // Only display active customers with 1 or more placed orders
+      const activeCustomers = Array.from(customerMap.values()).filter((c) => c.totalOrders > 0);
+      setCustomers(activeCustomers);
     } catch (err) {
       console.error("Failed to load customer list:", err);
     }
+  };
+
+  const handleDeleteCustomer = async (custEmail) => {
+    if (!custEmail) return;
+    if (!window.confirm(`Are you sure you want to delete customer record for "${custEmail}"? This cannot be undone.`)) return;
+
+    setCustomers((prev) => prev.filter((c) => c.email !== custEmail));
+
+    try {
+      await deleteDoc(doc(db, "users", custEmail));
+    } catch (err) {
+      console.warn("Firestore customer delete warning:", err);
+    }
+
+    try {
+      localStorage.removeItem(`frd_user_profile_${custEmail}`);
+    } catch (e) {}
+
+    toast.success(`Customer record for "${custEmail}" deleted successfully.`);
   };
 
   const filteredCustomers = customers.filter((cust) => {
@@ -175,8 +197,10 @@ export default function AdminCustomersPage() {
   const totalOrdersPlaced = customers.reduce((acc, c) => acc + c.totalOrders, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Overview Metric Cards */}
+    <div className="space-y-6 animate-in fade-in duration-300">
+
+
+      {/* Analytics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#141813] p-5 rounded-2xl border border-neutral-800 shadow-lg flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-lime-500/10 border border-lime-500/20 flex items-center justify-center text-lime-400">
@@ -184,7 +208,7 @@ export default function AdminCustomersPage() {
           </div>
           <div>
             <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-              Total Customers
+              Total Registered Customers
             </span>
             <span className="font-heading font-black text-2xl text-white block">
               {customers.length}

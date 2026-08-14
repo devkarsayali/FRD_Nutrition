@@ -64,16 +64,16 @@ export default function CheckoutModal() {
   };
 
   // Calculations for totals
-  const subtotal = cartSubtotal > 0 ? cartSubtotal : 5400;
+  const subtotal = cartSubtotal;
   
   const calculatedSavings = selectedCartItems.reduce((acc, item) => {
     const originalPrice = item.product?.originalPrice || item.product?.mrp || Math.round((item.product?.price || 0) * 1.333);
     return acc + Math.max(0, (originalPrice - (item.product?.price || 0)) * item.quantity);
   }, 0);
 
-  const savedAmount = calculatedSavings > 0 ? calculatedSavings : 1800;
+  const savedAmount = calculatedSavings;
   const shippingFee = 0;
-  const finalTotal = subtotal + shippingFee;
+  const finalTotal = subtotal;
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -360,6 +360,61 @@ export default function AdminOrdersPage({ defaultTab }) {
     window.dispatchEvent(new CustomEvent("frd_orders_updated"));
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!orderId) return;
+    if (!window.confirm(`Are you sure you want to delete order #${orderId}? This cannot be undone.`)) return;
+
+    const targetOrder = allOrders.find((o) => o.id === orderId);
+    const custEmail = (targetOrder?.customer?.email || targetOrder?.shippingAddress?.email || "").toLowerCase().trim();
+
+    const remainingOrders = allOrders.filter((o) => o.id !== orderId);
+    setAllOrders(remainingOrders);
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder(null);
+    }
+
+    try {
+      await deleteDoc(doc(db, "orders", orderId));
+    } catch (err) {
+      console.warn("Firestore order delete warning:", err);
+    }
+
+    // Check if customer has any other orders left
+    if (custEmail) {
+      const hasOtherOrders = remainingOrders.some((o) => {
+        const e = (o.customer?.email || o.shippingAddress?.email || "").toLowerCase().trim();
+        return e === custEmail;
+      });
+
+      if (!hasOtherOrders) {
+        try {
+          await deleteDoc(doc(db, "users", custEmail));
+        } catch (uErr) {
+          console.warn("Firestore user cleanup warning:", uErr);
+        }
+        try {
+          localStorage.removeItem(`frd_user_profile_${custEmail}`);
+        } catch (e) {}
+      }
+    }
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.toLowerCase().includes("order")) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || "[]");
+          if (Array.isArray(data)) {
+            const updated = data.filter((o) => o.id !== orderId);
+            localStorage.setItem(key, JSON.stringify(updated));
+          }
+        } catch (e) {}
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
+    toast.success(`Order #${orderId} deleted successfully.`);
+  };
+
   const getStatusStepIndex = (status) => {
     if (!status) return 0;
     const s = status.toLowerCase().trim();
@@ -477,38 +532,7 @@ export default function AdminOrdersPage({ defaultTab }) {
     }
   };
 
-  // ✅ FIXED: handleDeleteOrder now removes the order from EVERY localStorage key
-  const handleDeleteOrder = (id) => {
-    // 1. Update state immediately
-    const updated = allOrders.filter((o) => o.id !== id);
-    setAllOrders(updated);
 
-    // 2. Save to the merged admin orders key
-    localStorage.setItem("frd_all_admin_orders", JSON.stringify(updated));
-
-    // 3. CRITICAL FIX: Remove the order from ALL localStorage keys that contain orders
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.toLowerCase().includes("order")) {
-        try {
-          const data = JSON.parse(localStorage.getItem(key) || "[]");
-          if (Array.isArray(data)) {
-            const filtered = data.filter((o) => o && o.id !== id);
-            localStorage.setItem(key, JSON.stringify(filtered));
-          } else if (data && typeof data === "object" && data.id === id) {
-            // If key holds a single order object, clear it
-            localStorage.setItem(key, JSON.stringify({}));
-          }
-        } catch (e) {
-          // ignore non-JSON keys
-        }
-      }
-    }
-
-    if (selectedOrder?.id === id) setSelectedOrder(null);
-    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
-    toast.success("Order record deleted.");
-  };
 
   const unreadCount = contactMessages.filter((m) => m.status === "unread").length;
 
