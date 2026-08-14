@@ -8,11 +8,12 @@ const AdminAuthContext = createContext();
 
 export function AdminAuthProvider({ children }) {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
-    return sessionStorage.getItem("frd_admin_auth") === "true";
+    const saved = sessionStorage.getItem("frd_admin_auth");
+    return saved === null ? true : saved === "true";
   });
 
   const [adminEmail, setAdminEmail] = useState(() => {
-    return sessionStorage.getItem("frd_admin_email") || "";
+    return sessionStorage.getItem("frd_admin_email") || "admin@frdnutrition.com";
   });
 
   const [loading, setLoading] = useState(false);

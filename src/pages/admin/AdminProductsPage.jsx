@@ -316,6 +316,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
       inStock: finalInStock,
       stockQuantity: finalStockQty,
+      initialStock: finalStockQty,
       image: formData.images.length > 0 ? formData.images[0] : formData.image,
       benefits: typeof formData.benefits === "string"
         ? formData.benefits.split("\n").map((b) => b.trim()).filter(Boolean)
@@ -633,7 +634,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                       setFormData({ ...formData, category: e.target.value })
                     }
                     placeholder="e.g. Protein, Pre Workout, Mass Gainer"
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-lime-500"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-lime-500 font-semibold"
                   />
                 </div>
 

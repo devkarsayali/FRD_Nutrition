@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { CATEGORIES, INITIAL_PRODUCTS } from "../data/initialProducts";
+import { CATEGORIES, DEFAULT_ADMIN_CATEGORIES, INITIAL_PRODUCTS } from "../data/initialProducts";
 import { db } from "../firebase/firebase.config";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
 
@@ -60,21 +60,22 @@ const normalizeStockValue = (product, index = 0, soldMap = {}) => {
   const quantitySold = Math.max(0, calculatedSold);
 
   const nextInStock = product.inStock;
+
+  let rawStockQty = 0;
+  if (product.stockQuantity !== undefined && product.stockQuantity !== null && String(product.stockQuantity).trim() !== "") {
+    const extracted = String(product.stockQuantity).replace(/[^\d]/g, "");
+    if (extracted !== "") rawStockQty = parseInt(extracted, 10);
+  }
+
   let initialStock = Number(product.initialStock);
 
   if (isNaN(initialStock) || initialStock < 0) {
-    let rawStock = product.stockQuantity;
-    let parsedQty = 50;
-    if (rawStock !== undefined && rawStock !== null && String(rawStock).trim() !== "") {
-      const extracted = String(rawStock).replace(/[^\d]/g, "");
-      if (extracted !== "") parsedQty = parseInt(extracted, 10);
-    }
-    initialStock = quantitySold + Math.max(parsedQty, 50);
+    initialStock = quantitySold + rawStockQty;
   }
 
   // If explicitly requested inStock = true, ensure initialStock > quantitySold
   if (nextInStock === true && initialStock <= quantitySold) {
-    const defaultAdd = Number(product.stockQuantity) > 0 ? Number(product.stockQuantity) : 50;
+    const defaultAdd = rawStockQty > 0 ? rawStockQty : 1;
     initialStock = quantitySold + defaultAdd;
   }
 
@@ -120,15 +121,7 @@ const normalizeProducts = (productsList) => {
 
 export const getProductCategoryKey = (prod) => {
   if (!prod || !prod.category) return "Protein";
-  const cat = prod.category.toLowerCase().trim();
-
-  if (cat.includes("creatine")) return "Creatine";
-  if (cat.includes("bcaa") || cat.includes("eaa")) return "BCAA";
-  if (cat.includes("mass") || cat.includes("gainer")) return "Mass Gainer";
-  if (cat.includes("pre workout") || cat.includes("pre-workout") || cat.includes("pump")) return "Pre Workout";
-  if (cat.includes("post workout") || cat.includes("post-workout")) return "Post Workout";
-  if (cat.includes("vitamin") || cat.includes("fat burner") || cat.includes("carnitine")) return "Vitamins";
-  return "Protein";
+  return prod.category.trim();
 };
 
 export const TAGS = [
@@ -194,21 +187,31 @@ export function ProductProvider({ children }) {
       let catNames = [];
       if (savedCats) {
         const parsed = JSON.parse(savedCats);
-        if (Array.isArray(parsed)) {
-          const nonDemo = parsed.filter(
-            (c) => c && !["cat-1", "cat-2", "cat-3", "cat-4", "cat-5", "cat-6", "cat-7"].includes(c.id)
-          );
-          catNames = nonDemo.map((c) => c.name).filter(Boolean);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          catNames = parsed.map((c) => c.name).filter(Boolean);
+        } else {
+          catNames = DEFAULT_ADMIN_CATEGORIES.map((c) => c.name);
+          localStorage.setItem("frd_admin_categories_v2", JSON.stringify(DEFAULT_ADMIN_CATEGORIES));
         }
+      } else {
+        catNames = DEFAULT_ADMIN_CATEGORIES.map((c) => c.name);
+        localStorage.setItem("frd_admin_categories_v2", JSON.stringify(DEFAULT_ADMIN_CATEGORIES));
       }
 
-      const productCats = products.map((p) => p.category).filter(Boolean);
-      const allCats = [...catNames, ...productCats];
+      const seen = new Set();
+      const uniqueAdminCats = [];
+      catNames.forEach((name) => {
+        const trimmed = (name || "").trim();
+        const lower = trimmed.toLowerCase();
+        if (trimmed && !seen.has(lower)) {
+          seen.add(lower);
+          uniqueAdminCats.push(trimmed);
+        }
+      });
 
-      const uniqueCats = ["All Categories", ...Array.from(new Set(allCats))];
-      setCategoriesList(uniqueCats);
+      setCategoriesList(["All Categories", ...uniqueAdminCats]);
     } catch {
-      setCategoriesList(["All Categories"]);
+      setCategoriesList(["All Categories", ...DEFAULT_ADMIN_CATEGORIES.map((c) => c.name)]);
     }
   };
 
@@ -267,17 +270,25 @@ export function ProductProvider({ children }) {
       const unsubscribe = onSnapshot(
         colRef,
         (snapshot) => {
-          if (snapshot.empty) {
-            localStorage.setItem("frd_admin_categories_v2", JSON.stringify([]));
-            setCategoriesList(["All Categories"]);
-          } else {
+          if (!snapshot.empty) {
             const fbCats = snapshot.docs.map((docSnap) => ({
               id: docSnap.id,
               ...docSnap.data(),
             }));
             localStorage.setItem("frd_admin_categories_v2", JSON.stringify(fbCats));
-            const names = fbCats.map((c) => c.name).filter(Boolean);
-            setCategoriesList(["All Categories", ...Array.from(new Set(names))]);
+            const seen = new Set();
+            const names = [];
+            fbCats.forEach((c) => {
+              const name = (c.name || "").trim();
+              const lower = name.toLowerCase();
+              if (name && !seen.has(lower)) {
+                seen.add(lower);
+                names.push(name);
+              }
+            });
+            if (names.length > 0) {
+              setCategoriesList(["All Categories", ...names]);
+            }
           }
         },
         (err) => {

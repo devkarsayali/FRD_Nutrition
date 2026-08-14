@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FiEdit2, FiFolderPlus, FiGrid, FiPackage, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { INITIAL_PRODUCTS } from "../../data/initialProducts";
+import { DEFAULT_ADMIN_CATEGORIES, INITIAL_PRODUCTS } from "../../data/initialProducts";
 import { db } from "../../firebase/firebase.config";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 
@@ -44,17 +44,9 @@ export default function AdminCategoriesPage() {
       const savedProducts = localStorage.getItem("frd_products_inventory_v7");
       const products = savedProducts ? JSON.parse(savedProducts) : INITIAL_PRODUCTS;
       return products.filter((p) => {
-        const cat = (p.category || "").toLowerCase();
-        const name = (p.name || "").toLowerCase();
-        const target = categoryName.toLowerCase();
-
-        if (target.includes("creatine")) return name.includes("creatine") || cat.includes("creatine");
-        if (target.includes("bcaa")) return name.includes("bcaa") || name.includes("eaa") || cat.includes("bcaa");
-        if (target.includes("mass") || target.includes("gainer")) return name.includes("mass") || name.includes("gainer") || cat.includes("mass");
-        if (target.includes("pre workout")) return name.includes("pre") || cat.includes("pre");
-        if (target.includes("post workout")) return name.includes("post") || cat.includes("post");
-        if (target.includes("vitamin")) return name.includes("vitamin") || cat.includes("vitamin");
-        return cat.includes(target) || name.includes(target);
+        const cat = (p.category || "").toLowerCase().trim();
+        const target = categoryName.toLowerCase().trim();
+        return cat === target || cat.includes(target);
       }).length;
     } catch (e) {
       return 0;
@@ -66,12 +58,8 @@ export default function AdminCategoriesPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const nonDemo = parsed.filter(
-            (c) => c && !["cat-1", "cat-2", "cat-3", "cat-4", "cat-5", "cat-6", "cat-7"].includes(c.id)
-          );
-          setCategories(nonDemo);
-          localStorage.setItem("frd_admin_categories_v2", JSON.stringify(nonDemo));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCategories(parsed);
           return;
         }
       } catch (e) {
@@ -79,8 +67,8 @@ export default function AdminCategoriesPage() {
       }
     }
 
-    setCategories([]);
-    localStorage.setItem("frd_admin_categories_v2", JSON.stringify([]));
+    setCategories(DEFAULT_ADMIN_CATEGORIES);
+    localStorage.setItem("frd_admin_categories_v2", JSON.stringify(DEFAULT_ADMIN_CATEGORIES));
   };
 
   const saveCategories = async (updated) => {

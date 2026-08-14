@@ -72,6 +72,7 @@ export default function AppRoutes() {
       {/* Admin Management Panel Routes */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboardWrapper />} />
+        <Route path="dashboard" element={<AdminDashboardWrapper />} />
         <Route path="products" element={<AdminProductsWrapper />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="orders" element={<AdminOrdersPage defaultTab="orders" />} />

@@ -31,9 +31,8 @@ import { useUserAuth } from "../../context/UserAuthContext";
 import { isValidPhone } from "../../utils/validation";
 
 const STATUS_STEPS = [
-  "Order Placed",
-  "Packed & Verified",
-  "In Transit",
+  "Ordered",
+  "Shipped",
   "Out for Delivery",
   "Delivered",
 ];
@@ -41,11 +40,10 @@ const STATUS_STEPS = [
 const getStatusStepIndex = (status) => {
   if (!status) return 0;
   const s = status.toLowerCase().trim();
-  if (s.includes("delivered")) return 4;
-  if (s.includes("out") || s.includes("delivery")) return 3;
-  if (s.includes("transit") || s.includes("shipped")) return 2;
-  if (s.includes("packed") || s.includes("confirmed") || s.includes("verify")) return 1;
-  return 0; // Order Placed / Pending
+  if (s.includes("delivered")) return 3;
+  if (s.includes("out") || s.includes("delivery")) return 2;
+  if (s.includes("shipped") || s.includes("transit")) return 1;
+  return 0; // Ordered
 };
 
 const getStatusBadgeConfig = (status) => {
@@ -65,18 +63,25 @@ const getStatusBadgeConfig = (status) => {
       pulse: "bg-amber-400",
     };
   }
-  if (s.includes("transit") || s.includes("shipped")) {
+  if (s.includes("shipped") || s.includes("transit")) {
     return {
       style: "bg-cyan-500/15 text-cyan-400 border-cyan-500/40 shadow-cyan-500/10",
       Icon: FiTruck,
       pulse: "bg-cyan-400",
     };
   }
-  if (s.includes("packed") || s.includes("confirmed") || s.includes("verify")) {
+  if (s.includes("returned")) {
     return {
-      style: "bg-amber-500/15 text-amber-400 border-amber-500/40 shadow-amber-500/10",
-      Icon: FiPackage,
-      pulse: "bg-amber-400",
+      style: "bg-orange-500/15 text-orange-400 border-orange-500/40 shadow-orange-500/10",
+      Icon: FiRefreshCw,
+      pulse: "bg-orange-400",
+    };
+  }
+  if (s.includes("refunded")) {
+    return {
+      style: "bg-purple-500/15 text-purple-400 border-purple-500/40 shadow-purple-500/10",
+      Icon: FiZap,
+      pulse: "bg-purple-400",
     };
   }
   if (s.includes("cancel")) {
@@ -227,20 +232,50 @@ export default function UserDashboardPage() {
 
   const { restoreProductStock } = useProducts();
 
+  const canCancelOrder = (order) => {
+    if (!order) return false;
+    const s = (order.status || "").toLowerCase().trim();
+    if (
+      s.includes("out") ||
+      s.includes("delivery") ||
+      s.includes("delivered") ||
+      s.includes("cancel") ||
+      s.includes("refund") ||
+      s.includes("return")
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+  const canReturnOrder = (order) => {
+    if (!order) return false;
+    const s = (order.status || "").toLowerCase().trim();
+    return s === "delivered";
+  };
+
   const handleCancelOrder = (targetOrder) => {
     if (!targetOrder || !targetOrder.id) return;
     const normStatus = (targetOrder.status || "").toLowerCase().trim();
-    if (["cancelled", "rejected", "refunded", "returned"].includes(normStatus)) {
-      toast.error("This order is already cancelled or returned.");
+
+    if (normStatus.includes("out") || normStatus.includes("delivery") || normStatus.includes("delivered")) {
+      toast.error("Orders cannot be cancelled once they are Out for Delivery or Delivered.");
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to cancel Order #${targetOrder.id}? Stock will be restored automatically.`)) {
+    if (["cancelled", "rejected", "refunded", "returned"].includes(normStatus)) {
+      toast.error(`This order is already ${targetOrder.status}.`);
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to cancel Order #${targetOrder.id}? Item stock will be restored automatically.`)) {
       return;
     }
 
     // 1. Restore product stock automatically
-    restoreProductStock(targetOrder.items || []);
+    if (!targetOrder.stockRestored) {
+      restoreProductStock(targetOrder.items || []);
+    }
 
     // 2. Update order status across all localStorage order keys
     const updateFn = (o) => {
@@ -272,6 +307,58 @@ export default function UserDashboardPage() {
 
     window.dispatchEvent(new CustomEvent("frd_orders_updated"));
     toast.success(`Order #${targetOrder.id} cancelled. Item stock automatically restored!`);
+  };
+
+  const handleReturnOrder = (targetOrder) => {
+    if (!targetOrder || !targetOrder.id) return;
+    const normStatus = (targetOrder.status || "").toLowerCase().trim();
+
+    if (normStatus !== "delivered") {
+      toast.error("Return requests can only be placed for Delivered orders.");
+      return;
+    }
+
+    const reason = window.prompt(
+      `Request Return for Order #${targetOrder.id}\n\nPlease enter the reason for your return (e.g. wrong size, damaged packaging, item not needed):`,
+      "Item not needed / Size issue"
+    );
+
+    if (reason === null) return; // User cancelled prompt
+
+    // Restore product stock upon return
+    if (!targetOrder.stockRestored) {
+      restoreProductStock(targetOrder.items || []);
+    }
+
+    const updateFn = (o) => {
+      if (!o || o.id !== targetOrder.id) return o;
+      return {
+        ...o,
+        status: "Returned",
+        returnReason: reason || "Customer Return",
+        stockRestored: true,
+      };
+    };
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.toLowerCase().includes("order")) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || "[]");
+          if (Array.isArray(data)) {
+            const updated = data.map(updateFn);
+            localStorage.setItem(key, JSON.stringify(updated));
+          } else if (data && typeof data === "object" && data.id === targetOrder.id) {
+            localStorage.setItem(key, JSON.stringify(updateFn(data)));
+          }
+        } catch (e) {
+          // ignore non-json
+        }
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
+    toast.success(`Return request submitted for Order #${targetOrder.id}!`);
   };
 
   // Track expanded order card IDs
@@ -416,18 +503,33 @@ export default function UserDashboardPage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {!["cancelled", "rejected", "refunded", "returned"].includes((order.status || "").toLowerCase()) && (
+                                {canCancelOrder(order) && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleCancelOrder(order);
                                     }}
-                                    className="px-3 py-2 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-extrabold transition flex items-center gap-1 cursor-pointer"
-                                    title="Cancel order and restore item stock"
+                                    className="px-3 py-2 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-extrabold transition flex items-center gap-1 cursor-pointer shadow-sm"
+                                    title="Cancel order before Out for Delivery"
                                   >
                                     <FiXCircle size={15} />
                                     <span>Cancel Order</span>
+                                  </button>
+                                )}
+
+                                {canReturnOrder(order) && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReturnOrder(order);
+                                    }}
+                                    className="px-3 py-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-extrabold transition flex items-center gap-1 cursor-pointer shadow-sm"
+                                    title="Request return for this delivered order"
+                                  >
+                                    <FiRefreshCw size={15} />
+                                    <span>Return Order</span>
                                   </button>
                                 )}
 

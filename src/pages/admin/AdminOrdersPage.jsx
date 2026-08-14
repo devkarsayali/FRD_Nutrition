@@ -191,26 +191,22 @@ export default function AdminOrdersPage({ defaultTab }) {
   const { decreaseProductStock, restoreProductStock } = useProducts();
 
   const STATUS_STEPS = [
-    "Pending",
-    "Confirmed",
-    "Packed",
+    "Ordered",
     "Shipped",
+    "Out for Delivery",
     "Delivered",
     "Cancelled",
-    "Rejected",
     "Refunded",
     "Returned",
   ];
 
   const ORDER_STATUS_OPTIONS = [
     "All",
-    "Order Placed",
-    "Packed & Verified",
-    "In Transit",
+    "Ordered",
+    "Shipped",
     "Out for Delivery",
     "Delivered",
     "Cancelled",
-    "Rejected",
     "Refunded",
     "Returned",
   ];
@@ -252,11 +248,10 @@ export default function AdminOrdersPage({ defaultTab }) {
   const getStatusStepIndex = (status) => {
     if (!status) return 0;
     const s = status.toLowerCase().trim();
-    if (s.includes("delivered")) return 4;
-    if (s.includes("out for delivery") || s.includes("out_for_delivery")) return 3;
-    if (s.includes("transit") || s.includes("shipped") || s.includes("shipping")) return 2;
-    if (s.includes("packed") || s.includes("confirmed") || s.includes("verify")) return 1;
-    return 0; // Order Placed / Pending
+    if (s.includes("delivered")) return 3;
+    if (s.includes("out for delivery") || s.includes("out_for_delivery")) return 2;
+    if (s.includes("shipped") || s.includes("transit")) return 1;
+    return 0; // Ordered
   };
 
   const RESTORABLE_STATUSES = ["cancelled", "rejected", "refunded", "returned"];
@@ -267,10 +262,8 @@ export default function AdminOrdersPage({ defaultTab }) {
     const isNewStatusRestorable = RESTORABLE_STATUSES.includes(normNewStatus);
 
     const defaultSteps = [
-      { title: "Order Placed", time: "Order Placed", completed: true },
-      { title: "Confirmed", time: "Verification", completed: false },
-      { title: "Packed", time: "Warehouse", completed: false },
-      { title: "In Transit", time: "Shipped", completed: false },
+      { title: "Ordered", time: "Order Received", completed: true },
+      { title: "Shipped", time: "Dispatched", completed: false },
       { title: "Out for Delivery", time: "Local Hub", completed: false },
       { title: "Delivered", time: "Handed Over", completed: false },
     ];
@@ -620,13 +613,11 @@ export default function AdminOrdersPage({ defaultTab }) {
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
                             className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[11px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm"
                           >
-                            <option value="Order Placed" className="bg-neutral-900 text-white">Order Placed</option>
-                            <option value="Packed & Verified" className="bg-neutral-900 text-white">Packed & Verified</option>
-                            <option value="In Transit" className="bg-neutral-900 text-white">In Transit</option>
+                            <option value="Ordered" className="bg-neutral-900 text-white">Ordered</option>
+                            <option value="Shipped" className="bg-neutral-900 text-white">Shipped</option>
                             <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
                             <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
                             <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
-                            <option value="Rejected" className="bg-neutral-900 text-red-400">Rejected</option>
                             <option value="Refunded" className="bg-neutral-900 text-[#f5b800]">Refunded</option>
                             <option value="Returned" className="bg-neutral-900 text-amber-400">Returned</option>
                           </select>
@@ -1142,13 +1133,11 @@ export default function AdminOrdersPage({ defaultTab }) {
                     onChange={(e) => handleStatusChange(selectedOrder.id, e.target.value)}
                     className="bg-[#192218] border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-300 font-semibold focus:outline-none focus:border-lime-500 flex-1 sm:flex-none cursor-pointer"
                   >
-                    <option value="Order Placed" className="bg-neutral-900 text-white">Order Placed</option>
-                    <option value="Packed & Verified" className="bg-neutral-900 text-white">Packed & Verified</option>
-                    <option value="In Transit" className="bg-neutral-900 text-white">In Transit</option>
+                    <option value="Ordered" className="bg-neutral-900 text-white">Ordered</option>
+                    <option value="Shipped" className="bg-neutral-900 text-white">Shipped</option>
                     <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
                     <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
                     <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
-                    <option value="Rejected" className="bg-neutral-900 text-red-400">Rejected</option>
                     <option value="Refunded" className="bg-neutral-900 text-[#f5b800]">Refunded</option>
                     <option value="Returned" className="bg-neutral-900 text-amber-400">Returned</option>
                   </select>

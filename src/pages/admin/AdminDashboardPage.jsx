@@ -77,11 +77,8 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
       let catList = [];
       if (savedCats) {
         const parsed = JSON.parse(savedCats);
-        if (Array.isArray(parsed)) {
-          const nonDemo = parsed.filter(
-            (c) => c && !["cat-1", "cat-2", "cat-3", "cat-4", "cat-5", "cat-6", "cat-7"].includes(c.id)
-          );
-          catList = nonDemo.map((c) => c.name).filter(Boolean);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          catList = parsed.map((c) => c.name).filter(Boolean);
         }
       }
 

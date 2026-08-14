@@ -225,7 +225,7 @@ export function CartProvider({ children }) {
       orderDate: nowTimeStr,
       orderTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
       readStatus: "unread",
-      status: "Order Placed",
+      status: "Ordered",
       stockDeducted: true,
       courierName: "",
       awbTrackingNumber: "",

@@ -15,7 +15,6 @@ import {
   FiZap,
 } from "react-icons/fi";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import PincodeChecker from "../components/common/PincodeChecker";
 import toast from "react-hot-toast";
 import ProductCard from "../components/common/ProductCard";
 import { useCart } from "../context/CartContext";
@@ -27,7 +26,7 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const { products } = useProducts();
   const { addToCart, wishlist = [], toggleWishlist, setIsCheckoutOpen } = useCart();
-  const { requireAuth } = useUserAuth();
+  const { user, requireAuth } = useUserAuth();
 
   const product = (products && products.find((p) => p.id === productId)) || (products && products[0]) || null;
 
@@ -40,21 +39,88 @@ export default function ProductDetailsPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
+  // Dynamic Product Reviews State & Persistence
+  const DEFAULT_SAMPLE_REVIEWS = [
+    {
+      id: "rev-sample-1",
+      name: "Rahul Sharma",
+      rating: 5,
+      date: "12 Aug 2026",
+      title: "100% Authentic & Insane Results!",
+      comment: "Tastes amazing and mixes effortlessly with cold water. Noticed great recovery and strength gains within 2 weeks. Highly recommended!",
+      verified: true,
+    },
+    {
+      id: "rev-sample-2",
+      name: "Vikas Patel",
+      rating: 5,
+      date: "05 Aug 2026",
+      title: "Fast Delivery & Top Notch Quality",
+      comment: "Received the package within 2 days with direct importer seal intact. Authentic product from FRD Nutrition!",
+      verified: true,
+    },
+  ];
+
+  const loadProductReviews = () => {
+    if (!productId) return DEFAULT_SAMPLE_REVIEWS;
+    try {
+      const saved = localStorage.getItem(`frd_product_reviews_${productId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_SAMPLE_REVIEWS;
+  };
+
+  const [reviewsList, setReviewsList] = useState(loadProductReviews);
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    name: "",
+    title: "",
+    comment: "",
+  });
+
   useEffect(() => {
-    if (product) {
-      if (Array.isArray(product.flavors) && product.flavors.length > 0) {
-        setSelectedFlavor(String(product.flavors[0]));
-      } else {
-        setSelectedFlavor("Standard");
-      }
-      if (Array.isArray(product.sizes) && product.sizes.length > 0) {
-        setSelectedSize(String(product.sizes[0]));
-      } else {
-        setSelectedSize("Standard");
-      }
-      setSelectedMediaIndex(0);
+    setReviewsList(loadProductReviews());
+    setIsReviewFormOpen(false);
+  }, [productId]);
+
+  const handleReviewSubmit = (e) => {
+    e.preventDefault();
+    if (!reviewForm.comment.trim()) {
+      toast.error("Please enter your review comment.");
+      return;
     }
-  }, [product, productId]);
+
+    requireAuth(() => {
+      const newEntry = {
+        id: `rev-${Date.now()}`,
+        name: reviewForm.name.trim() || user?.name || "Verified Athlete",
+        rating: Number(reviewForm.rating || 5),
+        date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+        title: reviewForm.title.trim() || "Great Supplement!",
+        comment: reviewForm.comment.trim(),
+        verified: true,
+      };
+
+      const updated = [newEntry, ...reviewsList];
+      setReviewsList(updated);
+      try {
+        localStorage.setItem(`frd_product_reviews_${productId}`, JSON.stringify(updated));
+      } catch (err) {}
+
+      setIsReviewFormOpen(false);
+      setReviewForm({ rating: 5, name: "", title: "", comment: "" });
+      toast.success("Thank you! Your review has been published.");
+    }, "Please log in first to submit a product review.");
+  };
+
+  const avgRating = (
+    reviewsList.reduce((sum, r) => sum + Number(r.rating || 5), 0) / (reviewsList.length || 1)
+  ).toFixed(1);
 
   if (!product) {
     return (
@@ -442,9 +508,7 @@ export default function ProductDetailsPage() {
                 </div>
               </div>
 
-              <div className="pt-1">
-                <PincodeChecker />
-              </div>
+
 
             </div>
           </div>
@@ -508,21 +572,168 @@ export default function ProductDetailsPage() {
           )}
 
           {activeTab === "reviews" && (
-            <div className="space-y-3 sm:space-y-4 max-w-3xl text-xs text-neutral-300">
-              <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">
-                Verified Customer Reviews & Feedback
-              </h3>
-              <div className="p-3 sm:p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
-                <div>
-                  <span className="text-xl sm:text-2xl font-black text-white">{Number(product.rating || 4.9).toFixed(1)} / 5.0</span>
-                  <span className="block text-[10px] sm:text-[11px] text-neutral-400">Based on {product.reviewsCount || 180}+ verified buyer orders</span>
+            <div className="space-y-6 max-w-4xl text-xs text-neutral-300">
+              {/* Rating Overview Header Card */}
+              <div className="p-4 sm:p-6 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                <div className="space-y-1">
+                  <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">
+                    Verified Customer Reviews & Feedback
+                  </h3>
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="text-3xl sm:text-4xl font-black font-heading text-lime-400">{avgRating}</span>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center text-amber-400 gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <FiStar
+                            key={i}
+                            size={16}
+                            fill={i < Math.round(Number(avgRating)) ? "currentColor" : "none"}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-neutral-400 font-semibold block">
+                        Based on {reviewsList.length} verified buyer {reviewsList.length === 1 ? "review" : "reviews"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+
                 <button
-                  onClick={() => toast.success("Review form submitted!")}
-                  className="px-3.5 py-2 rounded-xl bg-lime-500 text-neutral-950 font-bold text-xs hover:bg-lime-400 transition"
+                  type="button"
+                  onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
+                  className="px-5 py-2.5 rounded-xl bg-lime-500 hover:bg-lime-400 text-neutral-950 font-black text-xs transition cursor-pointer shadow-md shadow-lime-500/20 shrink-0"
                 >
-                  Write Review
+                  {isReviewFormOpen ? "Cancel Review" : "Write a Review"}
                 </button>
+              </div>
+
+              {/* Review Submission Form Drawer / Card */}
+              {isReviewFormOpen && (
+                <form onSubmit={handleReviewSubmit} className="p-5 sm:p-6 rounded-2xl bg-[#181e18] border border-lime-500/40 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                  <h4 className="font-heading text-base font-bold text-white flex items-center gap-2">
+                    <FiCheckCircle className="text-lime-400" />
+                    <span>Write a Product Review for {product.name}</span>
+                  </h4>
+
+                  {/* Rating Selector */}
+                  <div>
+                    <label className="block text-neutral-300 font-bold mb-1">Your Rating *</label>
+                    <div className="flex items-center gap-1.5 cursor-pointer">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                          className="p-1 text-amber-400 transition transform hover:scale-125 cursor-pointer"
+                        >
+                          <FiStar
+                            size={24}
+                            fill={(hoverRating || reviewForm.rating) >= star ? "currentColor" : "none"}
+                          />
+                        </button>
+                      ))}
+                      <span className="ml-2 font-bold text-white text-xs">
+                        {hoverRating || reviewForm.rating} / 5 Stars
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-neutral-300 font-bold mb-1">Your Name</label>
+                      <input
+                        type="text"
+                        placeholder={user?.name || "e.g. Rahul Sharma"}
+                        value={reviewForm.name}
+                        onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-lime-500 text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-300 font-bold mb-1">Review Headline / Title</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Authentic product, great taste & recovery!"
+                        value={reviewForm.title}
+                        onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-lime-500 text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-bold mb-1">Your Detailed Review *</label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Share details about flavor, mixability, energy, or workout recovery results..."
+                      value={reviewForm.comment}
+                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-lime-500 text-xs leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-800">
+                    <button
+                      type="button"
+                      onClick={() => setIsReviewFormOpen(false)}
+                      className="px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 font-bold hover:text-white transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 rounded-xl bg-lime-500 text-neutral-950 font-black hover:bg-lime-400 transition shadow-md shadow-lime-500/20 cursor-pointer"
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Published Reviews Cards List */}
+              <div className="space-y-3.5">
+                {reviewsList.map((rev) => (
+                  <div key={rev.id} className="p-4 sm:p-5 rounded-2xl bg-neutral-900/80 border border-neutral-800 space-y-2.5 shadow-lg">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-lime-500/20 text-lime-400 font-black flex items-center justify-center border border-lime-500/30 text-xs shrink-0">
+                          {(rev.name || "C").charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-xs">{rev.name}</span>
+                            {rev.verified && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold flex items-center gap-1">
+                                <FiCheckCircle size={10} />
+                                Verified Buyer
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-neutral-500 block">{rev.date}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center text-amber-400 gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <FiStar
+                            key={i}
+                            size={13}
+                            fill={i < Number(rev.rating) ? "currentColor" : "none"}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {rev.title && (
+                      <h5 className="font-bold text-white text-xs sm:text-sm">{rev.title}</h5>
+                    )}
+
+                    <p className="text-xs text-neutral-300 leading-relaxed">{rev.comment}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}

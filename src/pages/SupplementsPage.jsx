@@ -11,6 +11,7 @@ export default function SupplementsPage() {
   const {
     categories,
     tags,
+
     filteredProducts,
     selectedCategory,
     setSelectedCategory,
