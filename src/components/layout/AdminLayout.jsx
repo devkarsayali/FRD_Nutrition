@@ -144,10 +144,9 @@ export default function AdminLayout() {
     };
   }, [cartContextOrders, location.pathname]);
 
-  // Auth check bypassed to allow direct URL access to dashboard without login
-  // if (!isAdminLoggedIn) {
-  //   return <Navigate to="/admin/login" replace />;
-  // }
+  if (!isAdminLoggedIn) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     month: "short",
