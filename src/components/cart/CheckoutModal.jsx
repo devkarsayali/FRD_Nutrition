@@ -72,7 +72,7 @@ export default function CheckoutModal() {
   }, 0);
 
   const savedAmount = calculatedSavings > 0 ? calculatedSavings : 1800;
-  const shippingFee = subtotal >= 2999 ? 0 : 50;
+  const shippingFee = 0;
   const finalTotal = subtotal + shippingFee;
 
   const handleSubmit = (e) => {

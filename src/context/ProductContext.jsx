@@ -6,7 +6,7 @@ import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firesto
 const ProductContext = createContext();
 const STORAGE_KEY = "frd_products_inventory_v7";
 
-export const calculateQuantitySoldMap = () => {
+export const calculateQuantitySoldMap = (firestoreOrdersList = []) => {
   const soldMap = {};
   const RESTORABLE_STATUSES = ["cancelled", "rejected", "refunded", "returned"];
   try {
@@ -15,6 +15,10 @@ export const calculateQuantitySoldMap = () => {
       if (!o || !o.id) return;
       orderMap.set(o.id, o);
     };
+
+    if (Array.isArray(firestoreOrdersList)) {
+      firestoreOrdersList.forEach(addOrder);
+    }
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -246,7 +250,7 @@ export function ProductProvider({ children }) {
             setProducts(normalized);
             normalized.forEach((p) => {
               if (p.id) {
-                setDoc(doc(db, "products", p.id), p).catch(() => {});
+                setDoc(doc(db, "products", p.id), p).catch(() => { });
               }
             });
           } else {
@@ -305,6 +309,34 @@ export function ProductProvider({ children }) {
     } catch (e) {
       console.warn("Firebase categories sync setup error:", e);
     }
+  }, []);
+
+  // Real-time Firebase Firestore Sync for Orders -> updates Quantity Sold & Available Stock
+  useEffect(() => {
+    let unsubscribeOrders = () => {};
+    try {
+      unsubscribeOrders = onSnapshot(
+        collection(db, "orders"),
+        (snapshot) => {
+          const fbOrders = [];
+          snapshot.forEach((docSnap) => {
+            fbOrders.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          const soldMap = calculateQuantitySoldMap(fbOrders);
+          setProducts((prevProducts) => {
+            if (!Array.isArray(prevProducts) || prevProducts.length === 0) return prevProducts;
+            return prevProducts.map((p, idx) => normalizeStockValue(p, idx, soldMap));
+          });
+        },
+        (err) => {
+          console.warn("Firestore orders soldMap sync warning:", err);
+        }
+      );
+    } catch (e) {}
+
+    return () => {
+      if (typeof unsubscribeOrders === "function") unsubscribeOrders();
+    };
   }, []);
 
   // Admin CRUD Functions

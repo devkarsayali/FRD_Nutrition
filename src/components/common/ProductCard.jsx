@@ -41,11 +41,10 @@ export default function ProductCard({ product, onQuickView }) {
         <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 flex flex-col gap-1 sm:gap-2">
           <button
             onClick={handleWishlistToggle}
-            className={`p-1.5 sm:p-2 rounded-full backdrop-blur-md transition cursor-pointer ${
-              isWishlisted
+            className={`p-1.5 sm:p-2 rounded-full backdrop-blur-md transition cursor-pointer ${isWishlisted
                 ? "bg-red-500/20 text-red-500 border border-red-500/40"
                 : "bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/60 shadow-sm"
-            }`}
+              }`}
             title="Wishlist"
           >
             <FiHeart size={13} fill={isWishlisted ? "currentColor" : "none"} />
@@ -114,11 +113,10 @@ export default function ProductCard({ product, onQuickView }) {
           <button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all ${
-              isOutOfStock
+            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all ${isOutOfStock
                 ? "bg-slate-700 text-slate-400 cursor-not-allowed shadow-none opacity-50"
                 : "bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 hover:scale-110 shadow-amber-500/20 cursor-pointer"
-            }`}
+              }`}
             title={isOutOfStock ? "Out of Stock" : "Add to Cart"}
           >
             <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

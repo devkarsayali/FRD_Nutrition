@@ -1138,10 +1138,10 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                         {availableCalc} <span className="text-xs font-bold text-neutral-400">Units Available</span>
                       </span>
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${availableCalc === 0
-                          ? "bg-red-500/20 text-red-400 border-red-500/30"
-                          : availableCalc < 10
-                            ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                            : "bg-lime-500/20 text-lime-400 border-lime-500/30"
+                        ? "bg-red-500/20 text-red-400 border-red-500/30"
+                        : availableCalc < 10
+                          ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                          : "bg-lime-500/20 text-lime-400 border-lime-500/30"
                         }`}>
                         {availableCalc === 0 ? "Out of Stock" : availableCalc < 10 ? "Low Stock" : "In Stock"}
                       </span>

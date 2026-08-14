@@ -109,19 +109,12 @@ export default function CartDrawer() {
 
           {/* Free Shipping Bar */}
           <div className="px-6 py-3.5 bg-neutral-900 border-b border-neutral-800/80 text-xs">
-            {freeShippingRemaining > 0 ? (
-              <p className="text-neutral-300">
-                Add <span className="font-bold text-[#f5b800]">₹{freeShippingRemaining}</span> more for <span className="text-[#f5b800] font-bold">FREE Express Delivery</span> 🚚
-              </p>
-            ) : (
-              <p className="text-[#f5b800] font-semibold flex items-center gap-1.5">
-                🎉 Congratulations! You unlocked FREE Express Delivery!
-              </p>
-            )}
+            <p className="text-[#f5b800] font-bold flex items-center gap-1.5">
+              🎉 Enjoy FREE Express Pan-India Delivery on all orders! 🚚
+            </p>
             <div className="w-full bg-neutral-800 h-2 rounded-full mt-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-[#f5b800] to-amber-500 h-full transition-all duration-500"
-                style={{ width: `${freeShippingPercent}%` }}
+                className="bg-gradient-to-r from-[#f5b800] to-amber-500 h-full w-full"
               />
             </div>
           </div>

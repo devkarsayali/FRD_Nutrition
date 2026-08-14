@@ -69,7 +69,7 @@ export default function ProductDetailsPage() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (e) {}
+    } catch (e) { }
     return DEFAULT_SAMPLE_REVIEWS;
   };
 
@@ -110,7 +110,7 @@ export default function ProductDetailsPage() {
       setReviewsList(updated);
       try {
         localStorage.setItem(`frd_product_reviews_${productId}`, JSON.stringify(updated));
-      } catch (err) {}
+      } catch (err) { }
 
       setIsReviewFormOpen(false);
       setReviewForm({ rating: 5, name: "", title: "", comment: "" });
@@ -138,8 +138,8 @@ export default function ProductDetailsPage() {
     Array.isArray(product.images) && product.images.length > 0
       ? product.images
       : product.image
-      ? [product.image]
-      : []
+        ? [product.image]
+        : []
   ).map((url) => ({ type: "image", url: String(url || "") }));
 
   const videoMedia = (
@@ -217,7 +217,7 @@ export default function ProductDetailsPage() {
           title: product.name || "FRD Nutrition Supplement",
           url: window.location.href,
         })
-        .catch(() => {});
+        .catch(() => { });
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Product link copied to clipboard!");
@@ -247,7 +247,7 @@ export default function ProductDetailsPage() {
 
         <div className="bg-[#141813] rounded-2xl sm:rounded-3xl border border-neutral-800 p-3.5 sm:p-8 shadow-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 lg:gap-12 items-start">
-            
+
             <div className="lg:col-span-6 space-y-3 sm:space-y-4">
               <div className="bg-[#191e19] rounded-xl sm:rounded-2xl border border-neutral-800 p-2.5 sm:p-6 relative flex items-center justify-center min-h-[200px] sm:min-h-[440px] overflow-hidden group">
                 <button
@@ -298,11 +298,10 @@ export default function ProductDetailsPage() {
                     <button
                       key={idx}
                       onClick={() => setSelectedMediaIndex(idx)}
-                      className={`relative w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${
-                        selectedMediaIndex === idx
+                      className={`relative w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${selectedMediaIndex === idx
                           ? "border-lime-500 ring-2 ring-lime-500/30"
                           : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
-                      }`}
+                        }`}
                     >
                       {item.type === "video" ? (
                         <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center text-lime-400">
@@ -387,11 +386,10 @@ export default function ProductDetailsPage() {
                       <button
                         key={fIdx}
                         onClick={() => handleFlavorSelect(flavor, fIdx)}
-                        className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold uppercase transition ${
-                          selectedFlavor === String(flavor)
+                        className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold uppercase transition ${selectedFlavor === String(flavor)
                             ? "bg-lime-500 text-neutral-950 font-black shadow-md shadow-lime-500/20"
                             : "bg-neutral-900 border border-neutral-800 text-neutral-300 hover:border-neutral-700"
-                        }`}
+                          }`}
                       >
                         {String(flavor)}
                       </button>
@@ -410,11 +408,10 @@ export default function ProductDetailsPage() {
                       <button
                         key={sIdx}
                         onClick={() => setSelectedSize(String(size))}
-                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold border transition ${
-                          selectedSize === String(size)
+                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold border transition ${selectedSize === String(size)
                             ? "border-lime-500 bg-lime-500/10 text-lime-400"
                             : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700"
-                        }`}
+                          }`}
                       >
                         {String(size)}
                       </button>
@@ -458,11 +455,10 @@ export default function ProductDetailsPage() {
                 <button
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-extrabold uppercase text-xs sm:text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 min-w-0 ${
-                    isOutOfStock
+                  className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-extrabold uppercase text-xs sm:text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 min-w-0 ${isOutOfStock
                       ? "bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none border border-neutral-700"
                       : "bg-lime-500 hover:bg-lime-400 text-neutral-950 shadow-lime-500/20 cursor-pointer"
-                  }`}
+                    }`}
                 >
                   <FiShoppingBag size={17} className="shrink-0" />
                   <span className="truncate">{isOutOfStock ? "OUT OF STOCK" : "ADD TO CART"}</span>
@@ -470,11 +466,10 @@ export default function ProductDetailsPage() {
 
                 <button
                   onClick={() => toggleWishlist(product.id)}
-                  className={`p-3 sm:p-4 rounded-xl border transition shrink-0 ${
-                    isWishlisted
+                  className={`p-3 sm:p-4 rounded-xl border transition shrink-0 ${isWishlisted
                       ? "border-red-500/40 bg-red-500/10 text-red-400"
                       : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-white"
-                  }`}
+                    }`}
                   title="Wishlist"
                 >
                   <FiHeart size={18} fill={isWishlisted ? "currentColor" : "none"} />
@@ -524,11 +519,10 @@ export default function ProductDetailsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`font-bold text-xs sm:text-sm whitespace-nowrap transition py-2 relative ${
-                  activeTab === tab.id
+                className={`font-bold text-xs sm:text-sm whitespace-nowrap transition py-2 relative ${activeTab === tab.id
                     ? "text-lime-400"
                     : "text-neutral-400 hover:text-white"
-                }`}
+                  }`}
               >
                 <span>{tab.label}</span>
                 {activeTab === tab.id && (

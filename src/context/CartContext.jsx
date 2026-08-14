@@ -218,7 +218,7 @@ export function CartProvider({ children }) {
       }
     }
 
-    const shippingFee = cartSubtotal >= 2999 ? 0 : 50;
+    const shippingFee = 0;
     const totalPayable = cartSubtotal + shippingFee;
     const nowTimeStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const newOrder = {
@@ -238,7 +238,7 @@ export function CartProvider({ children }) {
       txnId: `TXN-${Date.now().toString().slice(-8)}`,
       subtotal: cartSubtotal,
       gst: Math.round(cartSubtotal * 0.18),
-      shipping: shippingFee,
+      shipping: 0,
       total: totalPayable,
       totalAmount: totalPayable,
       customer: {
