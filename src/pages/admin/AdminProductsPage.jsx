@@ -12,7 +12,7 @@ import {
   FiUpload,
   FiX,
 } from "react-icons/fi";
-import { useProducts } from "../../context/ProductContext";
+import { useProducts, isCategoryMatch } from "../../context/ProductContext";
 
 export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen }) {
   const [searchParams] = useSearchParams();
@@ -377,13 +377,7 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase());
 
-    const prodCatKey = getProductCategoryKey(p);
-    const selectedCatNorm = (selectedCategoryFilter || "").toLowerCase();
-    const matchesCat =
-      selectedCatNorm === "all" ||
-      selectedCatNorm === "all categories" ||
-      prodCatKey.toLowerCase() === selectedCatNorm ||
-      (p.category || "").toLowerCase().includes(selectedCatNorm);
+    const matchesCat = isCategoryMatch(p.category, selectedCategoryFilter);
 
     const matchesStock =
       stockFilter === "All"

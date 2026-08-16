@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FiAlertCircle, FiBox, FiMessageSquare, FiShoppingBag } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { useProducts } from "../../context/ProductContext";
+import { useProducts, isCategoryMatch } from "../../context/ProductContext";
 import AdminDoughnutChart from "../../components/admin/AdminDoughnutChart";
 import { db } from "../../firebase/firebase.config";
 import { collection, onSnapshot } from "firebase/firestore";
@@ -143,7 +143,7 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
   // Dynamic Product Categories Chart Data (Automatically includes any new categories added by admin)
   const categoryChartData = activeCategories.map((catName, idx) => ({
     label: catName,
-    value: products.filter((p) => getProductCategoryKey(p) === catName).length,
+    value: products.filter((p) => isCategoryMatch(p.category, catName)).length,
     color: COLOR_PALETTE[idx % COLOR_PALETTE.length],
     link: `/admin/products?category=${encodeURIComponent(catName)}`,
   }));

@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import oipLogo from "../../assets/OIP.png";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { isValidEmail } from "../../utils/validation";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase/firebase.config";
 
 export default function AdminLoginPage() {
   const { loginAdmin, isAdminLoggedIn } = useAdminAuth();
@@ -14,6 +16,7 @@ export default function AdminLoginPage() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResetSent, setIsResetSent] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,14 +41,24 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleForgotSubmit = (e) => {
+  const handleForgotSubmit = async (e) => {
     e.preventDefault();
-    if (!isValidEmail(resetEmail)) {
+    const targetEmail = resetEmail.trim();
+    if (!isValidEmail(targetEmail)) {
       toast.error("Please enter a valid email address.");
       return;
     }
-    setIsResetSent(true);
-    toast.success(`Password reset link sent to ${resetEmail}`);
+    setSendingReset(true);
+    try {
+      await sendPasswordResetEmail(auth, targetEmail);
+      setIsResetSent(true);
+      toast.success(`Password reset email sent to ${targetEmail}! Check your inbox.`);
+    } catch (err) {
+      console.error("Firebase reset email error:", err);
+      toast.error(err.code === "auth/user-not-found" ? "No admin account found with this email." : err.message || "Failed to send reset link.");
+    } finally {
+      setSendingReset(false);
+    }
   };
 
   return (

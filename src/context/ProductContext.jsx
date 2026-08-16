@@ -128,6 +128,73 @@ export const getProductCategoryKey = (prod) => {
   return prod.category.trim();
 };
 
+export const isCategoryMatch = (productCategory, targetCategory) => {
+  if (!targetCategory || targetCategory === "All Categories" || targetCategory === "All") {
+    return true;
+  }
+  if (!productCategory) return false;
+
+  const prod = String(productCategory).toLowerCase().trim();
+  const target = String(targetCategory).toLowerCase().trim();
+
+  if (prod === target) return true;
+
+  const cleanProd = prod.replace(/[^a-z0-9]/g, "");
+  const cleanTarget = target.replace(/[^a-z0-9]/g, "");
+
+  if (cleanProd === cleanTarget) return true;
+  if (cleanProd.length >= 3 && cleanTarget.length >= 3) {
+    if (cleanProd.includes(cleanTarget) || cleanTarget.includes(cleanProd)) return true;
+  }
+
+  // Supplement category alias/keyword matching
+  if (cleanTarget.includes("creatine") && cleanProd.includes("creatine")) return true;
+
+  if (
+    (cleanTarget.includes("bcaa") || cleanTarget.includes("amino") || cleanTarget.includes("eaa")) &&
+    (cleanProd.includes("bcaa") || cleanProd.includes("amino") || cleanProd.includes("eaa") || cleanProd.includes("branched"))
+  ) {
+    return true;
+  }
+
+  if (
+    (cleanTarget.includes("mass") || cleanTarget.includes("gainer")) &&
+    (cleanProd.includes("mass") || cleanProd.includes("gainer"))
+  ) {
+    return true;
+  }
+
+  if (
+    (cleanTarget.includes("preworkout") || cleanTarget.includes("pre")) &&
+    (cleanProd.includes("preworkout") || cleanProd.includes("pre") || cleanProd.includes("pump"))
+  ) {
+    return true;
+  }
+
+  if (
+    (cleanTarget.includes("postworkout") || cleanTarget.includes("post")) &&
+    (cleanProd.includes("postworkout") || cleanProd.includes("post") || cleanProd.includes("recovery"))
+  ) {
+    return true;
+  }
+
+  if (
+    (cleanTarget.includes("vitamin") || cleanTarget.includes("vitamins")) &&
+    (cleanProd.includes("vitamin") || cleanProd.includes("multivitamin") || cleanProd.includes("mineral") || cleanProd.includes("fatburner") || cleanProd.includes("carnitine"))
+  ) {
+    return true;
+  }
+
+  if (
+    cleanTarget.includes("protein") &&
+    (cleanProd.includes("protein") || cleanProd.includes("whey") || cleanProd.includes("isolate"))
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 export const TAGS = [
   "All Tags",
   "Popular",
@@ -606,17 +673,7 @@ export function ProductProvider({ children }) {
 
   // Filtered & Sorted Products
   const filteredProducts = safeProducts.filter((product) => {
-    const normCategory = selectedCategory.toLowerCase().trim();
-    const prodCatRaw = (product.category || "").toLowerCase().trim();
-    const prodCatKey = getProductCategoryKey(product).toLowerCase().trim();
-
-    const matchesCategory =
-      normCategory === "all categories" ||
-      normCategory === "all" ||
-      prodCatKey === normCategory ||
-      prodCatRaw === normCategory ||
-      prodCatRaw.includes(normCategory) ||
-      normCategory.includes(prodCatRaw);
+    const matchesCategory = isCategoryMatch(product.category, selectedCategory);
 
     const matchesPrice = product.price <= maxPrice;
 

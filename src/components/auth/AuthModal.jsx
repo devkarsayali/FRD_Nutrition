@@ -5,6 +5,8 @@ import { FiCheckCircle, FiEye, FiEyeOff, FiLock, FiMail, FiUser, FiX } from "rea
 import toast from "react-hot-toast";
 import { useUserAuth } from "../../context/UserAuthContext";
 import { isValidEmail, isValidPhone } from "../../utils/validation";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase/firebase.config";
 
 export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose }) {
   const { isAuthOpen, setIsAuthOpen, loginUser, logoutUser, user: contextUser } = useUserAuth();
@@ -138,14 +140,21 @@ export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose
     handleClose();
   };
 
-  const handleForgotPassword = (e) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
-    if (!formData.email) {
-      toast.error("Please enter your registered email address.");
+    const resetEmail = (formData.email || "").trim();
+    if (!resetEmail || !isValidEmail(resetEmail)) {
+      toast.error("Please enter a valid registered email address.");
       return;
     }
-    toast.success(`Password reset instructions sent to ${formData.email}!`);
-    setMode("login");
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast.success(`Password reset link sent to ${resetEmail}! Check your inbox.`);
+      setMode("login");
+    } catch (err) {
+      console.error("Firebase reset email error:", err);
+      toast.error(err.code === "auth/user-not-found" ? "No account found with this email." : err.message || "Failed to send reset email.");
+    }
   };
 
   const handleGoogleLogin = () => {

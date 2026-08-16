@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { FiEdit2, FiFolderPlus, FiGrid, FiPackage, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { DEFAULT_ADMIN_CATEGORIES, INITIAL_PRODUCTS } from "../../data/initialProducts";
+import { DEFAULT_ADMIN_CATEGORIES } from "../../data/initialProducts";
 import { db } from "../../firebase/firebase.config";
 import { doc, setDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
+import { useProducts, isCategoryMatch } from "../../context/ProductContext";
 
 export default function AdminCategoriesPage() {
   const navigate = useNavigate();
+  const { products } = useProducts();
   const [categories, setCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -40,17 +42,8 @@ export default function AdminCategoriesPage() {
   }, [isModalOpen]);
 
   const getProductCount = (categoryName) => {
-    try {
-      const savedProducts = localStorage.getItem("frd_products_inventory_v7");
-      const products = savedProducts ? JSON.parse(savedProducts) : INITIAL_PRODUCTS;
-      return products.filter((p) => {
-        const cat = (p.category || "").toLowerCase().trim();
-        const target = categoryName.toLowerCase().trim();
-        return cat === target || cat.includes(target);
-      }).length;
-    } catch (e) {
-      return 0;
-    }
+    if (!Array.isArray(products)) return 0;
+    return products.filter((p) => isCategoryMatch(p.category, categoryName)).length;
   };
 
   const loadCategories = async () => {

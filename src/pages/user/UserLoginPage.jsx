@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import oipLogo from "../../assets/OIP.png";
 import { useUserAuth } from "../../context/UserAuthContext";
 import { isValidEmail } from "../../utils/validation";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase/firebase.config";
 
 export default function UserLoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -140,14 +142,21 @@ export default function UserLoginPage() {
     navigate("/user/dashboard");
   };
 
-  const handleForgotPassword = (e) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
-    if (!formData.email) {
-      toast.error("Please enter your registered email address.");
+    const resetEmail = (formData.email || "").trim();
+    if (!resetEmail || !isValidEmail(resetEmail)) {
+      toast.error("Please enter a valid registered email address.");
       return;
     }
-    toast.success(`Password reset instructions sent to ${formData.email}!`);
-    handleSwitchMode("login");
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast.success(`Password reset link sent to ${resetEmail}! Check your inbox.`);
+      handleSwitchMode("login");
+    } catch (err) {
+      console.error("Firebase reset email error:", err);
+      toast.error(err.code === "auth/user-not-found" ? "No account found with this email." : err.message || "Failed to send reset email.");
+    }
   };
 
   const handleGoogleLogin = () => {
