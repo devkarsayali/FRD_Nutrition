@@ -191,45 +191,69 @@ export default function AdminOrdersPage({ defaultTab }) {
     try {
       const orderMap = new Map();
 
-      // Helper to add order to map cleanly
-      const addOrderToMap = (o) => {
-        if (!o || !o.id) return;
-        if (!o.items || o.items.length === 0) {
-          if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
-        }
+      const formatFirestoreOrder = (o) => ({
+        ...o,
+        customer: {
+          fullName: o.customer?.fullName || o.shippingAddress?.name || "Customer",
+          phone: o.customer?.phone || o.shippingAddress?.phone || "N/A",
+          email: o.customer?.email || "",
+          address: o.customer?.address || o.shippingAddress?.address || "",
+          paymentMethod: o.customer?.paymentMethod || o.paymentMethod || "Prepaid",
+        },
+        items: o.items || [],
+        readStatus: o.readStatus || "unread",
+      });
 
-        const existing = orderMap.get(o.id) || {};
-        const merged = {
-          ...existing,
-          ...o,
-          customer: {
-            fullName: o.customer?.fullName || o.shippingAddress?.name || existing.customer?.fullName || "Customer",
-            phone: o.customer?.phone || o.shippingAddress?.phone || existing.customer?.phone || "N/A",
-            email: o.customer?.email || existing.customer?.email || "",
-            address: o.customer?.address || o.shippingAddress?.address || existing.customer?.address || "",
-            paymentMethod: o.customer?.paymentMethod || o.paymentMethod || existing.customer?.paymentMethod || "Prepaid",
-          },
-          items: o.items || existing.items || [],
-          readStatus: o.readStatus || existing.readStatus || "read",
-        };
-        orderMap.set(o.id, merged);
-      };
-
-      // 1. Add Firestore orders
+      // 1. Add Firestore orders first (authoritative live snapshot data)
       if (Array.isArray(providedFirestoreOrders)) {
-        providedFirestoreOrders.forEach(addOrderToMap);
+        providedFirestoreOrders.forEach((o) => {
+          if (o && o.id) orderMap.set(o.id, formatFirestoreOrder(o));
+        });
       } else {
         try {
           const snap = await getDocs(collection(db, "orders"));
-          snap.forEach((docSnap) => addOrderToMap({ id: docSnap.id, ...docSnap.data() }));
+          snap.forEach((docSnap) => {
+            const o = { id: docSnap.id, ...docSnap.data() };
+            orderMap.set(o.id, formatFirestoreOrder(o));
+          });
         } catch (fErr) {
           console.warn("Firestore loadOrders warning:", fErr);
         }
       }
 
+      // Helper to merge secondary sources (cartContext & localStorage) without overwriting Firestore live fields
+      const addSecondaryOrderToMap = (o) => {
+        if (!o || !o.id) return;
+        if (!o.items || o.items.length === 0) {
+          if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
+        }
+
+        const existing = orderMap.get(o.id);
+        if (!existing) {
+          orderMap.set(o.id, formatFirestoreOrder(o));
+        } else {
+          // Keep Firestore's live properties (readStatus, status) prioritized over stale local storage
+          const merged = {
+            ...o,
+            ...existing,
+            customer: {
+              fullName: existing.customer?.fullName || o.customer?.fullName || o.shippingAddress?.name || "Customer",
+              phone: existing.customer?.phone || o.customer?.phone || o.shippingAddress?.phone || "N/A",
+              email: existing.customer?.email || o.customer?.email || "",
+              address: existing.customer?.address || o.customer?.address || o.shippingAddress?.address || "",
+              paymentMethod: existing.customer?.paymentMethod || o.customer?.paymentMethod || o.paymentMethod || "Prepaid",
+            },
+            items: existing.items?.length ? existing.items : o.items || [],
+            readStatus: existing.readStatus !== undefined ? existing.readStatus : o.readStatus || "unread",
+            status: existing.status || o.status || "Ordered",
+          };
+          orderMap.set(o.id, merged);
+        }
+      };
+
       // 2. Add context orders
       if (Array.isArray(cartContextOrders)) {
-        cartContextOrders.forEach(addOrderToMap);
+        cartContextOrders.forEach(addSecondaryOrderToMap);
       }
 
       // 3. Scan ALL localStorage keys containing 'orders' or 'order'
@@ -239,9 +263,9 @@ export default function AdminOrdersPage({ defaultTab }) {
           try {
             const parsed = JSON.parse(localStorage.getItem(key) || "[]");
             if (Array.isArray(parsed)) {
-              parsed.forEach(addOrderToMap);
+              parsed.forEach(addSecondaryOrderToMap);
             } else if (parsed && parsed.id) {
-              addOrderToMap(parsed);
+              addSecondaryOrderToMap(parsed);
             }
           } catch (e) {
             // ignore non-JSON items
@@ -251,6 +275,32 @@ export default function AdminOrdersPage({ defaultTab }) {
 
       const combined = Array.from(orderMap.values());
       setAllOrders(combined);
+
+      // Sync latest Firestore state to localStorage keys so local storage stays updated
+      if (providedFirestoreOrders) {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.toLowerCase().includes("order")) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key) || "[]");
+              if (Array.isArray(data)) {
+                let changed = false;
+                const updated = data.map((localItem) => {
+                  const match = orderMap.get(localItem.id);
+                  if (match && (localItem.readStatus !== match.readStatus || localItem.status !== match.status)) {
+                    changed = true;
+                    return { ...localItem, readStatus: match.readStatus, status: match.status };
+                  }
+                  return localItem;
+                });
+                if (changed) {
+                  localStorage.setItem(key, JSON.stringify(updated));
+                }
+              }
+            } catch (e) {}
+          }
+        }
+      }
     } catch (err) {
       console.error("Failed to load orders:", err);
     }
@@ -493,42 +543,17 @@ export default function AdminOrdersPage({ defaultTab }) {
   };
 
   const handleToggleOrderRead = (id) => {
-    const updatedOrders = allOrders.map((order) => {
-      if (order.id !== id) return order;
-      const nextReadStatus = order.readStatus === "unread" ? "read" : "unread";
-      return { ...order, readStatus: nextReadStatus };
-    });
-    setAllOrders(updatedOrders);
-
-    updateOrderInLocalStorage(id, (o) => ({
-      ...o,
-      readStatus: o.readStatus === "unread" ? "read" : "unread",
-    }));
-
-    if (selectedOrder && selectedOrder.id === id) {
-      setSelectedOrder((prev) =>
-        prev ? { ...prev, readStatus: prev.readStatus === "unread" ? "read" : "unread" } : prev
-      );
-    }
-
-    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
+    const targetOrder = allOrders.find((o) => o.id === id);
+    if (!targetOrder) return;
+    const nextReadStatus = targetOrder.readStatus === "unread" ? "read" : "unread";
+    updateOrderData(id, { readStatus: nextReadStatus });
     toast.success("Order status updated.");
   };
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
     if (order.readStatus === "unread") {
-      const updatedOrders = allOrders.map((o) =>
-        o.id === order.id ? { ...o, readStatus: "read" } : o
-      );
-      setAllOrders(updatedOrders);
-
-      updateOrderInLocalStorage(order.id, (o) => ({
-        ...o,
-        readStatus: "read",
-      }));
-
-      window.dispatchEvent(new CustomEvent("frd_orders_updated"));
+      updateOrderData(order.id, { readStatus: "read" });
     }
   };
 

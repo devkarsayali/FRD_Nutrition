@@ -116,20 +116,43 @@ export default function AdminLayout() {
   const loadUnreadOrdersCount = (providedFirestoreOrders = null) => {
     try {
       const orderMap = new Map();
-      const addOrder = (o) => {
+
+      // 1. Add Firestore live snapshot orders first
+      if (Array.isArray(providedFirestoreOrders)) {
+        providedFirestoreOrders.forEach((o) => {
+          if (o && o.id) orderMap.set(o.id, o);
+        });
+      }
+
+      // Helper for secondary sources (cartContext & localStorage)
+      const addSecondaryOrder = (o) => {
         if (!o || !o.id) return;
         if (!o.items || o.items.length === 0) {
           if (!o.customer?.email && !o.shippingAddress?.email && !o.total && !o.totalAmount) return;
         }
-        orderMap.set(o.id, o);
+
+        const existing = orderMap.get(o.id);
+        if (!existing) {
+          orderMap.set(o.id, o);
+        } else {
+          // If existing came from Firestore live snapshot, preserve its readStatus
+          const mergedReadStatus =
+            existing.readStatus !== undefined
+              ? existing.readStatus
+              : o.readStatus !== undefined
+              ? o.readStatus
+              : "unread";
+
+          orderMap.set(o.id, {
+            ...o,
+            ...existing,
+            readStatus: mergedReadStatus,
+          });
+        }
       };
 
-      if (Array.isArray(providedFirestoreOrders)) {
-        providedFirestoreOrders.forEach(addOrder);
-      }
-
       if (Array.isArray(cartContextOrders)) {
-        cartContextOrders.forEach(addOrder);
+        cartContextOrders.forEach(addSecondaryOrder);
       }
 
       for (let i = 0; i < localStorage.length; i++) {
@@ -138,9 +161,9 @@ export default function AdminLayout() {
           try {
             const parsed = JSON.parse(localStorage.getItem(key) || "[]");
             if (Array.isArray(parsed)) {
-              parsed.forEach(addOrder);
+              parsed.forEach(addSecondaryOrder);
             } else if (parsed && parsed.id) {
-              addOrder(parsed);
+              addSecondaryOrder(parsed);
             }
           } catch {
             // ignore non-json
@@ -150,7 +173,7 @@ export default function AdminLayout() {
 
       const rawOrders = Array.from(orderMap.values());
       const unreadOrders = rawOrders.filter(
-        (o) => o.readStatus === "unread" || (o.status || "").toLowerCase() === "ordered"
+        (o) => (o.readStatus || "unread") === "unread"
       );
 
       setNewOrdersCount(unreadOrders.length);
