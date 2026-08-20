@@ -600,22 +600,6 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-lime-500"
                   />
                 </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-neutral-300 font-bold mb-1">
-                    Subtitle / Short Tagline
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.subtitle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, subtitle: e.target.value })
-                    }
-                    placeholder="e.g. NitroTech Whey 1.8kg + Platinum Creatine 250g Stack"
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-lime-500"
-                  />
-                </div>
-
                 <div>
                   <label className="block text-neutral-300 font-bold mb-1">
                     Category *

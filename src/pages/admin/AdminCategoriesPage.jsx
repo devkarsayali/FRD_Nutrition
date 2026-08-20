@@ -61,7 +61,7 @@ export default function AdminCategoriesPage() {
         localStorage.setItem("frd_admin_categories_v2", JSON.stringify(firestoreCats));
         return;
       }
-    } catch (err) {}
+    } catch (err) { }
 
     const saved = localStorage.getItem("frd_admin_categories_v2");
     if (saved) {
@@ -71,7 +71,7 @@ export default function AdminCategoriesPage() {
           setCategories(parsed);
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     setCategories(DEFAULT_ADMIN_CATEGORIES);
@@ -80,9 +80,9 @@ export default function AdminCategoriesPage() {
     // Upload defaults to Firebase Firestore if collection is empty
     try {
       for (const cat of DEFAULT_ADMIN_CATEGORIES) {
-        setDoc(doc(db, "categories", cat.id), cat).catch(() => {});
+        setDoc(doc(db, "categories", cat.id), cat).catch(() => { });
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const saveCategories = async (updated) => {
@@ -169,16 +169,16 @@ export default function AdminCategoriesPage() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      
 
-        <button
-          onClick={() => handleOpenModal()}
-          className="px-5 py-2.5 rounded-2xl bg-lime-500 hover:bg-lime-400 text-neutral-950 font-heading font-black text-xs transition cursor-pointer shadow-lg shadow-lime-500/20 flex items-center gap-2 shrink-0"
-        >
-          <FiPlus size={16} />
-          <span>Add New Category</span>
-        </button>
-      
+
+      <button
+        onClick={() => handleOpenModal()}
+        className="px-5 py-2.5 rounded-2xl bg-lime-500 hover:bg-lime-400 text-neutral-950 font-heading font-black text-xs transition cursor-pointer shadow-lg shadow-lime-500/20 flex items-center gap-2 shrink-0"
+      >
+        <FiPlus size={16} />
+        <span>Add New Category</span>
+      </button>
+
 
       {/* Categories Grid Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -216,9 +216,6 @@ export default function AdminCategoriesPage() {
                 <h3 className="font-heading text-lg font-black text-white group-hover:text-lime-400 transition">
                   {cat.name}
                 </h3>
-                <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
-                  {cat.description || "High performance nutritional supplement line."}
-                </p>
               </div>
 
               {/* Action & Supplement Count */}
@@ -281,19 +278,6 @@ export default function AdminCategoriesPage() {
                   onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                   placeholder="e.g. Core Lineup, Best Seller"
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-2.5 text-white placeholder-neutral-600 focus:border-lime-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-bold mb-1">
-                  Description:
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief description of products in this category..."
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-2xl p-3 text-white placeholder-neutral-600 focus:border-lime-500 focus:outline-none"
                 />
               </div>
 
