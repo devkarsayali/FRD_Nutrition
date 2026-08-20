@@ -65,26 +65,7 @@ export default function ProductDetailsPage() {
   }, [product?.id, product?.flavors, product?.sizes]);
 
   // Dynamic Product Reviews State & Persistence
-  const DEFAULT_SAMPLE_REVIEWS = [
-    {
-      id: "rev-sample-1",
-      name: "Rahul Sharma",
-      rating: 5,
-      date: "12 Aug 2026",
-      title: "100% Authentic & Insane Results!",
-      comment: "Tastes amazing and mixes effortlessly with cold water. Noticed great recovery and strength gains within 2 weeks. Highly recommended!",
-      verified: true,
-    },
-    {
-      id: "rev-sample-2",
-      name: "Vikas Patel",
-      rating: 5,
-      date: "05 Aug 2026",
-      title: "Fast Delivery & Top Notch Quality",
-      comment: "Received the package within 2 days with direct importer seal intact. Authentic product from FRD Nutrition!",
-      verified: true,
-    },
-  ];
+  const DEFAULT_SAMPLE_REVIEWS = [];
 
   const loadProductReviews = () => {
     if (!productId) return DEFAULT_SAMPLE_REVIEWS;
@@ -324,8 +305,8 @@ export default function ProductDetailsPage() {
                       key={idx}
                       onClick={() => setSelectedMediaIndex(idx)}
                       className={`relative w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition shrink-0 bg-[#191e19] p-1 ${selectedMediaIndex === idx
-                          ? "border-lime-500 ring-2 ring-lime-500/30"
-                          : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
+                        ? "border-lime-500 ring-2 ring-lime-500/30"
+                        : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
                         }`}
                     >
                       {item.type === "video" ? (
@@ -412,8 +393,8 @@ export default function ProductDetailsPage() {
                         key={fIdx}
                         onClick={() => handleFlavorSelect(flavor, fIdx)}
                         className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold uppercase transition ${selectedFlavor === String(flavor)
-                            ? "bg-lime-500 text-neutral-950 font-black shadow-md shadow-lime-500/20"
-                            : "bg-neutral-900 border border-neutral-800 text-neutral-300 hover:border-neutral-700"
+                          ? "bg-lime-500 text-neutral-950 font-black shadow-md shadow-lime-500/20"
+                          : "bg-neutral-900 border border-neutral-800 text-neutral-300 hover:border-neutral-700"
                           }`}
                       >
                         {String(flavor)}
@@ -434,8 +415,8 @@ export default function ProductDetailsPage() {
                         key={sIdx}
                         onClick={() => setSelectedSize(String(size))}
                         className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold border transition ${selectedSize === String(size)
-                            ? "border-lime-500 bg-lime-500/10 text-lime-400"
-                            : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700"
+                          ? "border-lime-500 bg-lime-500/10 text-lime-400"
+                          : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700"
                           }`}
                       >
                         {String(size)}
@@ -481,8 +462,8 @@ export default function ProductDetailsPage() {
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
                   className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-extrabold uppercase text-xs sm:text-sm tracking-wider transition shadow-xl flex items-center justify-center gap-2 active:scale-98 min-w-0 ${isOutOfStock
-                      ? "bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none border border-neutral-700"
-                      : "bg-lime-500 hover:bg-lime-400 text-neutral-950 shadow-lime-500/20 cursor-pointer"
+                    ? "bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none border border-neutral-700"
+                    : "bg-lime-500 hover:bg-lime-400 text-neutral-950 shadow-lime-500/20 cursor-pointer"
                     }`}
                 >
                   <FiShoppingBag size={17} className="shrink-0" />
@@ -492,8 +473,8 @@ export default function ProductDetailsPage() {
                 <button
                   onClick={() => toggleWishlist(product.id)}
                   className={`p-3 sm:p-4 rounded-xl border transition shrink-0 ${isWishlisted
-                      ? "border-red-500/40 bg-red-500/10 text-red-400"
-                      : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-white"
+                    ? "border-red-500/40 bg-red-500/10 text-red-400"
+                    : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-white"
                     }`}
                   title="Wishlist"
                 >
@@ -545,8 +526,8 @@ export default function ProductDetailsPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`font-bold text-xs sm:text-sm whitespace-nowrap transition py-2 relative ${activeTab === tab.id
-                    ? "text-lime-400"
-                    : "text-neutral-400 hover:text-white"
+                  ? "text-lime-400"
+                  : "text-neutral-400 hover:text-white"
                   }`}
               >
                 <span>{tab.label}</span>
@@ -664,7 +645,7 @@ export default function ProductDetailsPage() {
                       <label className="block text-neutral-300 font-bold mb-1">Your Name</label>
                       <input
                         type="text"
-                        placeholder={user?.name || "e.g. Rahul Sharma"}
+                        placeholder={user?.name || "Enter your name"}
                         value={reviewForm.name}
                         onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-lime-500 text-xs font-semibold"
