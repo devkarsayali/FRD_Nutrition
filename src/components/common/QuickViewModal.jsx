@@ -3,21 +3,30 @@ import { FiCheck, FiHelpCircle, FiShoppingBag, FiStar, FiX } from "react-icons/f
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useUserAuth } from "../../context/UserAuthContext";
+import { getNormalizedList } from "../../context/ProductContext";
 
 export default function QuickViewModal({ product, onClose }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { requireAuth } = useUserAuth();
+
+  const flavorsList = getNormalizedList(product?.flavors);
+  const sizesList = getNormalizedList(product?.sizes);
+
   const [selectedFlavor, setSelectedFlavor] = useState(
-    product?.flavors ? product.flavors[0] : "Standard"
+    flavorsList.length > 0 ? flavorsList[0] : "Standard"
   );
   const [selectedSize, setSelectedSize] = useState(
-    product?.sizes ? product.sizes[0] : "Standard"
+    sizesList.length > 0 ? sizesList[0] : "Standard"
   );
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (product) {
+      const fls = getNormalizedList(product.flavors);
+      const szs = getNormalizedList(product.sizes);
+      setSelectedFlavor(fls.length > 0 ? fls[0] : "Standard");
+      setSelectedSize(szs.length > 0 ? szs[0] : "Standard");
       document.documentElement.classList.add("no-scroll");
       document.body.classList.add("no-scroll");
       document.getElementById("root")?.classList.add("no-scroll");
@@ -98,13 +107,13 @@ export default function QuickViewModal({ product, onClose }) {
             </p>
 
             {/* Flavor Picker */}
-            {product.flavors && product.flavors.length > 0 && (
+            {flavorsList.length > 0 && (
               <div>
                 <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">
                   Flavor: <span className="text-white font-bold">{selectedFlavor}</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {product.flavors.map((flavor) => (
+                  {flavorsList.map((flavor) => (
                     <button
                       key={flavor}
                       onClick={() => setSelectedFlavor(flavor)}
@@ -122,13 +131,13 @@ export default function QuickViewModal({ product, onClose }) {
             )}
 
             {/* Size Picker */}
-            {product.sizes && product.sizes.length > 0 && (
+            {sizesList.length > 0 && (
               <div>
                 <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">
                   Size: <span className="text-white font-bold">{selectedSize}</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {product.sizes.map((size) => (
+                  {sizesList.map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}

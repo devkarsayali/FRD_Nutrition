@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useUserAuth } from "./UserAuthContext";
-import { useProducts } from "./ProductContext";
+import { useProducts, getNormalizedList } from "./ProductContext";
 import { db } from "../firebase/firebase.config";
 import { collection, doc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
 
@@ -78,8 +78,10 @@ export function CartProvider({ children }) {
   }, [orders, ordersStorageKey, userEmail]);
 
   const addToCart = (product, quantity = 1, flavor = null, size = null) => {
-    const selectedFlavor = flavor || (product.flavors ? product.flavors[0] : "Standard");
-    const selectedSize = size || (product.sizes ? product.sizes[0] : "Standard");
+    const fls = getNormalizedList(product.flavors);
+    const szs = getNormalizedList(product.sizes);
+    const selectedFlavor = flavor || (fls.length > 0 ? fls[0] : "Standard");
+    const selectedSize = size || (szs.length > 0 ? szs[0] : "Standard");
     const itemKey = `${product.id}-${selectedFlavor}-${selectedSize}`;
 
     // Get latest real-time stock

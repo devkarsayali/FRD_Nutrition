@@ -12,7 +12,7 @@ import {
   FiUpload,
   FiX,
 } from "react-icons/fi";
-import { useProducts, isCategoryMatch } from "../../context/ProductContext";
+import { useProducts, isCategoryMatch, getNormalizedList } from "../../context/ProductContext";
 
 export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen }) {
   const [searchParams] = useSearchParams();
@@ -206,8 +206,8 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
       price: product.price || "",
       originalPrice: product.originalPrice || "",
       stockQuantity: product.stockQuantity !== undefined ? product.stockQuantity : 36,
-      flavors: Array.isArray(product.flavors) ? product.flavors.join(", ") : product.flavors || "",
-      sizes: Array.isArray(product.sizes) ? product.sizes.join(", ") : product.sizes || "",
+      flavors: getNormalizedList(product.flavors).join(", "),
+      sizes: getNormalizedList(product.sizes).join(", "),
       description: product.description || "",
       image: product.image || existingImages[0] || WheyIsolate,
       images: existingImages,
@@ -312,6 +312,8 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
 
     const payload = {
       ...formData,
+      flavors: getNormalizedList(formData.flavors),
+      sizes: getNormalizedList(formData.sizes),
       price: Number(formData.price),
       originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
       inStock: finalInStock,

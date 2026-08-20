@@ -56,6 +56,23 @@ export const calculateQuantitySoldMap = (firestoreOrdersList = []) => {
   return soldMap;
 };
 
+export const getNormalizedList = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val
+      .flatMap((item) => (typeof item === "string" ? item.split(",") : [item]))
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+  if (typeof val === "string") {
+    return val
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
 const normalizeStockValue = (product, index = 0, soldMap = {}) => {
   if (!product) return product;
 
@@ -106,8 +123,13 @@ const normalizeStockValue = (product, index = 0, soldMap = {}) => {
     createdAt = new Date(1770000000000 - index * 86400000).toISOString();
   }
 
+  const flavors = getNormalizedList(product.flavors);
+  const sizes = getNormalizedList(product.sizes);
+
   return {
     ...product,
+    flavors,
+    sizes,
     createdAt,
     initialStock,
     quantitySold,

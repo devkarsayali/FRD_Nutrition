@@ -18,7 +18,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import ProductCard from "../components/common/ProductCard";
 import { useCart } from "../context/CartContext";
-import { useProducts } from "../context/ProductContext";
+import { useProducts, getNormalizedList } from "../context/ProductContext";
 import { useUserAuth } from "../context/UserAuthContext";
 
 export default function ProductDetailsPage() {
@@ -33,11 +33,36 @@ export default function ProductDetailsPage() {
   const availableStock = product?.inStock ? (Number(product.stockQuantity) || 0) : 0;
   const isOutOfStock = availableStock <= 0;
 
-  const [selectedFlavor, setSelectedFlavor] = useState("Standard");
-  const [selectedSize, setSelectedSize] = useState("Standard");
+  const flavorsList = getNormalizedList(product?.flavors);
+  const sizesList = getNormalizedList(product?.sizes);
+
+  const [selectedFlavor, setSelectedFlavor] = useState(
+    flavorsList.length > 0 ? flavorsList[0] : "Standard"
+  );
+  const [selectedSize, setSelectedSize] = useState(
+    sizesList.length > 0 ? sizesList[0] : "Standard"
+  );
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+
+  useEffect(() => {
+    if (flavorsList.length > 0) {
+      if (!selectedFlavor || selectedFlavor === "Standard" || !flavorsList.includes(selectedFlavor)) {
+        setSelectedFlavor(flavorsList[0]);
+      }
+    } else {
+      setSelectedFlavor("Standard");
+    }
+
+    if (sizesList.length > 0) {
+      if (!selectedSize || selectedSize === "Standard" || !sizesList.includes(selectedSize)) {
+        setSelectedSize(sizesList[0]);
+      }
+    } else {
+      setSelectedSize("Standard");
+    }
+  }, [product?.id, product?.flavors, product?.sizes]);
 
   // Dynamic Product Reviews State & Persistence
   const DEFAULT_SAMPLE_REVIEWS = [
@@ -376,13 +401,13 @@ export default function ProductDetailsPage() {
                 )}
               </div>
 
-              {Array.isArray(product.flavors) && product.flavors.length > 0 && (
+              {flavorsList.length > 0 && (
                 <div className="space-y-1.5 sm:space-y-2.5">
                   <label className="block text-[11px] sm:text-xs font-extrabold text-neutral-300 uppercase tracking-wider">
-                    {String(selectedFlavor || "CHOCOLATE").toUpperCase()} :
+                    Flavor: <span className="text-lime-400 font-bold">{String(selectedFlavor || "").toUpperCase()}</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {product.flavors.map((flavor, fIdx) => (
+                    {flavorsList.map((flavor, fIdx) => (
                       <button
                         key={fIdx}
                         onClick={() => handleFlavorSelect(flavor, fIdx)}
@@ -398,13 +423,13 @@ export default function ProductDetailsPage() {
                 </div>
               )}
 
-              {Array.isArray(product.sizes) && product.sizes.length > 0 && (
+              {sizesList.length > 0 && (
                 <div className="space-y-1.5 sm:space-y-2.5">
                   <label className="block text-[11px] sm:text-xs font-extrabold text-neutral-300 uppercase tracking-wider">
-                    Package Size:
+                    Package Size: <span className="text-lime-400 font-bold">{String(selectedSize || "").toUpperCase()}</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {product.sizes.map((size, sIdx) => (
+                    {sizesList.map((size, sIdx) => (
                       <button
                         key={sIdx}
                         onClick={() => setSelectedSize(String(size))}
