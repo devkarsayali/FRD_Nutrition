@@ -402,7 +402,7 @@ export function ProductProvider({ children }) {
 
   // Real-time Firebase Firestore Sync for Orders -> updates Quantity Sold & Available Stock
   useEffect(() => {
-    let unsubscribeOrders = () => {};
+    let unsubscribeOrders = () => { };
     try {
       unsubscribeOrders = onSnapshot(
         collection(db, "orders"),
@@ -421,7 +421,7 @@ export function ProductProvider({ children }) {
           console.warn("Firestore orders soldMap sync warning:", err);
         }
       );
-    } catch (e) {}
+    } catch (e) { }
 
     return () => {
       if (typeof unsubscribeOrders === "function") unsubscribeOrders();
@@ -577,6 +577,7 @@ export function ProductProvider({ children }) {
     if (!Array.isArray(items) || items.length === 0) return;
     setProducts((prev) => {
       let hasChanges = false;
+      const updatedDocs = [];
       const updated = prev.map((p) => {
         const matched = items.find(
           (item) => (item.productId || item.product?.id || item.id) === p.id
@@ -588,16 +589,23 @@ export function ProductProvider({ children }) {
         const newQty = Math.max(0, currentQty - qty);
         hasChanges = true;
 
-        return normalizeStockValue({
+        const norm = normalizeStockValue({
           ...p,
           stockQuantity: newQty,
           inStock: newQty > 0,
         });
+        updatedDocs.push(norm);
+        return norm;
       });
 
       if (hasChanges) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         setTimeout(() => window.dispatchEvent(new CustomEvent("frd_products_updated")), 0);
+        updatedDocs.forEach((docItem) => {
+          if (docItem && docItem.id) {
+            setDoc(doc(db, "products", String(docItem.id)), docItem).catch(() => { });
+          }
+        });
       }
       return updated;
     });
@@ -607,6 +615,7 @@ export function ProductProvider({ children }) {
     if (!Array.isArray(items) || items.length === 0) return;
     setProducts((prev) => {
       let hasChanges = false;
+      const updatedDocs = [];
       const updated = prev.map((p) => {
         const matched = items.find(
           (item) => (item.productId || item.product?.id || item.id) === p.id
@@ -618,16 +627,23 @@ export function ProductProvider({ children }) {
         const newQty = currentQty + qty;
         hasChanges = true;
 
-        return normalizeStockValue({
+        const norm = normalizeStockValue({
           ...p,
           stockQuantity: newQty,
           inStock: newQty > 0,
         });
+        updatedDocs.push(norm);
+        return norm;
       });
 
       if (hasChanges) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         setTimeout(() => window.dispatchEvent(new CustomEvent("frd_products_updated")), 0);
+        updatedDocs.forEach((docItem) => {
+          if (docItem && docItem.id) {
+            setDoc(doc(db, "products", String(docItem.id)), docItem).catch(() => { });
+          }
+        });
       }
       return updated;
     });

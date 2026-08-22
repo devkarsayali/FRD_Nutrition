@@ -1451,39 +1451,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                 </div>
               )}
 
-              {/* Courier Partner & AWB Tracking Section */}
-              <div className="pt-3 border-t border-neutral-800 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-lime-400 block">
-                  Delivery Logistics & Courier Tracking
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="text-[10px] font-bold text-neutral-400 block mb-1">
-                      Courier Partner Name:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. BlueDart, Delhivery, DTDC"
-                      value={selectedOrder.courierName || ""}
-                      onChange={(e) => updateOrderData(selectedOrder.id, { courierName: e.target.value })}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-1.5 text-xs font-bold text-white placeholder-neutral-600 focus:border-lime-500 focus:outline-none"
-                    />
-                  </div>
 
-                  <div>
-                    <label className="text-[10px] font-bold text-neutral-400 block mb-1">
-                      AWB Tracking Number:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. AWB-987654321"
-                      value={selectedOrder.awbTrackingNumber || ""}
-                      onChange={(e) => updateOrderData(selectedOrder.id, { awbTrackingNumber: e.target.value })}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-1.5 text-xs font-bold text-white placeholder-neutral-600 focus:border-lime-500 focus:outline-none font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Purchased Items List */}

@@ -16,6 +16,7 @@ import AdminOrdersPage from "../pages/admin/AdminOrdersPage";
 import AdminProductsPage from "../pages/admin/AdminProductsPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
 import AdminCustomersPage from "../pages/admin/AdminCustomersPage";
+import AdminSalesPage from "../pages/admin/AdminSalesPage";
 
 import PrivacyPolicyPage from "../pages/policies/PrivacyPolicyPage";
 import ReturnsPolicyPage from "../pages/policies/ReturnsPolicyPage";
@@ -73,6 +74,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboardWrapper />} />
         <Route path="dashboard" element={<AdminDashboardWrapper />} />
+        <Route path="sales" element={<AdminSalesPage />} />
         <Route path="products" element={<AdminProductsWrapper />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="orders" element={<AdminOrdersPage defaultTab="orders" />} />

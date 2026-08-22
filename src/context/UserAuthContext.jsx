@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { db } from "../firebase/firebase.config";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 
 const UserAuthContext = createContext();
 const USER_STORAGE_KEY = "frd_user_session_v1";
@@ -37,8 +37,9 @@ export function UserAuthProvider({ children }) {
 
     const fullUser = {
       id: userId,
-      name: userData.name || userEmail.split("@")[0] || "Athlete",
+      name: userData.name || (userEmail ? userEmail.split("@")[0] : "Customer"),
       email: userEmail,
+      photoURL: userData.photoURL || userData.avatar || "",
       phone: userData.phone || "",
       address: userData.address || "",
       city: userData.city || "",
@@ -47,12 +48,14 @@ export function UserAuthProvider({ children }) {
       country: userData.country || "India",
     };
 
-    // Save user profile to Firebase Firestore database
+    // Save user profile to Firebase Firestore database with merge option
     try {
-      await setDoc(doc(db, "users", userEmail), {
-        ...fullUser,
-        lastLoginAt: new Date().toISOString(),
-      });
+      if (userEmail) {
+        await setDoc(doc(db, "users", userEmail), {
+          ...fullUser,
+          lastLoginAt: new Date().toISOString(),
+        }, { merge: true });
+      }
     } catch (firebaseErr) {
       console.warn("Firestore user sync warning:", firebaseErr);
     }
@@ -89,7 +92,7 @@ export function UserAuthProvider({ children }) {
         await setDoc(doc(db, "users", email), {
           ...next,
           updatedAt: new Date().toISOString(),
-        });
+        }, { merge: true });
       } catch (err) {
         console.warn("Firestore profile update warning:", err);
       }

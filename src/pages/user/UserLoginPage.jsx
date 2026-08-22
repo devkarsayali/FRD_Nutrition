@@ -19,32 +19,25 @@ export default function UserLoginPage() {
   }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: "select_account",
+    });
     try {
-      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const googleUser = {
         id: result.user.uid,
-        name: result.user.displayName || "FRD Athlete",
+        name: result.user.displayName || (result.user.email ? result.user.email.split("@")[0] : "Customer"),
         email: result.user.email,
-        photo: result.user.photoURL,
+        photoURL: result.user.photoURL || "",
       };
-      loginUser(googleUser);
-      toast.success(`Welcome back, ${googleUser.name}!`);
+      await loginUser(googleUser);
       navigate("/user/dashboard");
     } catch (err) {
-      console.warn("Google Firebase Auth error, using athlete login fallback:", err);
-      if (err.code === "auth/popup-closed-by-user") {
-        toast.error("Google sign-in popup was closed before completing.");
-        return;
+      console.error("Google login error:", err);
+      if (err.code !== "auth/popup-closed-by-user") {
+        toast.error(err.message || "Google sign-in failed. Please try again.");
       }
-      const fallbackUser = {
-        id: `usr_athlete_${Date.now().toString().slice(-6)}`,
-        name: "Ram Athlete",
-        email: "athlete@gmail.com",
-      };
-      loginUser(fallbackUser);
-      toast.success(`Welcome back, ${fallbackUser.name}!`);
-      navigate("/user/dashboard");
     }
   };
 
@@ -54,10 +47,10 @@ export default function UserLoginPage() {
         initial={{ opacity: 0, y: 25, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-[#0f172a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-center"
+        className="w-full max-w-md bg-[#0f172a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-auto"
       >
         {/* Header Branding */}
-        <div className="space-y-2">
+        <div className="text-center space-y-2">
           <img
             src={oipLogo}
             alt="FRD Nutrition Official Logo"
@@ -67,36 +60,37 @@ export default function UserLoginPage() {
             FRD NUTRITION OFFICIAL STORE
           </span>
           <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
-            Athlete Access
+            User Access
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
             Sign in with your Google account for instant 1-click access to your profile, orders, and exclusive rewards.
           </p>
         </div>
 
         {/* Google Login Button */}
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full py-3.5 px-4 rounded-2xl bg-slate-900 border border-slate-700 hover:border-[#f5b800] text-white font-extrabold hover:bg-slate-800 transition flex items-center justify-center gap-3 text-xs sm:text-sm cursor-pointer shadow-lg shadow-black/40 group"
-          >
-            <FcGoogle size={22} className="group-hover:scale-110 transition-transform" />
-            <span>Continue with Google</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full py-3.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 font-bold hover:bg-slate-800 hover:border-slate-700 transition flex items-center justify-center gap-2.5 text-xs cursor-pointer shadow-sm"
+        >
+          <FcGoogle size={20} />
+          <span>Continue with Google</span>
+        </button>
 
-        {/* Features Info */}
-        <div className="pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-2 text-left">
-          <p className="flex items-center gap-2">
-            <span className="text-[#f5b800]">✓</span> 100% Secure & Verified Authentication
-          </p>
-          <p className="flex items-center gap-2">
-            <span className="text-[#f5b800]">✓</span> Track your orders & delivery updates live
-          </p>
-          <p className="flex items-center gap-2">
-            <span className="text-[#f5b800]">✓</span> Fast checkout with saved shipping address
-          </p>
+        {/* Bullet Points */}
+        <div className="pt-2 border-t border-slate-800/80 space-y-2.5 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="text-[#f5b800] font-bold">✓</span>
+            <span>100% Secure &amp; Verified Authentication</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[#f5b800] font-bold">✓</span>
+            <span>Track your orders &amp; delivery updates live</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[#f5b800] font-bold">✓</span>
+            <span>Fast checkout with saved shipping address</span>
+          </div>
         </div>
       </motion.div>
     </div>

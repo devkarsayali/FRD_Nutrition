@@ -12,6 +12,7 @@ import {
   FiMessageSquare,
   FiSettings,
   FiShoppingBag,
+  FiTrendingUp,
   FiUsers,
   FiX,
 } from "react-icons/fi";
@@ -76,7 +77,7 @@ export default function AdminLayout() {
   useEffect(() => {
     loadUnreadMessagesCount();
 
-    let unsubscribe = () => {};
+    let unsubscribe = () => { };
     try {
       unsubscribe = onSnapshot(
         collection(db, "contact_messages"),
@@ -87,9 +88,9 @@ export default function AdminLayout() {
           });
           setUnreadMessagesCount(unreadCount);
         },
-        () => {}
+        () => { }
       );
-    } catch (e) {}
+    } catch (e) { }
 
     window.addEventListener("frd_contact_messages_updated", loadUnreadMessagesCount);
     window.addEventListener("storage", loadUnreadMessagesCount);
@@ -140,8 +141,8 @@ export default function AdminLayout() {
             existing.readStatus !== undefined
               ? existing.readStatus
               : o.readStatus !== undefined
-              ? o.readStatus
-              : "unread";
+                ? o.readStatus
+                : "unread";
 
           orderMap.set(o.id, {
             ...o,
@@ -185,7 +186,7 @@ export default function AdminLayout() {
   useEffect(() => {
     loadUnreadOrdersCount();
 
-    let unsubscribeOrders = () => {};
+    let unsubscribeOrders = () => { };
     try {
       unsubscribeOrders = onSnapshot(
         collection(db, "orders"),
@@ -200,7 +201,7 @@ export default function AdminLayout() {
           console.warn("Firestore order badge warning:", err);
         }
       );
-    } catch (e) {}
+    } catch (e) { }
 
     window.addEventListener("frd_orders_updated", loadUnreadOrdersCount);
     window.addEventListener("storage", loadUnreadOrdersCount);
@@ -224,6 +225,7 @@ export default function AdminLayout() {
   // SEPARATE SIDEBAR NAVIGATION LINKS IN OPTIMAL WORKFLOW SEQUENCE
   const adminNav = [
     { name: "Dashboard", path: "/admin", icon: FiGrid },
+    { name: "Sales", path: "/admin/sales", icon: FiTrendingUp },
     { name: "Categories", path: "/admin/categories", icon: FiLayers },
     { name: "Supplements", path: "/admin/products", icon: FiBox },
     { name: "Customer Orders", path: "/admin/orders", icon: FiShoppingBag },
@@ -400,8 +402,8 @@ export default function AdminLayout() {
                     end={item.path === "/admin"}
                     onClick={() => setIsSidebarOpen(false)}
                     className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-semibold text-xs transition ${isCurrentActive
-                        ? "bg-lime-500 text-neutral-950 shadow-md shadow-lime-500/20 font-bold"
-                        : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
+                      ? "bg-lime-500 text-neutral-950 shadow-md shadow-lime-500/20 font-bold"
+                      : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
                       }`}
                   >
                     <div className="flex items-center gap-3">
@@ -412,8 +414,8 @@ export default function AdminLayout() {
                     {badgeCount > 0 && (
                       <span
                         className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center border border-[#121611] ${isCurrentActive
-                            ? "bg-neutral-950 text-white"
-                            : "bg-red-500 text-white"
+                          ? "bg-neutral-950 text-white"
+                          : "bg-red-500 text-white"
                           }`}
                       >
                         {badgeCount}
