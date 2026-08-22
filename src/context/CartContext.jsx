@@ -235,7 +235,7 @@ export function CartProvider({ children }) {
       awbTrackingNumber: "",
       deliveryDate: "Expected in 4-8 Business Days",
       deliveryTime: "By 6:00 PM",
-      paymentMethod: customerDetails.paymentMethod === "upi" ? "UPI Instant Pay" : customerDetails.paymentMethod === "card" ? "Credit / Debit Card" : "Prepaid Online Pay",
+      paymentMethod: "Online",
       paymentStatus: "Paid & Verified",
       txnId: `TXN-${Date.now().toString().slice(-8)}`,
       subtotal: cartSubtotal,
@@ -248,7 +248,7 @@ export function CartProvider({ children }) {
         phone: customerDetails.phone,
         email: customerDetails.email || orderUserEmail,
         address: `${customerDetails.address}, ${customerDetails.city || ""}, ${customerDetails.state || ""} - ${customerDetails.pincode || ""}`,
-        paymentMethod: customerDetails.paymentMethod === "upi" ? "UPI Instant Pay" : customerDetails.paymentMethod === "card" ? "Credit / Debit Card" : "Prepaid Online Pay",
+        paymentMethod: "Online",
       },
       shippingAddress: {
         name: customerDetails.fullName,

@@ -15,6 +15,7 @@ import {
   FiUser,
   FiX,
 } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
 import toast from "react-hot-toast";
@@ -22,8 +23,94 @@ import { useOutletContext, useLocation, useNavigate, useSearchParams } from "rea
 import { db } from "../../firebase/firebase.config";
 import { collection, doc, getDocs, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
+export const formatPaymentMethod = (method) => {
+  if (!method) return "Online";
+  const m = String(method).toLowerCase().trim();
+  if (m.includes("cod") || m.includes("cash")) return "Cash on Delivery";
+  return "Online";
+};
+
+export const formatWhatsAppPhone = (phone) => {
+  if (!phone) return "";
+  const cleaned = String(phone).replace(/\D/g, "");
+  if (!cleaned) return "";
+  if (cleaned.length === 10) return `91${cleaned}`;
+  if (cleaned.length === 12 && cleaned.startsWith("91")) return cleaned;
+  if (cleaned.startsWith("91")) return cleaned;
+  return `91${cleaned.slice(-10)}`;
+};
+
+export const buildWhatsAppMessageText = (msg, productsList = []) => {
+  if (!msg) return "";
+  const custName = msg.name || "Valued Customer";
+  const userQuery = msg.message || "";
+  const rawProdName = msg.product || msg.productName || "";
+
+  let matchedProduct = null;
+  if (rawProdName) {
+    const normSearch = rawProdName.toLowerCase().trim();
+    matchedProduct = (productsList || []).find((p) => {
+      const pNameNorm = (p.name || "").toLowerCase().trim();
+      return (
+        pNameNorm === normSearch ||
+        normSearch.includes(pNameNorm) ||
+        pNameNorm.includes(normSearch) ||
+        (msg.productId && p.id === msg.productId)
+      );
+    });
+  }
+
+  const isProductEnquiry = Boolean(rawProdName || msg.type === "Product Enquiry" || matchedProduct);
+
+  if (isProductEnquiry && (rawProdName || matchedProduct)) {
+    const productName = matchedProduct?.name || rawProdName;
+    const category = matchedProduct?.category || "Supplements";
+    const sellingPrice = matchedProduct?.price ? Number(matchedProduct.price) : null;
+    const mrpVal = (matchedProduct?.originalPrice || matchedProduct?.mrp) ? Number(matchedProduct?.originalPrice || matchedProduct?.mrp) : null;
+
+    let priceDetailStr = "";
+    if (sellingPrice && mrpVal && mrpVal > sellingPrice) {
+      priceDetailStr = `₹${sellingPrice} (MRP: ₹${mrpVal})`;
+    } else if (sellingPrice && mrpVal) {
+      priceDetailStr = `₹${sellingPrice} (MRP: ₹${mrpVal})`;
+    } else if (sellingPrice) {
+      priceDetailStr = `₹${sellingPrice}`;
+    } else {
+      priceDetailStr = "Special Pricing Available";
+    }
+
+    const stockStatus = matchedProduct
+      ? matchedProduct.inStock !== false
+        ? "In Stock"
+        : "Out of Stock"
+      : "In Stock";
+    const authenticity = "100% Authentic Guaranteed";
+
+    return (
+      `Hi ${custName},\n\n` +
+      `Thank you for reaching out to FRD Nutrition! Here are the details regarding your enquiry for *${productName}*:\n\n` +
+      `*Product Details:*\n` +
+      `• Category: ${category}\n` +
+      `• Special Price: ${priceDetailStr}\n` +
+      `• Availability: ${stockStatus} (${authenticity})\n\n` +
+      `*Your Query:*\n` +
+      `‘${userQuery}’\n\n` +
+      `Please let us know if you need any assistance placing your order or have any questions!`
+    );
+  } else {
+    return (
+      `Hi ${custName},\n\n` +
+      `Thank you for reaching out to FRD Nutrition!\n\n` +
+      `Regarding your enquiry:\n` +
+      `‘${userQuery}’\n\n` +
+      `Please let us know how we can assist you further or if you have any questions!`
+    );
+  }
+};
+
 export default function AdminOrdersPage({ defaultTab }) {
   const { orders: cartContextOrders } = useCart();
+  const { products } = useProducts();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -198,7 +285,7 @@ export default function AdminOrdersPage({ defaultTab }) {
           phone: o.customer?.phone || o.shippingAddress?.phone || "N/A",
           email: o.customer?.email || "",
           address: o.customer?.address || o.shippingAddress?.address || "",
-          paymentMethod: o.customer?.paymentMethod || o.paymentMethod || "Prepaid",
+          paymentMethod: formatPaymentMethod(o.customer?.paymentMethod || o.paymentMethod),
         },
         items: o.items || [],
         readStatus: o.readStatus || "unread",
@@ -241,7 +328,7 @@ export default function AdminOrdersPage({ defaultTab }) {
               phone: existing.customer?.phone || o.customer?.phone || o.shippingAddress?.phone || "N/A",
               email: existing.customer?.email || o.customer?.email || "",
               address: existing.customer?.address || o.customer?.address || o.shippingAddress?.address || "",
-              paymentMethod: existing.customer?.paymentMethod || o.customer?.paymentMethod || o.paymentMethod || "Prepaid",
+              paymentMethod: formatPaymentMethod(existing.customer?.paymentMethod || o.customer?.paymentMethod || o.paymentMethod),
             },
             items: existing.items?.length ? existing.items : o.items || [],
             readStatus: existing.readStatus !== undefined ? existing.readStatus : o.readStatus || "unread",
@@ -348,23 +435,17 @@ export default function AdminOrdersPage({ defaultTab }) {
 
   const STATUS_STEPS = [
     "Ordered",
-    "Shipped",
     "Out for Delivery",
     "Delivered",
     "Cancelled",
-    "Refunded",
-    "Returned",
   ];
 
   const ORDER_STATUS_OPTIONS = [
     "All",
     "Ordered",
-    "Shipped",
     "Out for Delivery",
     "Delivered",
     "Cancelled",
-    "Refunded",
-    "Returned",
   ];
 
   const updateOrderData = (orderId, updateFields) => {
@@ -766,7 +847,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                         {/* Payment Method */}
                         <td className="py-4 px-4">
                           <span className="px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800 text-[10px] font-bold uppercase text-neutral-300">
-                            {order.customer?.paymentMethod || order.paymentMethod || "Prepaid"}
+                            {formatPaymentMethod(order.customer?.paymentMethod || order.paymentMethod)}
                           </span>
                         </td>
 
@@ -778,12 +859,9 @@ export default function AdminOrdersPage({ defaultTab }) {
                             className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[11px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm"
                           >
                             <option value="Ordered" className="bg-neutral-900 text-white">Ordered</option>
-                            <option value="Shipped" className="bg-neutral-900 text-white">Shipped</option>
                             <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
                             <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
                             <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
-                            <option value="Refunded" className="bg-neutral-900 text-[#f5b800]">Refunded</option>
-                            <option value="Returned" className="bg-neutral-900 text-amber-400">Returned</option>
                           </select>
                         </td>
 
@@ -1241,7 +1319,7 @@ export default function AdminOrdersPage({ defaultTab }) {
 
             {/* Footer Modal Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-neutral-800 gap-2 flex-wrap">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => {
                     handleToggleRead(selectedMessage.id);
@@ -1250,7 +1328,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                       status: prev.status === "read" ? "unread" : "read",
                     }));
                   }}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
                     selectedMessage.status === "unread"
                       ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
                       : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
@@ -1259,11 +1337,23 @@ export default function AdminOrdersPage({ defaultTab }) {
                   {selectedMessage.status === "unread" ? "Mark Read" : "Mark Unread"}
                 </button>
 
+                {selectedMessage.phone && (
+                  <a
+                    href={`https://wa.me/${formatWhatsAppPhone(selectedMessage.phone)}?text=${encodeURIComponent(buildWhatsAppMessageText(selectedMessage, products))}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-emerald-500/20 cursor-pointer"
+                  >
+                    <FaWhatsapp size={15} />
+                    <span>Reply via WhatsApp</span>
+                  </a>
+                )}
+
                 <a
                   href={`mailto:${selectedMessage.email}?subject=Re: ${encodeURIComponent(selectedMessage.subject || selectedMessage.product || "FRD Nutrition Enquiry")}&body=${encodeURIComponent(`Hi ${selectedMessage.name},\n\nThank you for reaching out regarding ${selectedMessage.product || "your enquiry"}.\n\n`)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 hover:bg-amber-400 transition"
+                  className="px-3.5 py-2.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 hover:bg-amber-400 transition"
                 >
                   <FiMail size={13} />
                   <span>Reply via Email</span>
@@ -1272,7 +1362,7 @@ export default function AdminOrdersPage({ defaultTab }) {
 
               <button
                 onClick={() => setSelectedMessage(null)}
-                className="px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
               >
                 Close
               </button>
@@ -1298,12 +1388,9 @@ export default function AdminOrdersPage({ defaultTab }) {
                     className="bg-[#192218] border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-300 font-semibold focus:outline-none focus:border-lime-500 flex-1 sm:flex-none cursor-pointer"
                   >
                     <option value="Ordered" className="bg-neutral-900 text-white">Ordered</option>
-                    <option value="Shipped" className="bg-neutral-900 text-white">Shipped</option>
                     <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
                     <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
                     <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
-                    <option value="Refunded" className="bg-neutral-900 text-[#f5b800]">Refunded</option>
-                    <option value="Returned" className="bg-neutral-900 text-amber-400">Returned</option>
                   </select>
                 </div>
                 <span className="text-xs text-neutral-400 block mt-0.5">
@@ -1350,7 +1437,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                 <div>
                   <span className="text-neutral-500 block">Payment Method:</span>
                   <span className="font-bold text-white uppercase">
-                    {selectedOrder.customer?.paymentMethod || selectedOrder.paymentMethod || "Prepaid"}
+                    {formatPaymentMethod(selectedOrder.customer?.paymentMethod || selectedOrder.paymentMethod)}
                   </span>
                 </div>
               </div>

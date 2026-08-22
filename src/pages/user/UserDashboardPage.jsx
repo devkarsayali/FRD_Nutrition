@@ -266,19 +266,7 @@ export default function UserDashboardPage() {
   const { restoreProductStock } = useProducts();
 
   const canCancelOrder = (order) => {
-    if (!order) return false;
-    const s = (order.status || "").toLowerCase().trim();
-    if (
-      s.includes("out") ||
-      s.includes("delivery") ||
-      s.includes("delivered") ||
-      s.includes("cancel") ||
-      s.includes("refund") ||
-      s.includes("return")
-    ) {
-      return false;
-    }
-    return true;
+    return false;
   };
 
   const canReturnOrder = (order) => {
@@ -536,21 +524,6 @@ export default function UserDashboardPage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {canCancelOrder(order) && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCancelOrder(order);
-                                    }}
-                                    className="px-3 py-2 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-extrabold transition flex items-center gap-1 cursor-pointer shadow-sm"
-                                    title="Cancel order before Out for Delivery"
-                                  >
-                                    <FiXCircle size={15} />
-                                    <span>Cancel Order</span>
-                                  </button>
-                                )}
-
                                 {canReturnOrder(order) && (
                                   <button
                                     type="button"

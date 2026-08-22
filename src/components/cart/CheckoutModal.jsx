@@ -418,42 +418,14 @@ export default function CheckoutModal() {
                 PAYMENT METHOD
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, paymentMethod: "razorpay" })}
-                  className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-between transition cursor-pointer ${
-                    formData.paymentMethod === "razorpay"
-                      ? "border-[#f5b800] bg-amber-500/10 text-white shadow-md shadow-amber-500/10"
-                      : "border-slate-800 bg-[#090d16] text-slate-400 hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <FiCreditCard className="text-[#f5b800]" size={18} />
-                    <span className="font-extrabold">Razorpay</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">
-                    UPI / Cards / NetBanking
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, paymentMethod: "cod" })}
-                  className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-between transition cursor-pointer ${
-                    formData.paymentMethod === "cod"
-                      ? "border-[#f5b800] bg-amber-500/10 text-white shadow-md shadow-amber-500/10"
-                      : "border-slate-800 bg-[#090d16] text-slate-400 hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <FiShield className="text-[#f5b800]" size={18} />
-                    <span className="font-extrabold">Cash on Delivery</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
-                    Pay at Doorstep
-                  </span>
-                </button>
+              <div className="w-full p-3.5 rounded-xl border border-[#f5b800] bg-amber-500/10 text-white shadow-md shadow-amber-500/10 text-xs font-bold flex items-center justify-between transition">
+                <div className="flex items-center gap-2.5">
+                  <FiCreditCard className="text-[#f5b800]" size={18} />
+                  <span className="font-extrabold">Razorpay</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">
+                  UPI / Cards / NetBanking
+                </span>
               </div>
             </div>
 
