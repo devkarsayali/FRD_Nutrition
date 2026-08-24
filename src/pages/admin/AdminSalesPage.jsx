@@ -748,11 +748,10 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${
-            dateFilter === "today" && saleTypeFilter === "all"
+          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "today" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-lime-500 shadow-lime-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-lime-500/50"
-          }`}
+            }`}
           title="Click to view Today's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
@@ -780,11 +779,10 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${
-            dateFilter === "this_week" && saleTypeFilter === "all"
+          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_week" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-amber-500 shadow-amber-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-amber-500/50"
-          }`}
+            }`}
           title="Click to view This Week's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
@@ -812,11 +810,10 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${
-            dateFilter === "this_month" && saleTypeFilter === "all"
+          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_month" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-cyan-500 shadow-cyan-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-cyan-500/50"
-          }`}
+            }`}
           title="Click to view This Month's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
@@ -844,11 +841,10 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${
-            dateFilter === "this_year" && saleTypeFilter === "all"
+          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_year" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-purple-500 shadow-purple-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-purple-500/50"
-          }`}
+            }`}
           title="Click to view This Year's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
@@ -909,11 +905,10 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${
-            saleTypeFilter === "offline"
+          className={`p-5 rounded-3xl text-left space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${saleTypeFilter === "offline"
               ? "bg-neutral-900 border-2 border-lime-500 shadow-lime-500/10"
               : "bg-neutral-900/90 border border-neutral-800 hover:border-lime-500/50"
-          }`}
+            }`}
           title="Click to view Offline Store Sales"
         >
           <div className="flex items-center justify-between text-xs text-neutral-400">
@@ -941,11 +936,10 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${
-            saleTypeFilter === "all"
+          className={`p-5 rounded-3xl text-left space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${saleTypeFilter === "all"
               ? "bg-gradient-to-r from-lime-500/20 via-neutral-900 to-amber-500/20 border-2 border-lime-500 shadow-lime-500/10"
               : "bg-gradient-to-r from-lime-500/10 via-neutral-900 to-amber-500/10 border border-lime-500/30 hover:border-lime-500"
-          }`}
+            }`}
           title="Click to view All Sales Log"
         >
           <div className="flex items-center justify-between text-xs text-neutral-300">
@@ -1151,7 +1145,7 @@ export default function AdminSalesPage() {
                           </span>
                         ) : (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-lime-500/10 text-lime-400 border border-lime-500/20">
-                            Offline POS
+                            Offline ORDER
                           </span>
                         )}
                       </td>
