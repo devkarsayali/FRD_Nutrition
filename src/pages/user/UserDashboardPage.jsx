@@ -34,7 +34,7 @@ import { isValidPhone } from "../../utils/validation";
 
 const STATUS_STEPS = [
   "Ordered",
-  "Shipped",
+  "Packed",
   "Out for Delivery",
   "Delivered",
 ];
@@ -44,7 +44,7 @@ const getStatusStepIndex = (status) => {
   const s = status.toLowerCase().trim();
   if (s.includes("delivered")) return 3;
   if (s.includes("out") || s.includes("delivery")) return 2;
-  if (s.includes("shipped") || s.includes("transit")) return 1;
+  if (s.includes("packed")) return 1;
   return 0; // Ordered
 };
 
@@ -65,10 +65,10 @@ const getStatusBadgeConfig = (status) => {
       pulse: "bg-amber-400",
     };
   }
-  if (s.includes("shipped") || s.includes("transit")) {
+  if (s.includes("packed")) {
     return {
       style: "bg-cyan-500/15 text-cyan-400 border-cyan-500/40 shadow-cyan-500/10",
-      Icon: FiTruck,
+      Icon: FiPackage,
       pulse: "bg-cyan-400",
     };
   }

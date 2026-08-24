@@ -32,6 +32,10 @@ export default function UserLoginPage() {
         photoURL: result.user.photoURL || "",
       };
       await loginUser(googleUser);
+      // Immediately sign out from Firebase Auth so Google OAuth account is stored as customer only
+      try {
+        await auth.signOut();
+      } catch (e) {}
       navigate("/user/dashboard");
     } catch (err) {
       console.error("Google login error:", err);

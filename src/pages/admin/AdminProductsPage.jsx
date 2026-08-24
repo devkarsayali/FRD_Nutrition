@@ -70,11 +70,20 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
     setEditInitialStock(product.initialStock !== undefined ? product.initialStock : 50);
   };
 
-  const handleSaveStock = (e) => {
+  const handleSaveStock = async (e) => {
     e.preventDefault();
     if (!stockProduct) return;
     const initialQtyNum = Math.max(0, parseInt(editInitialStock, 10) || 0);
-    updateInitialStock(stockProduct.id, initialQtyNum);
+    const onlineQtyNum = Number(stockProduct.quantitySold) || 0;
+    const offlineQtyNum = Number(stockProduct.offlineQuantitySold) || 0;
+
+    const availableStock = initialQtyNum - onlineQtyNum - offlineQtyNum;
+    if (availableStock < 0) {
+      toast.error(`Invalid quantity! Total Sold (${onlineQtyNum} Online + ${offlineQtyNum} Offline = ${onlineQtyNum + offlineQtyNum}) exceeds Initial Stock (${initialQtyNum}). Available stock cannot be negative.`);
+      return;
+    }
+
+    await updateInitialStock(stockProduct.id, initialQtyNum);
     toast.success(`Stock details updated for "${stockProduct.name}".`);
     setStockProduct(null);
   };
@@ -1071,10 +1080,19 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
 
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-1">
-                    Quantity Sold (Read-Only)
+                    Quantity Sold (Online) (Read-Only)
                   </span>
                   <span className="font-black text-emerald-400 text-xs block">
                     {stockProduct.quantitySold || 0} Units
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-1">
+                    Quantity Sold (Offline) (Read-Only)
+                  </span>
+                  <span className="font-black text-amber-400 text-xs block">
+                    {stockProduct.offlineQuantitySold || 0} Units
                   </span>
                 </div>
               </div>
@@ -1101,32 +1119,42 @@ export default function AdminProductsPage({ isAddModalOpen, setIsAddModalOpen })
               {/* Auto-Calculated Available Stock */}
               {(() => {
                 const initQty = parseInt(editInitialStock, 10) || 0;
-                const soldQty = Number(stockProduct.quantitySold) || 0;
-                const availableCalc = Math.max(0, initQty - soldQty);
+                const onlineSoldQty = Number(stockProduct.quantitySold) || 0;
+                const offlineSoldQty = Number(stockProduct.offlineQuantitySold) || 0;
+                const availableCalc = Math.max(0, initQty - onlineSoldQty - offlineSoldQty);
+                const isNegative = (initQty - onlineSoldQty - offlineSoldQty) < 0;
 
                 return (
-                  <div className="bg-neutral-900/90 border border-neutral-800 p-4 rounded-2xl space-y-1">
-                    <div className="flex items-center justify-between">
+                  <div className={`border p-4 rounded-2xl space-y-1 transition ${
+                    isNegative ? "bg-red-500/10 border-red-500/40" : "bg-neutral-900/90 border-neutral-800"
+                  }`}>
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
                       <span className="text-[10px] uppercase font-extrabold tracking-wider text-neutral-400">
                         Available Stock (Auto-Calculated)
                       </span>
-                      <span className="text-[10px] font-mono text-neutral-500">
-                        Initial ({initQty}) − Sold ({soldQty})
+                      <span className="text-[10px] font-mono text-neutral-400">
+                        Initial ({initQty}) − Online ({onlineSoldQty}) − Offline ({offlineSoldQty})
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-2xl font-black text-lime-400">
+                      <span className={`text-2xl font-black ${isNegative ? "text-red-400" : "text-lime-400"}`}>
                         {availableCalc} <span className="text-xs font-bold text-neutral-400">Units Available</span>
                       </span>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${availableCalc === 0
-                        ? "bg-red-500/20 text-red-400 border-red-500/30"
-                        : availableCalc < 10
-                          ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                          : "bg-lime-500/20 text-lime-400 border-lime-500/30"
-                        }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${
+                        availableCalc === 0
+                          ? "bg-red-500/20 text-red-400 border-red-500/30"
+                          : availableCalc < 10
+                            ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            : "bg-lime-500/20 text-lime-400 border-lime-500/30"
+                      }`}>
                         {availableCalc === 0 ? "Out of Stock" : availableCalc < 10 ? "Low Stock" : "In Stock"}
                       </span>
                     </div>
+                    {isNegative && (
+                      <p className="text-[11px] font-bold text-red-400 pt-1">
+                        ⚠️ Total sold ({onlineSoldQty + offlineSoldQty}) exceeds initial stock ({initQty}). Please adjust initial stock quantity.
+                      </p>
+                    )}
                   </div>
                 );
               })()}

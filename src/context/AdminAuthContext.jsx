@@ -22,17 +22,13 @@ export function AdminAuthProvider({ children }) {
     localStorage.removeItem("frd_admin_passcode");
   }, []);
 
-  // Sync Firebase Auth state if user signed in via Firebase Auth
+  // Ensure admin session requires explicit Email/Password authentication flag
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        sessionStorage.setItem("frd_admin_auth", "true");
-        sessionStorage.setItem("frd_admin_email", user.email || "");
-        setIsAdminLoggedIn(true);
-        setAdminEmail(user.email || "");
-      }
-    });
-    return () => unsubscribe();
+    const isAuth = sessionStorage.getItem("frd_admin_auth") === "true";
+    if (!isAuth) {
+      setIsAdminLoggedIn(false);
+      setAdminEmail("");
+    }
   }, []);
 
   const loginAdmin = async (emailInput, passwordInput) => {

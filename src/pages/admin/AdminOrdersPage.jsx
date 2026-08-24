@@ -435,6 +435,7 @@ export default function AdminOrdersPage({ defaultTab }) {
 
   const STATUS_STEPS = [
     "Ordered",
+    "Packed",
     "Out for Delivery",
     "Delivered",
     "Cancelled",
@@ -443,6 +444,7 @@ export default function AdminOrdersPage({ defaultTab }) {
   const ORDER_STATUS_OPTIONS = [
     "All",
     "Ordered",
+    "Packed",
     "Out for Delivery",
     "Delivered",
     "Cancelled",
@@ -551,29 +553,36 @@ export default function AdminOrdersPage({ defaultTab }) {
     const s = status.toLowerCase().trim();
     if (s.includes("delivered")) return 3;
     if (s.includes("out for delivery") || s.includes("out_for_delivery")) return 2;
-    if (s.includes("shipped") || s.includes("transit")) return 1;
+    if (s.includes("packed")) return 1;
     return 0; // Ordered
   };
 
   const RESTORABLE_STATUSES = ["cancelled", "rejected", "refunded", "returned"];
 
   const handleStatusChange = (orderId, newStatus) => {
+    const currentOrder = allOrders.find((o) => o.id === orderId);
+    if (!currentOrder) return;
+
+    const currentIndex = getStatusStepIndex(currentOrder.status);
     const targetIndex = getStatusStepIndex(newStatus);
     const normNewStatus = (newStatus || "").toLowerCase().trim();
     const isNewStatusRestorable = RESTORABLE_STATUSES.includes(normNewStatus);
 
+    // Enforce forward-only status progression (unless setting to Cancelled)
+    if (!isNewStatusRestorable && targetIndex < currentIndex) {
+      toast.error(`Cannot move order status backwards from "${currentOrder.status}" to "${newStatus}".`);
+      return;
+    }
+
     const defaultSteps = [
       { title: "Ordered", time: "Order Received", completed: true },
-      { title: "Shipped", time: "Dispatched", completed: false },
-      { title: "Out for Delivery", time: "Local Hub", completed: false },
+      { title: "Packed", time: "Warehouse Packed", completed: false },
+      { title: "Out for Delivery", time: "In Transit", completed: false },
       { title: "Delivered", time: "Handed Over", completed: false },
     ];
 
-    const currentOrder = allOrders.find((o) => o.id === orderId);
-    if (!currentOrder) return;
-
     const currentSteps =
-      currentOrder?.trackingSteps && currentOrder.trackingSteps.length >= 5
+      currentOrder?.trackingSteps && currentOrder.trackingSteps.length >= 4
         ? currentOrder.trackingSteps
         : defaultSteps;
 
@@ -853,16 +862,23 @@ export default function AdminOrdersPage({ defaultTab }) {
 
                         {/* Status Select Dropdown */}
                         <td className="py-4 px-4">
-                          <select
-                            value={order.status || "In Transit"}
-                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[11px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm"
-                          >
-                            <option value="Ordered" className="bg-neutral-900 text-white">Ordered</option>
-                            <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
-                            <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
-                            <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
-                          </select>
+                          {(() => {
+                            const curIdx = getStatusStepIndex(order.status);
+                            const isCancelled = (order.status || "").toLowerCase().trim() === "cancelled";
+                            return (
+                              <select
+                                value={order.status || "Ordered"}
+                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[11px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm disabled:opacity-60"
+                              >
+                                <option value="Ordered" disabled={curIdx > 0} className="bg-neutral-900 text-white disabled:text-neutral-600">Ordered</option>
+                                <option value="Packed" disabled={curIdx > 1} className="bg-neutral-900 text-white disabled:text-neutral-600">Packed</option>
+                                <option value="Out for Delivery" disabled={curIdx > 2} className="bg-neutral-900 text-white disabled:text-neutral-600">Out for Delivery</option>
+                                <option value="Delivered" disabled={curIdx > 3} className="bg-neutral-900 text-white disabled:text-neutral-600">Delivered</option>
+                                <option value="Cancelled" disabled={isCancelled} className="bg-neutral-900 text-red-400 disabled:text-neutral-600">Cancelled</option>
+                              </select>
+                            );
+                          })()}
                         </td>
 
                         {/* Actions */}
@@ -1382,16 +1398,23 @@ export default function AdminOrdersPage({ defaultTab }) {
                   <h3 className="font-heading text-xl font-black text-white">
                     Order #{selectedOrder.id}
                   </h3>
-                  <select
-                    value={selectedOrder.status || "In Transit"}
-                    onChange={(e) => handleStatusChange(selectedOrder.id, e.target.value)}
-                    className="bg-[#192218] border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-300 font-semibold focus:outline-none focus:border-lime-500 flex-1 sm:flex-none cursor-pointer"
-                  >
-                    <option value="Ordered" className="bg-neutral-900 text-white">Ordered</option>
-                    <option value="Out for Delivery" className="bg-neutral-900 text-white">Out for Delivery</option>
-                    <option value="Delivered" className="bg-neutral-900 text-white">Delivered</option>
-                    <option value="Cancelled" className="bg-neutral-900 text-red-400">Cancelled</option>
-                  </select>
+                  {(() => {
+                    const selIdx = getStatusStepIndex(selectedOrder.status);
+                    const isSelCancelled = (selectedOrder.status || "").toLowerCase().trim() === "cancelled";
+                    return (
+                      <select
+                        value={selectedOrder.status || "Ordered"}
+                        onChange={(e) => handleStatusChange(selectedOrder.id, e.target.value)}
+                        className="bg-[#192218] border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-300 font-semibold focus:outline-none focus:border-lime-500 flex-1 sm:flex-none cursor-pointer disabled:opacity-60"
+                      >
+                        <option value="Ordered" disabled={selIdx > 0} className="bg-neutral-900 text-white disabled:text-neutral-600">Ordered</option>
+                        <option value="Packed" disabled={selIdx > 1} className="bg-neutral-900 text-white disabled:text-neutral-600">Packed</option>
+                        <option value="Out for Delivery" disabled={selIdx > 2} className="bg-neutral-900 text-white disabled:text-neutral-600">Out for Delivery</option>
+                        <option value="Delivered" disabled={selIdx > 3} className="bg-neutral-900 text-white disabled:text-neutral-600">Delivered</option>
+                        <option value="Cancelled" disabled={isSelCancelled} className="bg-neutral-900 text-red-400 disabled:text-neutral-600">Cancelled</option>
+                      </select>
+                    );
+                  })()}
                 </div>
                 <span className="text-xs text-neutral-400 block mt-0.5">
                   Placed on {selectedOrder.date || selectedOrder.orderDate} • {selectedOrder.orderTime || ""}

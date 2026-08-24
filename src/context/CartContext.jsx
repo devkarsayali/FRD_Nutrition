@@ -268,10 +268,9 @@ export function CartProvider({ children }) {
         price: item.product.price,
       })),
       trackingSteps: [
-        { title: "Pending", time: "Just now", completed: true, active: true },
-        { title: "Confirmed", time: "Verification", completed: false, active: false },
+        { title: "Ordered", time: "Just now", completed: true, active: true },
         { title: "Packed", time: "Warehouse", completed: false, active: false },
-        { title: "Shipped", time: "In Transit", completed: false, active: false },
+        { title: "Out for Delivery", time: "In Transit", completed: false, active: false },
         { title: "Delivered", time: "Handed over", completed: false, active: false },
       ],
     };

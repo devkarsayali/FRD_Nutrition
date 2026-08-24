@@ -6,7 +6,59 @@ import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firesto
 const ProductContext = createContext();
 const STORAGE_KEY = "frd_products_inventory_v7";
 
-export const calculateQuantitySoldMap = (firestoreOrdersList = []) => {
+export const calculateOfflineQuantitySoldMap = (firestoreSalesList = [], productsList = []) => {
+  const offlineMap = {};
+  try {
+    const salesMap = new Map();
+    const addSale = (s) => {
+      if (!s || !s.id) return;
+      salesMap.set(s.id, s);
+    };
+
+    if (Array.isArray(firestoreSalesList)) {
+      firestoreSalesList.forEach(addSale);
+    }
+
+    try {
+      const localOffline = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
+      if (Array.isArray(localOffline)) {
+        localOffline.forEach(addSale);
+      }
+    } catch {}
+
+    const allSales = Array.from(salesMap.values());
+    allSales.forEach((sale) => {
+      if (Array.isArray(sale.items)) {
+        sale.items.forEach((item) => {
+          const itemPid = String(item.productId || item.product?.id || item.id || "").trim();
+          const itemName = String(item.name || item.product?.name || "").toLowerCase().trim();
+          const qty = Number(item.quantity) || 1;
+
+          if (itemPid) {
+            offlineMap[itemPid] = (offlineMap[itemPid] || 0) + qty;
+          }
+
+          // Match by name across products if name exists
+          if (itemName && Array.isArray(productsList)) {
+            productsList.forEach((prod) => {
+              const pName = String(prod.name || "").toLowerCase().trim();
+              if (pName && (pName === itemName || pName.includes(itemName) || itemName.includes(pName))) {
+                if (prod.id && String(prod.id) !== itemPid) {
+                  offlineMap[prod.id] = (offlineMap[prod.id] || 0) + qty;
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error computing offline quantity sold:", err);
+  }
+  return offlineMap;
+};
+
+export const calculateQuantitySoldMap = (firestoreOrdersList = [], firestoreSalesList = []) => {
   const soldMap = {};
   const RESTORABLE_STATUSES = ["cancelled", "rejected", "refunded", "returned"];
   try {
@@ -73,12 +125,16 @@ export const getNormalizedList = (val) => {
   return [];
 };
 
-const normalizeStockValue = (product, index = 0, soldMap = {}) => {
+const normalizeStockValue = (product, index = 0, soldMap = {}, offlineSoldMap = {}) => {
   if (!product) return product;
 
   const pId = product.id;
   const calculatedSold = soldMap[pId] !== undefined ? soldMap[pId] : (Number(product.quantitySold) || 0);
   const quantitySold = Math.max(0, calculatedSold);
+
+  const calculatedOffline = offlineSoldMap[pId] !== undefined ? offlineSoldMap[pId] : (Number(product.offlineQuantitySold) || 0);
+  const offlineQuantitySold = Math.max(0, calculatedOffline);
+  const totalSold = quantitySold + offlineQuantitySold;
 
   const nextInStock = product.inStock;
 
@@ -91,21 +147,21 @@ const normalizeStockValue = (product, index = 0, soldMap = {}) => {
   let initialStock = Number(product.initialStock);
 
   if (isNaN(initialStock) || initialStock < 0) {
-    initialStock = quantitySold + rawStockQty;
+    initialStock = totalSold + rawStockQty;
   }
 
-  // If explicitly requested inStock = true, ensure initialStock > quantitySold
-  if (nextInStock === true && initialStock <= quantitySold) {
+  // If explicitly requested inStock = true, ensure initialStock > totalSold
+  if (nextInStock === true && initialStock <= totalSold) {
     const defaultAdd = rawStockQty > 0 ? rawStockQty : 1;
-    initialStock = quantitySold + defaultAdd;
+    initialStock = totalSold + defaultAdd;
   }
 
-  // If explicitly requested inStock = false, initialStock = quantitySold so availableStock = 0
+  // If explicitly requested inStock = false, initialStock = totalSold so availableStock = 0
   if (nextInStock === false) {
-    initialStock = quantitySold;
+    initialStock = totalSold;
   }
 
-  const availableStock = Math.max(0, initialStock - quantitySold);
+  const availableStock = Math.max(0, initialStock - totalSold);
   const finalInStock = nextInStock === false ? false : availableStock > 0;
   const finalStockQty = finalInStock ? availableStock : 0;
 
@@ -133,6 +189,7 @@ const normalizeStockValue = (product, index = 0, soldMap = {}) => {
     createdAt,
     initialStock,
     quantitySold,
+    offlineQuantitySold,
     availableStock,
     inStock: finalInStock,
     stockQuantity: finalStockQty,
@@ -140,9 +197,10 @@ const normalizeStockValue = (product, index = 0, soldMap = {}) => {
 };
 
 const normalizeProducts = (productsList) => {
+  const targetProducts = Array.isArray(productsList) ? productsList : INITIAL_PRODUCTS;
   const soldMap = calculateQuantitySoldMap();
-  if (!Array.isArray(productsList)) return INITIAL_PRODUCTS.map((p, idx) => normalizeStockValue(p, idx, soldMap));
-  return productsList.map((p, idx) => normalizeStockValue(p, idx, soldMap));
+  const offlineSoldMap = calculateOfflineQuantitySoldMap([], targetProducts);
+  return targetProducts.map((p, idx) => normalizeStockValue(p, idx, soldMap, offlineSoldMap));
 };
 
 export const getProductCategoryKey = (prod) => {
@@ -400,9 +458,23 @@ export function ProductProvider({ children }) {
     }
   }, []);
 
-  // Real-time Firebase Firestore Sync for Orders -> updates Quantity Sold & Available Stock
+  // Real-time Firebase Firestore Sync for Orders & Sales -> updates Quantity Sold (Online/Offline) & Available Stock
   useEffect(() => {
     let unsubscribeOrders = () => { };
+    let unsubscribeSales = () => { };
+
+    let currentOrders = [];
+    let currentSales = [];
+
+    const updateCalculatedStocks = () => {
+      const soldMap = calculateQuantitySoldMap(currentOrders);
+      setProducts((prevProducts) => {
+        if (!Array.isArray(prevProducts) || prevProducts.length === 0) return prevProducts;
+        const offlineSoldMap = calculateOfflineQuantitySoldMap(currentSales, prevProducts);
+        return prevProducts.map((p, idx) => normalizeStockValue(p, idx, soldMap, offlineSoldMap));
+      });
+    };
+
     try {
       unsubscribeOrders = onSnapshot(
         collection(db, "orders"),
@@ -411,20 +483,33 @@ export function ProductProvider({ children }) {
           snapshot.forEach((docSnap) => {
             fbOrders.push({ id: docSnap.id, ...docSnap.data() });
           });
-          const soldMap = calculateQuantitySoldMap(fbOrders);
-          setProducts((prevProducts) => {
-            if (!Array.isArray(prevProducts) || prevProducts.length === 0) return prevProducts;
-            return prevProducts.map((p, idx) => normalizeStockValue(p, idx, soldMap));
-          });
+          currentOrders = fbOrders;
+          updateCalculatedStocks();
         },
         (err) => {
           console.warn("Firestore orders soldMap sync warning:", err);
+        }
+      );
+
+      unsubscribeSales = onSnapshot(
+        collection(db, "sales"),
+        (snapshot) => {
+          const fbSales = [];
+          snapshot.forEach((docSnap) => {
+            fbSales.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          currentSales = fbSales;
+          updateCalculatedStocks();
+        },
+        (err) => {
+          console.warn("Firestore sales offlineSoldMap sync warning:", err);
         }
       );
     } catch (e) { }
 
     return () => {
       if (typeof unsubscribeOrders === "function") unsubscribeOrders();
+      if (typeof unsubscribeSales === "function") unsubscribeSales();
     };
   }, []);
 
@@ -649,28 +734,44 @@ export function ProductProvider({ children }) {
     });
   };
 
-  const updateInitialStock = (productId, newInitialStock) => {
+  const updateInitialStock = async (productId, newInitialStock, newOfflineStock = null) => {
     const nextInitial = Math.max(0, parseInt(newInitialStock, 10) || 0);
+    let targetDoc = null;
+
     setProducts((prev) => {
       const soldMap = calculateQuantitySoldMap();
       const updated = prev.map((p) => {
         if (p.id !== productId) return p;
         const currentSold = soldMap[productId] !== undefined ? soldMap[productId] : (Number(p.quantitySold) || 0);
-        const shouldBeInStock = nextInitial > currentSold;
-        return normalizeStockValue(
+        const offlineQty = newOfflineStock !== null ? Math.max(0, parseInt(newOfflineStock, 10) || 0) : (Number(p.offlineQuantitySold) || 0);
+        const totalSold = currentSold + offlineQty;
+        const shouldBeInStock = nextInitial > totalSold;
+
+        targetDoc = normalizeStockValue(
           {
             ...p,
             initialStock: nextInitial,
+            offlineQuantitySold: offlineQty,
             inStock: shouldBeInStock,
           },
           0,
           soldMap
         );
+        return targetDoc;
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
+
     window.dispatchEvent(new CustomEvent("frd_products_updated"));
+
+    if (targetDoc && targetDoc.id) {
+      try {
+        await setDoc(doc(db, "products", String(targetDoc.id)), targetDoc, { merge: true });
+      } catch (err) {
+        console.error("Firebase stock update error:", err);
+      }
+    }
   };
 
   const resetToDefaultData = () => {

@@ -53,14 +53,12 @@ function PremiumAreaChart({
 
   const values = data.map((d) => Number(d[dataKey]) || 0);
   const maxVal = Math.max(...values, 10);
-  const minVal = 0;
-
-  // Chart dimensions
+  const minVal = 0;  // Chart dimensions
   const svgWidth = 600;
   const svgHeight = 220;
   const padLeft = 55;
   const padRight = 25;
-  const padTop = 30;
+  const padTop = 45;
   const padBottom = 35;
 
   const chartWidth = svgWidth - padLeft - padRight;
@@ -107,7 +105,7 @@ function PremiumAreaChart({
   const activePoint = hoveredIdx !== null ? points[hoveredIdx] : null;
 
   return (
-    <div className="p-5 rounded-3xl bg-[#141813] border border-neutral-800 space-y-4 shadow-xl relative overflow-hidden flex flex-col justify-between">
+    <div className="p-5 rounded-3xl bg-[#141813] border border-neutral-800 space-y-4 shadow-xl relative overflow-visible flex flex-col justify-between">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
         <div>
@@ -126,7 +124,7 @@ function PremiumAreaChart({
           No transactions recorded for the selected filter period.
         </div>
       ) : (
-        <div className="relative w-full overflow-hidden select-none">
+        <div className="relative w-full overflow-visible select-none">
           <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -231,18 +229,18 @@ function PremiumAreaChart({
           {/* Interactive Floating Tooltip */}
           {activePoint && (
             <div
-              className="absolute pointer-events-none bg-neutral-950/95 border rounded-xl px-3 py-1.5 shadow-2xl z-20 transition-all text-xs"
+              className="absolute pointer-events-none bg-neutral-950/95 border rounded-xl px-3 py-1.5 shadow-2xl z-30 transition-all text-xs whitespace-nowrap"
               style={{
                 borderColor: strokeColor,
                 left: `${(activePoint.x / svgWidth) * 100}%`,
                 top: `${(activePoint.y / svgHeight) * 100}%`,
-                transform: "translate(-50%, -125%)",
+                transform: activePoint.y < 70 ? "translate(-50%, 20%)" : "translate(-50%, -125%)",
               }}
             >
-              <span className="text-[10px] font-bold text-neutral-400 block uppercase">
+              <span className="text-[10px] font-bold text-neutral-400 block uppercase text-center">
                 {activePoint.label}
               </span>
-              <span className="font-heading font-black text-sm block" style={{ color: strokeColor }}>
+              <span className="font-heading font-black text-sm block text-center" style={{ color: strokeColor }}>
                 {valuePrefix}
                 {activePoint.val.toLocaleString("en-IN")}
                 {valueSuffix}
@@ -738,7 +736,7 @@ export default function AdminSalesPage() {
       </div>
 
       {/* SUMMARY METRIC CARDS GRID (CLICKABLE TO OPEN SECTION OR FILTER) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Today's Sales */}
         <button
           type="button"
@@ -748,24 +746,24 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "today" && saleTypeFilter === "all"
+          className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "today" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-lime-500 shadow-lime-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-lime-500/50"
             }`}
           title="Click to view Today's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span className="font-semibold text-neutral-300">Today's Sales</span>
-            <span className="w-8 h-8 rounded-xl bg-lime-500/10 text-lime-400 flex items-center justify-center font-bold">
+            <span className="font-semibold text-neutral-300 text-[11px] sm:text-xs truncate">Today's Sales</span>
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-lime-500/10 text-lime-400 flex items-center justify-center font-bold text-xs shrink-0">
               ₹
             </span>
           </div>
           <div>
-            <span className="font-heading font-black text-2xl text-white block">
+            <span className="font-heading font-black text-lg sm:text-2xl text-white block truncate">
               ₹{metrics.todaySales.toLocaleString("en-IN")}
             </span>
-            <span className="text-[11px] font-bold text-lime-400">
-              {metrics.todayProducts} products sold today
+            <span className="text-[10px] sm:text-[11px] font-bold text-lime-400 block truncate">
+              {metrics.todayProducts} products sold
             </span>
           </div>
         </button>
@@ -779,24 +777,24 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_week" && saleTypeFilter === "all"
+          className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_week" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-amber-500 shadow-amber-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-amber-500/50"
             }`}
           title="Click to view This Week's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span className="font-semibold text-neutral-300">This Week's Sales</span>
-            <span className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
-              <FiTrendingUp size={16} />
+            <span className="font-semibold text-neutral-300 text-[11px] sm:text-xs truncate">This Week's Sales</span>
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold shrink-0">
+              <FiTrendingUp size={15} />
             </span>
           </div>
           <div>
-            <span className="font-heading font-black text-2xl text-white block">
+            <span className="font-heading font-black text-lg sm:text-2xl text-white block truncate">
               ₹{metrics.weekSales.toLocaleString("en-IN")}
             </span>
-            <span className="text-[11px] font-bold text-amber-400">
-              {metrics.weekProducts} products sold this week
+            <span className="text-[10px] sm:text-[11px] font-bold text-amber-400 block truncate">
+              {metrics.weekProducts} products sold
             </span>
           </div>
         </button>
@@ -810,24 +808,24 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_month" && saleTypeFilter === "all"
+          className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_month" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-cyan-500 shadow-cyan-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-cyan-500/50"
             }`}
           title="Click to view This Month's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span className="font-semibold text-neutral-300">This Month's Sales</span>
-            <span className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold">
-              <FiCalendar size={16} />
+            <span className="font-semibold text-neutral-300 text-[11px] sm:text-xs truncate">This Month's Sales</span>
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold shrink-0">
+              <FiCalendar size={15} />
             </span>
           </div>
           <div>
-            <span className="font-heading font-black text-2xl text-white block">
+            <span className="font-heading font-black text-lg sm:text-2xl text-white block truncate">
               ₹{metrics.monthSales.toLocaleString("en-IN")}
             </span>
-            <span className="text-[11px] font-bold text-cyan-400">
-              {metrics.monthProducts} products sold this month
+            <span className="text-[10px] sm:text-[11px] font-bold text-cyan-400 block truncate">
+              {metrics.monthProducts} products sold
             </span>
           </div>
         </button>
@@ -841,24 +839,24 @@ export default function AdminSalesPage() {
             setCurrentPage(1);
             scrollToTable();
           }}
-          className={`p-5 rounded-3xl text-left space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_year" && saleTypeFilter === "all"
+          className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_year" && saleTypeFilter === "all"
               ? "bg-[#141813] border-2 border-purple-500 shadow-purple-500/10"
               : "bg-[#141813] border border-neutral-800 hover:border-purple-500/50"
             }`}
           title="Click to view This Year's sales log"
         >
           <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span className="font-semibold text-neutral-300">This Year's Sales</span>
-            <span className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">
-              <FiDollarSign size={16} />
+            <span className="font-semibold text-neutral-300 text-[11px] sm:text-xs truncate">This Year's Sales</span>
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold shrink-0">
+              <FiDollarSign size={15} />
             </span>
           </div>
           <div>
-            <span className="font-heading font-black text-2xl text-white block">
+            <span className="font-heading font-black text-lg sm:text-2xl text-white block truncate">
               ₹{metrics.yearSales.toLocaleString("en-IN")}
             </span>
-            <span className="text-[11px] font-bold text-purple-400">
-              {metrics.yearProducts} products sold this year
+            <span className="text-[10px] sm:text-[11px] font-bold text-purple-400 block truncate">
+              {metrics.yearProducts} products sold
             </span>
           </div>
         </button>
