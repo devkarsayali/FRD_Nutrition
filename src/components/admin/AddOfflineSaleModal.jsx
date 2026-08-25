@@ -965,7 +965,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
               type="submit"
               className="px-6 py-3 rounded-xl bg-lime-500 text-neutral-950 font-black hover:bg-lime-400 transition cursor-pointer text-xs shadow-lg shadow-lime-500/20 uppercase tracking-wider"
             >
-              {editingSale ? "Update Sale Record" : "Confirm & Save Offline Sale"}
+              {editingSale ? "Update Sale Record" : "Confirm & Save"}
             </button>
           </div>
         </form>
