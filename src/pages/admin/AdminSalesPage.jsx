@@ -15,10 +15,12 @@ import {
   FiEye,
   FiX,
   FiArrowRight,
+  FiFileText,
 } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
 import AddOfflineSaleModal from "../../components/admin/AddOfflineSaleModal";
+import OfflineSaleBillModal from "../../components/admin/OfflineSaleBillModal";
 import toast from "react-hot-toast";
 import { db } from "../../firebase/firebase.config";
 import { collection, doc, deleteDoc, onSnapshot } from "firebase/firestore";
@@ -270,6 +272,7 @@ export default function AdminSalesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
   const [selectedSaleDetail, setSelectedSaleDetail] = useState(null);
+  const [selectedBillSale, setSelectedBillSale] = useState(null);
 
   // Filters State
   const [dateFilter, setDateFilter] = useState("this_month"); // "today", "yesterday", "this_week", "this_month", "this_year", "custom"
@@ -284,7 +287,7 @@ export default function AdminSalesPage() {
 
   // Lock background body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = Boolean(selectedSaleDetail) || Boolean(isAddModalOpen);
+    const isAnyModalOpen = Boolean(selectedSaleDetail) || Boolean(isAddModalOpen) || Boolean(selectedBillSale);
     if (isAnyModalOpen) {
       document.documentElement.classList.add("no-scroll");
       document.body.classList.add("no-scroll");
@@ -299,7 +302,7 @@ export default function AdminSalesPage() {
       document.body.classList.remove("no-scroll");
       document.getElementById("root")?.classList.remove("no-scroll");
     };
-  }, [selectedSaleDetail, isAddModalOpen]);
+  }, [selectedSaleDetail, isAddModalOpen, selectedBillSale]);
 
   // 1. Live Listener for Firestore `orders` (Online Sales)
   useEffect(() => {
@@ -427,6 +430,21 @@ export default function AdminSalesPage() {
         order.phone ||
         "N/A";
 
+      const custEmail =
+        order.customer?.email ||
+        order.shippingAddress?.email ||
+        order.userEmail ||
+        "";
+      const custAddress =
+        order.customer?.address ||
+        order.shippingAddress?.address ||
+        order.shippingAddress?.street ||
+        "";
+      const custCity =
+        order.customer?.city ||
+        order.shippingAddress?.city ||
+        "";
+
       const pmRaw = String(order.paymentMethod || "").toLowerCase();
       const paymentMethod = pmRaw.includes("cod") || pmRaw.includes("cash")
         ? "Cash on Delivery"
@@ -441,7 +459,7 @@ export default function AdminSalesPage() {
       transactions.push({
         id: order.id,
         saleType: "online",
-        customer: { name: custName, phone: custPhone },
+        customer: { name: custName, phone: custPhone, email: custEmail, address: custAddress, city: custCity },
         items,
         totalQuantity,
         subtotal: finalAmount + discount,
@@ -478,6 +496,9 @@ export default function AdminSalesPage() {
         customer: {
           name: sale.customer?.name || "Walk-in Customer",
           phone: sale.customer?.phone || "N/A",
+          email: sale.customer?.email || "",
+          address: sale.customer?.address || "",
+          city: sale.customer?.city || "",
         },
         items,
         totalQuantity,
@@ -747,8 +768,8 @@ export default function AdminSalesPage() {
             scrollToTable();
           }}
           className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "today" && saleTypeFilter === "all"
-              ? "bg-[#141813] border-2 border-lime-500 shadow-lime-500/10"
-              : "bg-[#141813] border border-neutral-800 hover:border-lime-500/50"
+            ? "bg-[#141813] border-2 border-lime-500 shadow-lime-500/10"
+            : "bg-[#141813] border border-neutral-800 hover:border-lime-500/50"
             }`}
           title="Click to view Today's sales log"
         >
@@ -778,8 +799,8 @@ export default function AdminSalesPage() {
             scrollToTable();
           }}
           className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_week" && saleTypeFilter === "all"
-              ? "bg-[#141813] border-2 border-amber-500 shadow-amber-500/10"
-              : "bg-[#141813] border border-neutral-800 hover:border-amber-500/50"
+            ? "bg-[#141813] border-2 border-amber-500 shadow-amber-500/10"
+            : "bg-[#141813] border border-neutral-800 hover:border-amber-500/50"
             }`}
           title="Click to view This Week's sales log"
         >
@@ -809,8 +830,8 @@ export default function AdminSalesPage() {
             scrollToTable();
           }}
           className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_month" && saleTypeFilter === "all"
-              ? "bg-[#141813] border-2 border-cyan-500 shadow-cyan-500/10"
-              : "bg-[#141813] border border-neutral-800 hover:border-cyan-500/50"
+            ? "bg-[#141813] border-2 border-cyan-500 shadow-cyan-500/10"
+            : "bg-[#141813] border border-neutral-800 hover:border-cyan-500/50"
             }`}
           title="Click to view This Month's sales log"
         >
@@ -840,8 +861,8 @@ export default function AdminSalesPage() {
             scrollToTable();
           }}
           className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-2 sm:space-y-3 shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${dateFilter === "this_year" && saleTypeFilter === "all"
-              ? "bg-[#141813] border-2 border-purple-500 shadow-purple-500/10"
-              : "bg-[#141813] border border-neutral-800 hover:border-purple-500/50"
+            ? "bg-[#141813] border-2 border-purple-500 shadow-purple-500/10"
+            : "bg-[#141813] border border-neutral-800 hover:border-purple-500/50"
             }`}
           title="Click to view This Year's sales log"
         >
@@ -904,8 +925,8 @@ export default function AdminSalesPage() {
             scrollToTable();
           }}
           className={`p-5 rounded-3xl text-left space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${saleTypeFilter === "offline"
-              ? "bg-neutral-900 border-2 border-lime-500 shadow-lime-500/10"
-              : "bg-neutral-900/90 border border-neutral-800 hover:border-lime-500/50"
+            ? "bg-neutral-900 border-2 border-lime-500 shadow-lime-500/10"
+            : "bg-neutral-900/90 border border-neutral-800 hover:border-lime-500/50"
             }`}
           title="Click to view Offline Store Sales"
         >
@@ -935,8 +956,8 @@ export default function AdminSalesPage() {
             scrollToTable();
           }}
           className={`p-5 rounded-3xl text-left space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${saleTypeFilter === "all"
-              ? "bg-gradient-to-r from-lime-500/20 via-neutral-900 to-amber-500/20 border-2 border-lime-500 shadow-lime-500/10"
-              : "bg-gradient-to-r from-lime-500/10 via-neutral-900 to-amber-500/10 border border-lime-500/30 hover:border-lime-500"
+            ? "bg-gradient-to-r from-lime-500/20 via-neutral-900 to-amber-500/20 border-2 border-lime-500 shadow-lime-500/10"
+            : "bg-gradient-to-r from-lime-500/10 via-neutral-900 to-amber-500/10 border border-lime-500/30 hover:border-lime-500"
             }`}
           title="Click to view All Sales Log"
         >
@@ -1195,8 +1216,15 @@ export default function AdminSalesPage() {
                           {tx.saleType === "offline" && (
                             <>
                               <button
-                                onClick={() => handleEditOfflineSale(tx)}
+                                onClick={() => setSelectedBillSale(tx.originalSale || tx)}
                                 className="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-lime-400 hover:text-lime-300 transition cursor-pointer"
+                                title="View & Print Offline Bill"
+                              >
+                                <FiFileText size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleEditOfflineSale(tx)}
+                                className="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white transition cursor-pointer"
                                 title="Edit Offline Sale"
                               >
                                 <FiEdit size={15} />
@@ -1254,7 +1282,19 @@ export default function AdminSalesPage() {
             setIsAddModalOpen(false);
             setEditingSale(null);
           }}
+          onSaveSuccess={(savedSale) => {
+            setSelectedBillSale(savedSale);
+          }}
           editingSale={editingSale}
+        />
+      )}
+
+      {/* Offline Sale Bill / Invoice Modal */}
+      {selectedBillSale && (
+        <OfflineSaleBillModal
+          isOpen={Boolean(selectedBillSale)}
+          onClose={() => setSelectedBillSale(null)}
+          sale={selectedBillSale}
         />
       )}
 
@@ -1280,10 +1320,21 @@ export default function AdminSalesPage() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1">
-                <span className="text-neutral-400 font-bold block">Customer Details</span>
-                <span className="text-white font-bold block">{selectedSaleDetail.customer?.name}</span>
-                <span className="text-neutral-400 block">{selectedSaleDetail.customer?.phone}</span>
+              <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1.5">
+                <span className="text-neutral-400 font-bold block text-[11px] uppercase tracking-wider">Customer Details</span>
+                <span className="text-white font-bold block text-sm">Name:-{selectedSaleDetail.customer?.name}</span>
+                {selectedSaleDetail.customer?.phone && selectedSaleDetail.customer.phone !== "N/A" && (
+                  <span className="text-neutral-300 block font-mono">Phone:- {selectedSaleDetail.customer.phone}</span>
+                )}
+                {selectedSaleDetail.customer?.email && (
+                  <span className="text-neutral-300 block">Email:- {selectedSaleDetail.customer.email}</span>
+                )}
+                {selectedSaleDetail.customer?.address && (
+                  <span className="text-neutral-300 block">Address:- {selectedSaleDetail.customer.address}</span>
+                )}
+                {selectedSaleDetail.customer?.city && (
+                  <span className="text-neutral-300 block">City:- {selectedSaleDetail.customer.city}</span>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -1317,7 +1368,19 @@ export default function AdminSalesPage() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between items-center pt-2 border-t border-neutral-800">
+              {selectedSaleDetail.saleType === "offline" ? (
+                <button
+                  onClick={() => {
+                    setSelectedBillSale(selectedSaleDetail.originalSale || selectedSaleDetail);
+                    setSelectedSaleDetail(null);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-lime-500 hover:bg-lime-400 text-neutral-950 text-xs font-bold transition cursor-pointer"
+                >
+                  <FiFileText size={15} />
+                  <span>View Official Bill</span>
+                </button>
+              ) : <div />}
               <button
                 onClick={() => setSelectedSaleDetail(null)}
                 className="px-5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-white hover:bg-neutral-800 cursor-pointer"

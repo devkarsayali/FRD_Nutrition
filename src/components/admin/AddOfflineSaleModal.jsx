@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiPlus, FiTrash2, FiX, FiShoppingBag, FiUser, FiPhone, FiDollarSign, FiCalendar, FiFileText, FiLayers } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiX, FiShoppingBag, FiUser, FiPhone, FiDollarSign, FiCalendar, FiFileText, FiLayers, FiSearch, FiMail, FiMapPin } from "react-icons/fi";
 import { useProducts, isCategoryMatch } from "../../context/ProductContext";
 import toast from "react-hot-toast";
 import { db } from "../../firebase/firebase.config";
@@ -10,6 +10,9 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerCity, setCustomerCity] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [saleDate, setSaleDate] = useState(() => new Date().toISOString().slice(0, 16));
   const [notes, setNotes] = useState("");
@@ -25,6 +28,10 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
   const [selectedCustomPrice, setSelectedCustomPrice] = useState("");
   const [selectedItemDiscount, setSelectedItemDiscount] = useState(0);
 
+  // Search product box state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   // Filter products based on selected Category
   const categoryFilteredProducts = useMemo(() => {
     if (!selectedCategory || selectedCategory === "All Categories" || selectedCategory === "All") {
@@ -33,10 +40,24 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     return products.filter((p) => isCategoryMatch(p.category, selectedCategory));
   }, [products, selectedCategory]);
 
+  // Search products matching typing
+  const searchFilteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return products.filter((p) =>
+      p.name?.toLowerCase().includes(query) ||
+      p.brand?.toLowerCase().includes(query) ||
+      p.category?.toLowerCase().includes(query)
+    );
+  }, [products, searchQuery]);
+
   useEffect(() => {
     if (editingSale) {
       setCustomerName(editingSale.customer?.name || "");
       setCustomerPhone(editingSale.customer?.phone || "");
+      setCustomerEmail(editingSale.customer?.email || "");
+      setCustomerAddress(editingSale.customer?.address || "");
+      setCustomerCity(editingSale.customer?.city || "");
       setPaymentMethod(editingSale.paymentMethod || "Cash");
       const d = editingSale.saleDate ? new Date(editingSale.saleDate) : new Date();
       setSaleDate(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
@@ -59,6 +80,9 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     } else {
       setCustomerName("");
       setCustomerPhone("");
+      setCustomerEmail("");
+      setCustomerAddress("");
+      setCustomerCity("");
       setPaymentMethod("Cash");
       const d = new Date();
       setSaleDate(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
@@ -148,6 +172,16 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     setSelectedQty(1);
     setSelectedCustomPrice("");
     setSelectedItemDiscount(0);
+    setSearchQuery("");
+  };
+
+  const handleSelectProductFromSearch = (prod) => {
+    setSelectedProductId(prod.id);
+    setSelectedCustomPrice(String(prod.price || ""));
+    setSelectedQty(1);
+    setSelectedItemDiscount(0);
+    setSearchQuery(prod.name || "");
+    setIsSearchFocused(false);
   };
 
   const handleRemoveItem = (index) => {
@@ -195,12 +229,29 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
       ? editingSale.id
       : `off_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+    // Generate unique sequential bill number (e.g. FRD-OFF-000001)
+    let billNumber = editingSale?.billNumber || "";
+    if (!billNumber) {
+      let nextSeq = 1;
+      try {
+        const savedOffline = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
+        if (Array.isArray(savedOffline) && savedOffline.length > 0) {
+          nextSeq = savedOffline.length + 1;
+        }
+      } catch (e) {}
+      billNumber = `FRD-OFF-${String(nextSeq).padStart(6, "0")}`;
+    }
+
     const saleData = {
       id: saleId,
+      billNumber,
       saleType: "offline",
       customer: {
         name: customerName.trim() || "Walk-in Customer",
         phone: customerPhone.trim() || "N/A",
+        email: customerEmail.trim() || "",
+        address: customerAddress.trim() || "",
+        city: customerCity.trim() || "",
       },
       items: saleItems.map((item) => ({
         productId: item.productId,
@@ -247,7 +298,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
           savedOffline.unshift(saleData);
         }
         localStorage.setItem("frd_offline_sales_v1", JSON.stringify(savedOffline));
-      } catch (err) {}
+      } catch (err) { }
 
       window.dispatchEvent(new CustomEvent("frd_sales_updated"));
       toast.success(editingSale ? "Offline sale updated successfully!" : "Offline store sale recorded successfully!");
@@ -294,49 +345,167 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 text-xs">
-          {/* Customer Details Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-neutral-300 font-bold mb-1.5 flex items-center gap-1.5">
-                <FiUser className="text-lime-400" size={14} />
-                <span>Customer Name (Optional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Walk-in Customer / Name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
-              />
+          {/* Customer Details Section */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1.5 flex items-center gap-1.5">
+                  <FiUser className="text-lime-400" size={14} />
+                  <span>Customer Name (Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Walk-in Customer / Name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FiPhone className="text-lime-400" size={14} />
+                    <span>Customer Phone (Optional)</span>
+                  </span>
+                  <span className="text-[10px] text-neutral-400 font-mono">
+                    {customerPhone.length}/10
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="e.g. 9876543210"
+                  value={customerPhone}
+                  onChange={handlePhoneChange}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1.5 flex items-center gap-1.5">
+                  <FiMail className="text-lime-400" size={14} />
+                  <span>Customer Email (Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. customer@gmail.com"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-neutral-300 font-bold mb-1.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <FiPhone className="text-lime-400" size={14} />
-                  <span>Customer Phone (Optional)</span>
-                </span>
-                <span className="text-[10px] text-neutral-400 font-mono">
-                  {customerPhone.length}/10
-                </span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="e.g. 9876543210 (10 digits)"
-                value={customerPhone}
-                onChange={handlePhoneChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 font-mono"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-neutral-300 font-bold mb-1.5 flex items-center gap-1.5">
+                  <FiMapPin className="text-lime-400" size={14} />
+                  <span>Customer Address (Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Flat/Street No, Area"
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1.5 flex items-center gap-1.5">
+                  <FiMapPin className="text-lime-400" size={14} />
+                  <span>City (Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Mumbai / Pune"
+                  value={customerCity}
+                  onChange={(e) => setCustomerCity(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Product Picker Box with Category Filter */}
+          {/* Product Picker Box with Category Filter & Search Box */}
           <div className="p-4 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-3">
             <span className="text-xs font-bold text-lime-400 uppercase tracking-wider block">
               Add Products To Transaction
             </span>
+
+            {/* Optional Search Product Box */}
+            <div className="relative">
+              <label className="block text-[11px] text-neutral-400 font-bold mb-1 flex items-center gap-1">
+                <FiSearch size={12} className="text-lime-400" />
+                <span>Search Product (Optional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Type product name (e.g. Alpino)..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsSearchFocused(true);
+                  }}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-8 py-2.5 text-white text-xs focus:outline-none focus:border-lime-500"
+                />
+                <FiSearch size={14} className="absolute left-3 top-3 text-neutral-400 pointer-events-none" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsSearchFocused(false);
+                    }}
+                    className="absolute right-3 top-2.5 text-neutral-400 hover:text-white transition"
+                  >
+                    <FiX size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Live Search Suggestions Dropdown */}
+              {isSearchFocused && searchQuery.trim() !== "" && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg border border-neutral-800 bg-neutral-950 rounded-xl shadow-2xl z-30 max-h-56 overflow-y-auto divide-y divide-neutral-800">
+                  {searchFilteredProducts.length > 0 ? (
+                    searchFilteredProducts.map((p) => (
+                      <div
+                        key={p.id}
+                        onMouseDown={() => handleSelectProductFromSearch(p)}
+                        className="p-3 hover:bg-neutral-900 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          {p.image && (
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              className="w-8 h-8 rounded-lg object-cover bg-neutral-900 shrink-0"
+                            />
+                          )}
+                          <div className="truncate">
+                            <p className="font-bold text-white truncate">{p.name}</p>
+                            <p className="text-[10px] text-neutral-400">{p.category || "Supplement"}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-lime-400">₹{p.price}</p>
+                          <p className="text-[10px] text-neutral-400">Stock: {p.stockQuantity ?? 0}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-center text-xs text-neutral-500">
+                      No matching products found for "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
               {/* Category Dropdown Filter */}
@@ -381,44 +550,44 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
                 </select>
               </div>
 
-              {/* Unit Price */}
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] text-neutral-400 font-bold mb-1">
-                  Unit Price (₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={selectedCustomPrice}
-                  onChange={(e) => setSelectedCustomPrice(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-lime-500"
-                />
-              </div>
+              {/* Price, Qty and Add Button responsive row for mobile */}
+              <div className="sm:col-span-4 grid grid-cols-12 gap-2.5 items-end">
+                <div className="col-span-5">
+                  <label className="block text-[11px] text-neutral-400 font-bold mb-1">
+                    Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Price"
+                    value={selectedCustomPrice}
+                    onChange={(e) => setSelectedCustomPrice(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-lime-500 font-mono"
+                  />
+                </div>
 
-              {/* Quantity */}
-              <div className="sm:col-span-1">
-                <label className="block text-[11px] text-neutral-400 font-bold mb-1">
-                  Qty
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={selectedQty}
-                  onChange={(e) => setSelectedQty(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2 py-2.5 text-white text-xs focus:outline-none focus:border-lime-500"
-                />
-              </div>
+                <div className="col-span-4">
+                  <label className="block text-[11px] text-neutral-400 font-bold mb-1">
+                    Qty
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={selectedQty}
+                    onChange={(e) => setSelectedQty(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2 py-2.5 text-white text-xs focus:outline-none focus:border-lime-500 text-center font-bold"
+                  />
+                </div>
 
-              {/* Add Button */}
-              <div className="sm:col-span-1">
-                <button
-                  type="button"
-                  onClick={handleAddProductToSale}
-                  className="w-full h-10 bg-lime-500 hover:bg-lime-400 text-neutral-950 font-bold rounded-xl flex items-center justify-center transition cursor-pointer shadow-md shadow-lime-500/20"
-                  title="Add Product"
-                >
-                  <FiPlus size={18} />
-                </button>
+                <div className="col-span-3">
+                  <button
+                    type="button"
+                    onClick={handleAddProductToSale}
+                    className="w-full h-10 bg-lime-500 hover:bg-lime-400 text-neutral-950 font-bold rounded-xl flex items-center justify-center transition cursor-pointer shadow-md shadow-lime-500/20"
+                    title="Add Product to Sale"
+                  >
+                    <FiPlus size={20} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
