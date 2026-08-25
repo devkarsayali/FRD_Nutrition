@@ -157,76 +157,76 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
   return (
     <div className="space-y-8 text-white">
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {/* Card 1: Total Supplements */}
         <Link
           to="/admin/products"
-          className="p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-2 hover:border-lime-500/50 hover:bg-[#181e17] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
+          className="p-3.5 sm:p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-1.5 sm:space-y-2 hover:border-lime-500/50 hover:bg-[#181e17] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
         >
-          <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span>Total Supplements</span>
-            <FiBox className="text-lime-400 group-hover:scale-110 transition-transform" size={20} />
+          <div className="flex items-center justify-between text-neutral-400 text-xs gap-1">
+            <span className="truncate">Total Supplements</span>
+            <FiBox className="text-lime-400 group-hover:scale-110 transition-transform shrink-0" size={18} />
           </div>
-          <span className="font-heading font-black text-3xl text-white block">
+          <span className="font-heading font-black text-2xl sm:text-3xl text-white block">
             {totalProducts}
           </span>
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 group-hover:text-lime-400 transition-colors">
-            <span>Live on storefront</span>
-            <span className="font-bold flex items-center gap-0.5">Manage →</span>
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 group-hover:text-lime-400 transition-colors gap-1">
+            <span className="truncate">Live on storefront</span>
+            <span className="font-bold flex items-center gap-0.5 shrink-0">Manage →</span>
           </div>
         </Link>
 
         {/* Card 2: Out of Stock Alerts */}
         <Link
           to="/admin/products?stock=outofstock"
-          className="p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-2 hover:border-red-500/50 hover:bg-[#1f1717] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
+          className="p-3.5 sm:p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-1.5 sm:space-y-2 hover:border-red-500/50 hover:bg-[#1f1717] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
         >
-          <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span>Out of Stock Alerts</span>
-            <FiAlertCircle className="text-red-400 group-hover:scale-110 transition-transform" size={20} />
+          <div className="flex items-center justify-between text-neutral-400 text-xs gap-1">
+            <span className="truncate">Out of Stock Alerts</span>
+            <FiAlertCircle className="text-red-400 group-hover:scale-110 transition-transform shrink-0" size={18} />
           </div>
-          <span className="font-heading font-black text-3xl text-white block">
+          <span className="font-heading font-black text-2xl sm:text-3xl text-white block">
             {outOfStockCount}
           </span>
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 group-hover:text-red-400 transition-colors">
-            <span>Requires restocking</span>
-            <span className="font-bold flex items-center gap-0.5">Filter Out of Stock →</span>
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 group-hover:text-red-400 transition-colors gap-1">
+            <span className="truncate">Requires restocking</span>
+            <span className="font-bold flex items-center gap-0.5 shrink-0"><span className="hidden sm:inline">Filter Out of Stock</span><span className="sm:hidden">Filter</span> →</span>
           </div>
         </Link>
 
         {/* Card 3: Customer Orders */}
         <Link
           to="/admin/orders"
-          className="p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-2 hover:border-blue-500/50 hover:bg-[#171b22] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
+          className="p-3.5 sm:p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-1.5 sm:space-y-2 hover:border-blue-500/50 hover:bg-[#171b22] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
         >
-          <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span>Customer Orders</span>
-            <FiShoppingBag className="text-blue-400 group-hover:scale-110 transition-transform" size={20} />
+          <div className="flex items-center justify-between text-neutral-400 text-xs gap-1">
+            <span className="truncate">Customer Orders</span>
+            <FiShoppingBag className="text-blue-400 group-hover:scale-110 transition-transform shrink-0" size={18} />
           </div>
-          <span className="font-heading font-black text-3xl text-white block">
+          <span className="font-heading font-black text-2xl sm:text-3xl text-white block">
             {ordersCount}
           </span>
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 group-hover:text-blue-400 transition-colors">
-            <span>Submitted orders</span>
-            <span className="font-bold flex items-center gap-0.5">View Orders →</span>
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 group-hover:text-blue-400 transition-colors gap-1">
+            <span className="truncate">Submitted orders</span>
+            <span className="font-bold flex items-center gap-0.5 shrink-0"><span className="hidden sm:inline">View Orders</span><span className="sm:hidden">View</span> →</span>
           </div>
         </Link>
 
         {/* Card 4: Contact Messages */}
         <Link
           to="/admin/messages"
-          className="p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-2 hover:border-purple-500/50 hover:bg-[#1a1722] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
+          className="p-3.5 sm:p-6 rounded-2xl bg-[#141813] border border-neutral-800 space-y-1.5 sm:space-y-2 hover:border-purple-500/50 hover:bg-[#1a1722] hover:scale-[1.02] transition-all duration-200 group cursor-pointer block shadow-lg"
         >
-          <div className="flex items-center justify-between text-neutral-400 text-xs">
-            <span>Contact Messages</span>
-            <FiMessageSquare className="text-purple-400 group-hover:scale-110 transition-transform" size={20} />
+          <div className="flex items-center justify-between text-neutral-400 text-xs gap-1">
+            <span className="truncate">Contact Messages</span>
+            <FiMessageSquare className="text-purple-400 group-hover:scale-110 transition-transform shrink-0" size={18} />
           </div>
-          <span className="font-heading font-black text-3xl text-white block">
+          <span className="font-heading font-black text-2xl sm:text-3xl text-white block">
             {messagesCount}
           </span>
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 group-hover:text-purple-400 transition-colors">
-            <span>Customer inquiries</span>
-            <span className="font-bold flex items-center gap-0.5">View Messages →</span>
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 group-hover:text-purple-400 transition-colors gap-1">
+            <span className="truncate">Customer inquiries</span>
+            <span className="font-bold flex items-center gap-0.5 shrink-0"><span className="hidden sm:inline">View Messages</span><span className="sm:hidden">View</span> →</span>
           </div>
         </Link>
       </div>
