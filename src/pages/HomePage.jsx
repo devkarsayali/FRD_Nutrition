@@ -49,7 +49,16 @@ import Latest2 from "../assets/LATEST2.jpeg";
 import Latest3 from "../assets/LATEST3.jpeg";
 import Latest4 from "../assets/LATEST4.jpeg";
 
-
+const DEFAULT_HERO_SLIDE = {
+  id: "default_hero_slide_1",
+  tagline: "OFFICIAL FRD NUTRITION STORE",
+  title: "UNLEASH YOUR ULTIMATE ATHLETIC POTENTIAL",
+  subtitle: "100% Authentic Whey Protein, Creatine, BCAA & Gym Supplements Delivered Across India.",
+  btnText: "SHOP SUPPLEMENTS",
+  category: "All",
+  image: HeroBanner1,
+  active: true,
+};
 
 export default function HomePage() {
   const { latestProducts, justLaunchedProducts, trendingProducts, popularProducts, setSelectedCategory, setSelectedTag } = useProducts();
