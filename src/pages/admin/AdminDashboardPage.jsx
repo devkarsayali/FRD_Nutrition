@@ -25,42 +25,77 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
   const { products } = useProducts();
   const { orders } = useCart();
   const [messagesCount, setMessagesCount] = useState(0);
+  const [onlineOrdersCount, setOnlineOrdersCount] = useState(0);
+  const [offlineOrdersCount, setOfflineOrdersCount] = useState(0);
   const [ordersCount, setOrdersCount] = useState(0);
   const [activeCategories, setActiveCategories] = useState([]);
 
+  const updateCombinedOrdersCount = (onlineMap, offlineMap) => {
+    const onlineSize = onlineMap.size;
+    const offlineSize = offlineMap.size;
+    setOnlineOrdersCount(onlineSize);
+    setOfflineOrdersCount(offlineSize);
+    setOrdersCount(onlineSize + offlineSize);
+  };
+
   useEffect(() => {
-    // 1. Subscribe to Firestore orders collection for live count
+    let currentOnlineMap = new Map();
+    let currentOfflineMap = new Map();
+
+    // 1. Subscribe to Firestore orders collection for online count
     const unsubOrders = onSnapshot(collection(db, "orders"), (snap) => {
-      const firestoreOrdersMap = new Map();
+      const onlineMap = new Map();
       snap.forEach((doc) => {
-        firestoreOrdersMap.set(doc.id, doc.data());
+        onlineMap.set(doc.id, doc.data());
       });
 
-      // Also merge with context orders & local storage fallback
       if (Array.isArray(orders)) {
         orders.forEach((o) => {
-          if (o && o.id && !firestoreOrdersMap.has(o.id)) {
-            firestoreOrdersMap.set(o.id, o);
+          if (o && o.id && !onlineMap.has(o.id)) {
+            onlineMap.set(o.id, o);
           }
         });
       }
 
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.toLowerCase().includes("order")) {
+        if (key && key.toLowerCase().includes("order") && !key.includes("offline")) {
           try {
             const parsed = JSON.parse(localStorage.getItem(key) || "[]");
             const list = Array.isArray(parsed) ? parsed : [parsed];
             list.forEach((o) => {
-              if (o && o.id && !firestoreOrdersMap.has(o.id)) {
-                firestoreOrdersMap.set(o.id, o);
+              if (o && o.id && !onlineMap.has(o.id)) {
+                onlineMap.set(o.id, o);
               }
             });
           } catch (e) {}
         }
       }
 
-      setOrdersCount(firestoreOrdersMap.size);
+      currentOnlineMap = onlineMap;
+      updateCombinedOrdersCount(currentOnlineMap, currentOfflineMap);
+    });
+
+    // 1b. Subscribe to Firestore sales collection for offline count
+    const unsubSales = onSnapshot(collection(db, "sales"), (snap) => {
+      const offlineMap = new Map();
+      snap.forEach((doc) => {
+        offlineMap.set(doc.id, doc.data());
+      });
+
+      try {
+        const savedOffline = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
+        if (Array.isArray(savedOffline)) {
+          savedOffline.forEach((item) => {
+            if (item && item.id && !offlineMap.has(item.id)) {
+              offlineMap.set(item.id, item);
+            }
+          });
+        }
+      } catch (e) {}
+
+      currentOfflineMap = offlineMap;
+      updateCombinedOrdersCount(currentOnlineMap, currentOfflineMap);
     });
 
     // 2. Subscribe to Firestore contact_messages collection for live count
@@ -106,9 +141,11 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
 
     return () => {
       unsubOrders();
+      if (typeof unsubSales === "function") unsubSales();
       unsubMsgs();
       unsubCats();
       window.removeEventListener("frd_orders_updated", handleStorage);
+      window.removeEventListener("frd_sales_updated", handleStorage);
       window.removeEventListener("frd_contact_messages_updated", handleStorage);
       window.removeEventListener("frd_categories_updated", handleStorage);
       window.removeEventListener("storage", handleStorage);
@@ -203,11 +240,16 @@ export default function AdminDashboardPage({ onOpenAddModal }) {
             <span className="truncate">Customer Orders</span>
             <FiShoppingBag className="text-blue-400 group-hover:scale-110 transition-transform shrink-0" size={18} />
           </div>
-          <span className="font-heading font-black text-2xl sm:text-3xl text-white block">
-            {ordersCount}
-          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="font-heading font-black text-2xl sm:text-3xl text-white block">
+              {ordersCount}
+            </span>
+            <span className="text-[10px] text-neutral-400 font-mono">
+              🌐 {onlineOrdersCount} | 🏪 {offlineOrdersCount}
+            </span>
+          </div>
           <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 group-hover:text-blue-400 transition-colors gap-1">
-            <span className="truncate">Submitted orders</span>
+            <span className="truncate">Online ({onlineOrdersCount}) & Offline ({offlineOrdersCount})</span>
             <span className="font-bold flex items-center gap-0.5 shrink-0"><span className="hidden sm:inline">View Orders</span><span className="sm:hidden">View</span> →</span>
           </div>
         </Link>

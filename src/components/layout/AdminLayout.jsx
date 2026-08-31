@@ -5,6 +5,7 @@ import {
   FiChevronDown,
   FiGrid,
   FiHome,
+  FiImage,
   FiLayers,
   FiLock,
   FiLogOut,
@@ -213,7 +214,7 @@ export default function AdminLayout() {
   }, [cartContextOrders, location.pathname]);
 
   if (!isAdminLoggedIn) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -228,8 +229,9 @@ export default function AdminLayout() {
     { name: "Sales", path: "/admin/sales", icon: FiTrendingUp },
     { name: "Categories", path: "/admin/categories", icon: FiLayers },
     { name: "Supplements", path: "/admin/products", icon: FiBox },
+    { name: "Home Banners", path: "/admin/banners", icon: FiImage },
     { name: "Customer Orders", path: "/admin/orders", icon: FiShoppingBag },
-    { name: "Customers", path: "/admin/customers", icon: FiUsers },
+    // { name: "Customers", path: "/admin/customers", icon: FiUsers },
     { name: "Contact Messages", path: "/admin/messages", icon: FiMessageSquare },
   ];
 

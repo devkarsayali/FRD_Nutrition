@@ -1,5 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiPlus, FiTrash2, FiX, FiShoppingBag, FiUser, FiPhone, FiDollarSign, FiCalendar, FiFileText, FiLayers, FiSearch, FiMail, FiMapPin, FiCheckCircle } from "react-icons/fi";
+import {
+  FiPlus,
+  FiTrash2,
+  FiX,
+  FiShoppingBag,
+  FiUser,
+  FiPhone,
+  FiDollarSign,
+  FiCalendar,
+  FiFileText,
+  FiLayers,
+  FiSearch,
+  FiMail,
+  FiMapPin,
+  FiCheckCircle,
+  FiPackage,
+  FiClock,
+  FiGlobe,
+  FiChevronDown,
+  FiChevronUp,
+} from "react-icons/fi";
 import { useProducts, isCategoryMatch } from "../../context/ProductContext";
 import toast from "react-hot-toast";
 import { db } from "../../firebase/firebase.config";
@@ -18,7 +38,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
   const [notes, setNotes] = useState("");
   const [globalDiscount, setGlobalDiscount] = useState(0);
 
-  // Selected items list
+  // Selected items list for the sale
   const [saleItems, setSaleItems] = useState([]);
 
   // Category & Product Selection helper state
@@ -32,10 +52,12 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  // Existing Customer search & auto-fill state
+  // Customer search & suggestions state
   const [existingCustomers, setExistingCustomers] = useState([]);
-  const [isCustomerSearchFocused, setIsCustomerSearchFocused] = useState(false);
+  const [isCustomerNameFocused, setIsCustomerNameFocused] = useState(false);
+  const [isCustomerPhoneFocused, setIsCustomerPhoneFocused] = useState(false);
   const [selectedCustomerMeta, setSelectedCustomerMeta] = useState(null);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(true);
 
   // Filter products based on selected Category
   const categoryFilteredProducts = useMemo(() => {
@@ -56,86 +78,168 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     );
   }, [products, searchQuery]);
 
-  // Load existing offline store customers from Firestore (sales) & LocalStorage for live matching
+  // Load existing customers and past transactions (online orders, offline sales & users) from Firestore & LocalStorage
   useEffect(() => {
     if (!isOpen) return;
 
     const fetchCustomers = async () => {
-      const custMap = new Map();
+      const custMap = new Map(); // Key -> Customer details with orders
 
-      const addCust = (name, phone, email, address, city) => {
-        const trimmedName = (name || "").trim();
-        if (
-          !trimmedName ||
-          trimmedName.toLowerCase() === "walk-in customer" ||
-          trimmedName.toLowerCase() === "customer"
-        ) {
-          return;
-        }
+      const cleanPhoneDigits = (p) => {
+        if (!p) return "";
+        const digits = String(p).replace(/\D/g, "");
+        if (digits.length >= 10) return digits.slice(-10);
+        return digits;
+      };
 
-        const trimmedPhone = (phone || "").replace(/\D/g, "").slice(0, 10);
-        const trimmedEmail = (email || "").trim().toLowerCase();
-        const trimmedAddress = (address || "").trim();
-        const trimmedCity = (city || "").trim();
+      const addOrUpdateCustomer = (custData, orderObj = null) => {
+        if (!custData) return;
+        const rawPhone = (custData.phone || custData.phoneNumber || "").trim();
+        const name = (custData.name || custData.fullName || custData.displayName || "").trim();
+        const email = (custData.email || "").trim().toLowerCase();
+        const address = (custData.address || "").trim();
+        const city = (custData.city || "").trim();
 
-        // Key for deduplication
-        const key = trimmedEmail || (trimmedPhone.length === 10 ? trimmedPhone : trimmedName.toLowerCase());
+        if (!rawPhone && (!name || name.toLowerCase() === "walk-in customer")) return;
+
+        const phoneDigits = cleanPhoneDigits(rawPhone);
+        const key = phoneDigits.length >= 7 ? phoneDigits : (email || name.toLowerCase());
+
+        if (!key) return;
 
         if (custMap.has(key)) {
           const existing = custMap.get(key);
-          if (!existing.name && trimmedName) existing.name = trimmedName;
-          if (!existing.phone && trimmedPhone) existing.phone = trimmedPhone;
-          if (!existing.email && trimmedEmail) existing.email = trimmedEmail;
-          if (!existing.address && trimmedAddress) existing.address = trimmedAddress;
-          if (!existing.city && trimmedCity) existing.city = trimmedCity;
+          if (!existing.phone && rawPhone) existing.phone = rawPhone;
+          if (!existing.name && name && name.toLowerCase() !== "walk-in customer") existing.name = name;
+          if (!existing.email && email) existing.email = email;
+          if (!existing.address && address) existing.address = address;
+          if (!existing.city && city) existing.city = city;
+
+          if (orderObj) {
+            const exists = existing.orders.some((o) => o.id === orderObj.id);
+            if (!exists) existing.orders.push(orderObj);
+          }
         } else {
           custMap.set(key, {
-            name: trimmedName,
-            phone: trimmedPhone,
-            email: trimmedEmail,
-            address: trimmedAddress,
-            city: trimmedCity,
+            name: name && name.toLowerCase() !== "walk-in customer" ? name : "",
+            phone: rawPhone,
+            email,
+            address,
+            city,
+            orders: orderObj ? [orderObj] : [],
           });
         }
       };
 
-      // 1. Fetch offline sales records from Firestore `sales` collection
+      // 1. Fetch registered users from Firestore `users` collection
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        usersSnap.forEach((docSnap) => {
+          const u = docSnap.data();
+          addOrUpdateCustomer({
+            name: u.name || u.displayName || u.fullName,
+            phone: u.phone || u.phoneNumber,
+            email: u.email,
+            address: u.address,
+            city: u.city,
+          });
+        });
+      } catch (e) {
+        console.warn("Firestore users fetch warning:", e);
+      }
+
+      // 2. Fetch offline sales records from Firestore `sales` collection
       try {
         const salesSnap = await getDocs(collection(db, "sales"));
         salesSnap.forEach((docSnap) => {
           const s = docSnap.data();
-          // Filter to ensure offline sales records
-          if (s.customer && (!s.saleType || s.saleType === "offline")) {
-            addCust(
-              s.customer.name,
-              s.customer.phone,
-              s.customer.email,
-              s.customer.address,
-              s.customer.city
-            );
+          if (s.customer) {
+            addOrUpdateCustomer(s.customer, {
+              id: docSnap.id,
+              billNumber: s.billNumber || docSnap.id,
+              orderType: "offline",
+              date: s.saleDate || s.createdAt,
+              paymentMethod: s.paymentMethod || "Cash",
+              totalAmount: Number(s.totalAmount || s.total || 0),
+              totalQuantity: Number(s.totalQuantity || (s.items || []).reduce((acc, i) => acc + (i.quantity || 1), 0)),
+              items: Array.isArray(s.items)
+                ? s.items.map((i) => ({
+                    name: i.name,
+                    category: i.category || "Supplements",
+                    quantity: Number(i.quantity || 1),
+                    price: Number(i.price || 0),
+                    total: Number(i.total || (i.price || 0) * (i.quantity || 1)),
+                  }))
+                : [],
+            });
           }
         });
       } catch (e) {
         console.warn("Firestore sales fetch warning:", e);
       }
 
-      // 2. Fetch offline sales records from LocalStorage `frd_offline_sales_v1`
+      // 3. Fetch offline sales records from LocalStorage `frd_offline_sales_v1`
       try {
         const savedOffline = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
         if (Array.isArray(savedOffline)) {
           savedOffline.forEach((s) => {
             if (s.customer) {
-              addCust(
-                s.customer.name,
-                s.customer.phone,
-                s.customer.email,
-                s.customer.address,
-                s.customer.city
-              );
+              addOrUpdateCustomer(s.customer, {
+                id: s.id,
+                billNumber: s.billNumber || s.id,
+                orderType: "offline",
+                date: s.saleDate || s.createdAt,
+                paymentMethod: s.paymentMethod || "Cash",
+                totalAmount: Number(s.totalAmount || s.total || 0),
+                totalQuantity: Number(s.totalQuantity || (s.items || []).reduce((acc, i) => acc + (i.quantity || 1), 0)),
+                items: Array.isArray(s.items)
+                  ? s.items.map((i) => ({
+                      name: i.name,
+                      category: i.category || "Supplements",
+                      quantity: Number(i.quantity || 1),
+                      price: Number(i.price || 0),
+                      total: Number(i.total || (i.price || 0) * (i.quantity || 1)),
+                    }))
+                  : [],
+              });
             }
           });
         }
-      } catch (e) { }
+      } catch (e) {}
+
+      // 4. Fetch online store orders from Firestore `orders` collection
+      try {
+        const ordersSnap = await getDocs(collection(db, "orders"));
+        ordersSnap.forEach((docSnap) => {
+          const o = docSnap.data();
+          const cust = o.customer || o.shippingAddress || {};
+          addOrUpdateCustomer(cust, {
+            id: docSnap.id,
+            billNumber: o.orderNumber || docSnap.id,
+            orderType: "online",
+            date: o.createdAt || o.orderDate || o.date,
+            paymentMethod: o.paymentMethod || o.paymentInfo?.method || "ONLINE",
+            totalAmount: Number(o.totalAmount || o.total || 0),
+            totalQuantity: Number(o.totalQuantity || (o.items || o.cartItems || []).reduce((acc, i) => acc + (i.quantity || 1), 0)),
+            items: Array.isArray(o.items || o.cartItems)
+              ? (o.items || o.cartItems).map((i) => ({
+                  name: i.name || i.title,
+                  category: i.category || "Supplements",
+                  quantity: Number(i.quantity || 1),
+                  price: Number(i.price || 0),
+                  total: Number(i.total || (i.price || 0) * (i.quantity || 1)),
+                }))
+              : [],
+          });
+        });
+      } catch (e) {
+        console.warn("Firestore orders fetch warning:", e);
+      }
+
+      // Sort order history for each customer descending
+      custMap.forEach((cust) => {
+        cust.orders.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      });
 
       setExistingCustomers(Array.from(custMap.values()));
     };
@@ -143,27 +247,32 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     fetchCustomers();
   }, [isOpen]);
 
-  // Search matching customer suggestions based on customerName typing
-  const customerSuggestions = useMemo(() => {
+  // Name suggestions dropdown
+  const nameSuggestions = useMemo(() => {
     const query = customerName.trim().toLowerCase();
     if (!query) return [];
-
-    const isNumeric = /^\d+$/.test(query);
-
     return existingCustomers.filter((cust) => {
-      if (isNumeric) {
-        return cust.phone && cust.phone.includes(query);
-      }
-
-      if (!cust.name) return false;
-      const nameLower = cust.name.toLowerCase();
-      const nameWords = nameLower.split(/\s+/);
-
-      // Match names where the full name or any word in the name starts with the typed query
-      return nameLower.startsWith(query) || nameWords.some((word) => word.startsWith(query));
+      const nameLower = (cust.name || "").toLowerCase();
+      return nameLower.includes(query);
     });
   }, [existingCustomers, customerName]);
 
+  // Phone suggestions dropdown
+  const phoneSuggestions = useMemo(() => {
+    const query = customerPhone.trim().toLowerCase();
+    const digitsQuery = query.replace(/\D/g, "");
+    if (!query) return [];
+
+    return existingCustomers.filter((cust) => {
+      const rawPhone = (cust.phone || "").toLowerCase();
+      const phoneDigits = (cust.phone || "").replace(/\D/g, "");
+      if (digitsQuery && phoneDigits.includes(digitsQuery)) return true;
+      if (rawPhone.includes(query)) return true;
+      return false;
+    });
+  }, [existingCustomers, customerPhone]);
+
+  // Handle selecting customer from EITHER Name or Phone dropdown
   const handleSelectCustomer = (cust) => {
     setCustomerName(cust.name || "");
     setCustomerPhone(cust.phone || "");
@@ -171,8 +280,55 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     setCustomerAddress(cust.address || "");
     setCustomerCity(cust.city || "");
     setSelectedCustomerMeta(cust);
-    setIsCustomerSearchFocused(false);
-    toast.success(`Loaded details for existing customer "${cust.name}"`);
+    setIsCustomerNameFocused(false);
+    setIsCustomerPhoneFocused(false);
+    toast.success(`Loaded customer profile for "${cust.name || cust.phone}". Details auto-filled!`);
+  };
+
+  // Re-add items from a past order into current sale
+  const handleReaddOrderItems = (pastOrderItems) => {
+    if (!Array.isArray(pastOrderItems) || pastOrderItems.length === 0) return;
+
+    let addedCount = 0;
+    pastOrderItems.forEach((pastItem) => {
+      const catalogProd = products.find(
+        (p) => p.name?.toLowerCase().trim() === pastItem.name?.toLowerCase().trim()
+      );
+
+      const prodId = catalogProd ? catalogProd.id : `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const price = catalogProd ? Number(catalogProd.price) : Number(pastItem.price) || 0;
+      const qty = Math.max(1, Number(pastItem.quantity) || 1);
+      const category = catalogProd ? catalogProd.category : pastItem.category || "Supplements";
+      const image = catalogProd ? catalogProd.image : "";
+
+      setSaleItems((prev) => {
+        const existingIdx = prev.findIndex((i) => String(i.productId) === String(prodId) || i.name === pastItem.name);
+        if (existingIdx > -1) {
+          const updated = [...prev];
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            quantity: updated[existingIdx].quantity + qty,
+          };
+          return updated;
+        } else {
+          return [
+            ...prev,
+            {
+              productId: prodId,
+              name: pastItem.name,
+              category,
+              price,
+              quantity: qty,
+              itemDiscount: 0,
+              image,
+            },
+          ];
+        }
+      });
+      addedCount++;
+    });
+
+    toast.success(`Added ${addedCount} item(s) from previous order into transaction!`);
   };
 
   useEffect(() => {
@@ -264,7 +420,6 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     const qty = Math.max(1, Number(selectedQty) || 1);
     const itemDisc = Math.max(0, Number(selectedItemDiscount) || 0);
 
-    // Check if already in list
     const existingIndex = saleItems.findIndex((i) => String(i.productId) === String(prod.id));
     if (existingIndex > -1) {
       const updated = [...saleItems];
@@ -291,7 +446,6 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
       ]);
     }
 
-    // Reset picker
     setSelectedProductId("");
     setSelectedQty(1);
     setSelectedCustomPrice("");
@@ -339,6 +493,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!customerName.trim()) {
       toast.error("Please enter the customer name.");
       return;
@@ -346,11 +501,6 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
 
     if (!customerPhone.trim()) {
       toast.error("Please enter the customer phone number.");
-      return;
-    }
-
-    if (customerPhone.trim().length !== 10) {
-      toast.error("Customer phone number must be exactly 10 digits.");
       return;
     }
 
@@ -363,7 +513,6 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
       ? editingSale.id
       : `off_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    // Generate unique sequential bill number (e.g. FRD-OFF-000001)
     let billNumber = editingSale?.billNumber || "";
     if (!billNumber) {
       let nextSeq = 1;
@@ -372,7 +521,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
         if (Array.isArray(savedOffline) && savedOffline.length > 0) {
           nextSeq = savedOffline.length + 1;
         }
-      } catch (e) { }
+      } catch (e) {}
       billNumber = `FRD-OFF-${String(nextSeq).padStart(6, "0")}`;
     }
 
@@ -411,18 +560,13 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     };
 
     try {
-      // 1. Restore previous stock if editing
       if (editingSale && Array.isArray(editingSale.items)) {
         restoreProductStock(editingSale.items);
       }
 
-      // 2. Decrease new product stock
       decreaseProductStock(saleData.items);
-
-      // 3. Save to Firestore `sales` collection
       await setDoc(doc(db, "sales", saleId), saleData, { merge: true });
 
-      // 4. Save to LocalStorage fallback for offline sync
       try {
         const savedOffline = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
         const existingIdx = savedOffline.findIndex((s) => s.id === saleId);
@@ -432,7 +576,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
           savedOffline.unshift(saleData);
         }
         localStorage.setItem("frd_offline_sales_v1", JSON.stringify(savedOffline));
-      } catch (err) { }
+      } catch (err) {}
 
       window.dispatchEvent(new CustomEvent("frd_sales_updated"));
       toast.success(editingSale ? "Offline sale updated successfully!" : "Offline store sale recorded successfully!");
@@ -447,14 +591,9 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
     }
   };
 
-  const handlePhoneChange = (e) => {
-    const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 10);
-    setCustomerPhone(digitsOnly);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white my-auto max-h-[92vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white my-auto max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
           <div className="flex items-center gap-3">
@@ -479,14 +618,14 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 text-xs">
-          {/* Customer Details Section */}
+          {/* Customer Details & Dual Search Section */}
           <div className="space-y-4">
             {selectedCustomerMeta && (
               <div className="p-3 rounded-xl bg-lime-500/10 border border-lime-500/30 flex items-center justify-between text-xs text-lime-400">
                 <div className="flex items-center gap-2">
                   <FiCheckCircle size={16} className="shrink-0 text-lime-400" />
                   <span>
-                    Existing customer <strong>{selectedCustomerMeta.name}</strong> selected. Personal & contact details auto-filled.
+                    Existing customer loaded for <strong>{selectedCustomerMeta.name || selectedCustomerMeta.phone}</strong>. Details auto-filled.
                   </span>
                 </div>
                 <button
@@ -500,58 +639,63 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* 1. CUSTOMER NAME (SEARCH & AUTOCOMPLETE) */}
               <div className="relative">
                 <label className="block text-neutral-300 font-bold mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <FiUser className="text-lime-400" size={14} />
                     <span>Customer Name <span className="text-lime-400">*</span></span>
                   </span>
-                  {existingCustomers.length > 0 && (
-                    <span className="text-[10px] text-lime-400/80 font-normal">
-
-                    </span>
-                  )}
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Customer name"
+                    placeholder="Search name or type..."
                     value={customerName}
                     onChange={(e) => {
                       setCustomerName(e.target.value);
-                      setIsCustomerSearchFocused(true);
-                      setSelectedCustomerMeta(null);
+                      setIsCustomerNameFocused(true);
                     }}
-                    onFocus={() => setIsCustomerSearchFocused(true)}
-                    onBlur={() => setTimeout(() => setIsCustomerSearchFocused(false), 250)}
+                    onFocus={() => setIsCustomerNameFocused(true)}
+                    onBlur={() => setTimeout(() => setIsCustomerNameFocused(false), 250)}
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
                   />
 
-                  {/* Live Matching Customer Dropdown Suggestions */}
-                  {isCustomerSearchFocused && customerName.trim() !== "" && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl z-40 max-h-60 overflow-y-auto divide-y divide-neutral-800/80">
-                      {customerSuggestions.length > 0 ? (
+                  {/* Customer Name Suggestions Dropdown */}
+                  {isCustomerNameFocused && customerName.trim() !== "" && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-neutral-800">
+                      {nameSuggestions.length > 0 ? (
                         <>
-                          <div className="px-3 py-1.5 bg-neutral-900/80 text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between">
-                            <span>Matching Customers ({customerSuggestions.length})</span>
+                          <div className="px-3 py-1.5 bg-neutral-900/90 text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>Matching Customers ({nameSuggestions.length})</span>
                             <span className="text-[9px] text-lime-400 font-normal">Click to fill details</span>
                           </div>
-                          {customerSuggestions.map((cust, idx) => (
+                          {nameSuggestions.map((cust, idx) => (
                             <div
                               key={idx}
                               onMouseDown={() => handleSelectCustomer(cust)}
-                              className="p-3 hover:bg-neutral-900 cursor-pointer transition text-xs flex items-center gap-2 group"
+                              className="p-3 hover:bg-neutral-900 cursor-pointer transition text-xs flex items-center justify-between gap-2 group"
                             >
-                              <FiUser size={14} className="text-lime-400 shrink-0" />
-                              <span className="font-bold text-white group-hover:text-lime-400 transition">
-                                {cust.name}
+                              <div className="truncate">
+                                <p className="font-bold text-white group-hover:text-lime-400 transition flex items-center gap-1.5">
+                                  <span>{cust.name}</span>
+                                  {cust.phone && (
+                                    <span className="font-mono text-neutral-400 text-[11px]">
+                                      ({cust.phone})
+                                    </span>
+                                  )}
+                                </p>
+                                {cust.city && <p className="text-[10px] text-neutral-500 truncate">{cust.city}</p>}
+                              </div>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-400 font-medium border border-lime-500/20 shrink-0">
+                                {cust.orders.length} order(s)
                               </span>
                             </div>
                           ))}
                         </>
                       ) : (
                         <div className="p-3 text-xs text-neutral-400 text-center italic">
-                          No matching existing customer found. Type to add as a new customer.
+                          No matching customer name found.
                         </div>
                       )}
                     </div>
@@ -559,27 +703,74 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
                 </div>
               </div>
 
-              <div>
+              {/* 2. CUSTOMER PHONE (SEARCH & AUTOCOMPLETE) */}
+              <div className="relative">
                 <label className="block text-neutral-300 font-bold mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <FiPhone className="text-lime-400" size={14} />
                     <span>Customer Phone <span className="text-lime-400">*</span></span>
                   </span>
                   <span className="text-[10px] text-neutral-400 font-mono">
-                    {customerPhone.length}/10
+                    {customerPhone.length} chars
                   </span>
                 </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={10}
-                  placeholder="e.g. 9876543210"
-                  value={customerPhone}
-                  onChange={handlePhoneChange}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 font-mono"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search phone (e.g. 7972...)"
+                    value={customerPhone}
+                    onChange={(e) => {
+                      setCustomerPhone(e.target.value);
+                      setIsCustomerPhoneFocused(true);
+                    }}
+                    onFocus={() => setIsCustomerPhoneFocused(true)}
+                    onBlur={() => setTimeout(() => setIsCustomerPhoneFocused(false), 250)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 font-mono"
+                  />
+
+                  {/* Customer Phone Suggestions Dropdown */}
+                  {isCustomerPhoneFocused && customerPhone.trim() !== "" && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-neutral-800">
+                      {phoneSuggestions.length > 0 ? (
+                        <>
+                          <div className="px-3 py-1.5 bg-neutral-900/90 text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>Matching Phone Numbers ({phoneSuggestions.length})</span>
+                            <span className="text-[9px] text-lime-400 font-normal">Click to fill details</span>
+                          </div>
+                          {phoneSuggestions.map((cust, idx) => (
+                            <div
+                              key={idx}
+                              onMouseDown={() => handleSelectCustomer(cust)}
+                              className="p-3 hover:bg-neutral-900 cursor-pointer transition text-xs flex items-center justify-between gap-2 group"
+                            >
+                              <div className="truncate">
+                                <p className="font-bold text-white font-mono group-hover:text-lime-400 transition flex items-center gap-1.5">
+                                  <span>{cust.phone}</span>
+                                  {cust.name && (
+                                    <span className="font-sans font-semibold text-neutral-300 text-[11px]">
+                                      — {cust.name}
+                                    </span>
+                                  )}
+                                </p>
+                                {cust.city && <p className="text-[10px] text-neutral-500 truncate">{cust.city}</p>}
+                              </div>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-400 font-medium border border-lime-500/20 shrink-0">
+                                {cust.orders.length} order(s)
+                              </span>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="p-3 text-xs text-neutral-400 text-center italic">
+                          No matching phone number found. Continue entering details for a new customer.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* 3. CUSTOMER EMAIL */}
               <div>
                 <label className="block text-neutral-300 font-bold mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
@@ -587,9 +778,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
                     <span>Customer Email (Optional)</span>
                   </span>
                   {customerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim()) && (
-                    <span className="text-[10px] text-red-400 font-medium">
-                      Invalid email format
-                    </span>
+                    <span className="text-[10px] text-red-400 font-medium">Invalid</span>
                   )}
                 </label>
                 <input
@@ -597,10 +786,11 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
                   placeholder="e.g. customer@gmail.com"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className={`w-full bg-neutral-900 border rounded-xl px-3.5 py-2.5 text-white focus:outline-none transition ${customerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())
-                    ? "border-red-500/80 focus:border-red-500"
-                    : "border-neutral-800 focus:border-lime-500"
-                    }`}
+                  className={`w-full bg-neutral-900 border rounded-xl px-3.5 py-2.5 text-white focus:outline-none transition ${
+                    customerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())
+                      ? "border-red-500/80 focus:border-red-500"
+                      : "border-neutral-800 focus:border-lime-500"
+                  }`}
                 />
               </div>
             </div>
@@ -634,6 +824,110 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
                 />
               </div>
             </div>
+
+            {/* CUSTOMER PAST ORDER HISTORY PANEL */}
+            {selectedCustomerMeta && (
+              <div className="p-4 rounded-2xl bg-neutral-900/90 border border-lime-500/30 space-y-3 shadow-lg">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-lime-400 font-bold">
+                    <FiClock size={16} className="shrink-0" />
+                    <span>Customer Order History ({selectedCustomerMeta.orders?.length || 0} order(s))</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHistoryPanel((prev) => !prev)}
+                    className="text-[11px] text-neutral-400 hover:text-white flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <span>{showHistoryPanel ? "Hide Details" : "Show Details"}</span>
+                    {showHistoryPanel ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] bg-neutral-950 p-2.5 rounded-xl border border-neutral-800 text-neutral-300">
+                  <div>
+                    <span className="text-neutral-500">Customer: </span>
+                    <strong className="text-white">{selectedCustomerMeta.name || "N/A"}</strong> ({selectedCustomerMeta.phone || "N/A"})
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Total Spent: </span>
+                    <strong className="text-lime-400">
+                      ₹{(selectedCustomerMeta.orders || []).reduce((acc, o) => acc + (o.totalAmount || 0), 0).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Total Orders: </span>
+                    <strong className="text-white">{selectedCustomerMeta.orders?.length || 0}</strong>
+                  </div>
+                </div>
+
+                {showHistoryPanel && (
+                  <div className="space-y-2.5 pt-1">
+                    {!selectedCustomerMeta.orders || selectedCustomerMeta.orders.length === 0 ? (
+                      <p className="text-[11px] text-neutral-500 italic">No past orders recorded for this customer yet.</p>
+                    ) : (
+                      <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1">
+                        {selectedCustomerMeta.orders.map((ord, oIdx) => (
+                          <div
+                            key={ord.id || oIdx}
+                            className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2 hover:border-neutral-700 transition"
+                          >
+                            <div className="flex items-center justify-between text-[11px] border-b border-neutral-800/80 pb-2">
+                              <div className="flex items-center gap-2">
+                                {ord.orderType === "offline" ? (
+                                  <span className="px-2 py-0.5 rounded-md bg-lime-500/10 text-lime-400 font-bold border border-lime-500/20 text-[10px] flex items-center gap-1">
+                                    <FiShoppingBag size={10} />
+                                    <span>Offline Store Sale</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20 text-[10px] flex items-center gap-1">
+                                    <FiGlobe size={10} />
+                                    <span>Online Order</span>
+                                  </span>
+                                )}
+                                <span className="font-mono text-neutral-400 text-[10px]">#{ord.billNumber}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-neutral-400 text-[10px] flex items-center gap-1">
+                                  <FiClock size={10} />
+                                  <span>{ord.date ? new Date(ord.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}</span>
+                                </span>
+                                <span className="font-bold text-lime-400">₹{ord.totalAmount?.toLocaleString("en-IN")}</span>
+                              </div>
+                            </div>
+
+                            {/* Items List */}
+                            <div className="space-y-1 text-[11px]">
+                              {ord.items.map((item, iIdx) => (
+                                <div key={iIdx} className="flex items-center justify-between text-neutral-300">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <FiPackage size={11} className="text-neutral-500 shrink-0" />
+                                    <span className="truncate">{item.name}</span>
+                                    <span className="text-[10px] text-neutral-500">x{item.quantity}</span>
+                                  </div>
+                                  <span className="font-mono text-neutral-400 shrink-0 text-[10px]">₹{item.total || item.price * item.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1 border-t border-neutral-900 text-[10px]">
+                              <span className="text-neutral-500">Payment: <span className="text-neutral-300">{ord.paymentMethod}</span></span>
+                              <button
+                                type="button"
+                                onClick={() => handleReaddOrderItems(ord.items)}
+                                className="text-lime-400 hover:text-lime-300 font-bold flex items-center gap-1 underline transition cursor-pointer"
+                              >
+                                <FiPlus size={12} />
+                                <span>Re-add products to current sale</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Product Picker Box with Category Filter & Search Box */}
@@ -911,7 +1205,7 @@ export default function AddOfflineSaleModal({ isOpen, onClose, editingSale = nul
                 placeholder="₹0"
                 value={globalDiscount}
                 onChange={(e) => setGlobalDiscount(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500"
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 font-mono"
               />
             </div>
           </div>

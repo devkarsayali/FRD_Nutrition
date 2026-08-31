@@ -14,20 +14,26 @@ import {
   FiTrash2,
   FiUser,
   FiX,
+  FiEdit,
+  FiFileText,
+  FiPlus,
+  FiFilter,
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
 import { useProducts } from "../../context/ProductContext";
+import AddOfflineSaleModal from "../../components/admin/AddOfflineSaleModal";
+import OfflineSaleBillModal from "../../components/admin/OfflineSaleBillModal";
 import toast from "react-hot-toast";
 import { useOutletContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { db } from "../../firebase/firebase.config";
 import { collection, doc, getDocs, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 export const formatPaymentMethod = (method) => {
-  if (!method) return "Online";
+  if (!method) return "ONLINE";
   const m = String(method).toLowerCase().trim();
-  if (m.includes("cod") || m.includes("cash")) return "Cash on Delivery";
-  return "Online";
+  if (m.includes("cod") || m.includes("cash")) return "CASH";
+  return "ONLINE";
 };
 
 export const formatWhatsAppPhone = (phone) => {
@@ -123,19 +129,38 @@ export default function AdminOrdersPage({ defaultTab }) {
     location.pathname.includes("/admin/messages") ||
     searchParams.get("tab") === "messages";
 
+  const initialSourceParam = searchParams.get("source");
+  const [orderSourceFilter, setOrderSourceFilter] = useState(
+    initialSourceParam === "offline" ? "Offline" : initialSourceParam === "online" ? "Online" : "All"
+  );
   const [activeTab, setActiveTab] = useState(isMessages ? "messages" : "orders");
+
+  useEffect(() => {
+    const src = searchParams.get("source");
+    if (src === "offline") setOrderSourceFilter("Offline");
+    else if (src === "online") setOrderSourceFilter("Online");
+  }, [searchParams]);
   const [allOrders, setAllOrders] = useState([]);
   const [contactMessages, setContactMessages] = useState([]);
   const [localSearchTerm, setLocalSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [messageFilter, setMessageFilter] = useState("All");
 
+  const [isAddOfflineModalOpen, setIsAddOfflineModalOpen] = useState(false);
+  const [isEditOfflineModalOpen, setIsEditOfflineModalOpen] = useState(false);
+  const [editingOfflineSale, setEditingOfflineSale] = useState(null);
+  const [selectedBillSale, setSelectedBillSale] = useState(null);
+
+  const [dateFilter, setDateFilter] = useState("this_month");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const searchTerm = globalSearch || localSearchTerm;
 
   useEffect(() => {
-    if (selectedMessage || selectedOrder) {
+    if (selectedMessage || selectedOrder || isAddOfflineModalOpen || isEditOfflineModalOpen || selectedBillSale) {
       document.documentElement.classList.add("no-scroll");
       document.body.classList.add("no-scroll");
       document.getElementById("root")?.classList.add("no-scroll");
@@ -149,7 +174,7 @@ export default function AdminOrdersPage({ defaultTab }) {
       document.body.classList.remove("no-scroll");
       document.getElementById("root")?.classList.remove("no-scroll");
     };
-  }, [selectedMessage, selectedOrder]);
+  }, [selectedMessage, selectedOrder, isAddOfflineModalOpen, isEditOfflineModalOpen, selectedBillSale]);
 
   useEffect(() => {
     if (
@@ -171,7 +196,6 @@ export default function AdminOrdersPage({ defaultTab }) {
     loadMessages();
     loadOrders();
 
-    // Live Firebase Firestore listener for contact messages across all origins (Vercel & Localhost)
     let unsubscribeFirestore = () => {};
     try {
       unsubscribeFirestore = onSnapshot(
@@ -182,7 +206,6 @@ export default function AdminOrdersPage({ defaultTab }) {
             firestoreMsgs.push({ id: docSnap.id, ...docSnap.data() });
           });
 
-          // Merge Firestore messages with local fallback
           let localMsgs = [];
           try {
             localMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
@@ -206,7 +229,6 @@ export default function AdminOrdersPage({ defaultTab }) {
       console.warn("Firestore listener setup error:", err);
     }
 
-    // Live Firebase Firestore listener for orders across all origins (Vercel & Localhost)
     let unsubscribeOrders = () => {};
     try {
       unsubscribeOrders = onSnapshot(
@@ -226,20 +248,41 @@ export default function AdminOrdersPage({ defaultTab }) {
       console.warn("Firestore orders listener setup error:", err);
     }
 
+    let unsubscribeSales = () => {};
+    try {
+      unsubscribeSales = onSnapshot(
+        collection(db, "sales"),
+        () => {
+          loadOrders();
+        },
+        (err) => {
+          console.warn("Firestore sales snapshot warning:", err);
+        }
+      );
+    } catch (err) {
+      console.warn("Firestore sales listener setup error:", err);
+    }
+
     const handleOrdersUpdate = () => loadOrders();
     const handleMessagesUpdate = () => loadMessages();
+    const handleSalesUpdate = () => loadOrders();
 
     window.addEventListener("frd_orders_updated", handleOrdersUpdate);
+    window.addEventListener("frd_sales_updated", handleSalesUpdate);
     window.addEventListener("frd_contact_messages_updated", handleMessagesUpdate);
     window.addEventListener("storage", handleOrdersUpdate);
+    window.addEventListener("storage", handleSalesUpdate);
     window.addEventListener("storage", handleMessagesUpdate);
 
     return () => {
       if (typeof unsubscribeFirestore === "function") unsubscribeFirestore();
       if (typeof unsubscribeOrders === "function") unsubscribeOrders();
+      if (typeof unsubscribeSales === "function") unsubscribeSales();
       window.removeEventListener("frd_orders_updated", handleOrdersUpdate);
+      window.removeEventListener("frd_sales_updated", handleSalesUpdate);
       window.removeEventListener("frd_contact_messages_updated", handleMessagesUpdate);
       window.removeEventListener("storage", handleOrdersUpdate);
+      window.removeEventListener("storage", handleSalesUpdate);
       window.removeEventListener("storage", handleMessagesUpdate);
     };
   }, [cartContextOrders]);
@@ -280,6 +323,7 @@ export default function AdminOrdersPage({ defaultTab }) {
 
       const formatFirestoreOrder = (o) => ({
         ...o,
+        orderType: "online",
         customer: {
           fullName: o.customer?.fullName || o.shippingAddress?.name || "Customer",
           phone: o.customer?.phone || o.shippingAddress?.phone || "N/A",
@@ -291,7 +335,6 @@ export default function AdminOrdersPage({ defaultTab }) {
         readStatus: o.readStatus || "unread",
       });
 
-      // 1. Add Firestore orders first (authoritative live snapshot data)
       if (Array.isArray(providedFirestoreOrders)) {
         providedFirestoreOrders.forEach((o) => {
           if (o && o.id) orderMap.set(o.id, formatFirestoreOrder(o));
@@ -308,7 +351,6 @@ export default function AdminOrdersPage({ defaultTab }) {
         }
       }
 
-      // Helper to merge secondary sources (cartContext & localStorage) without overwriting Firestore live fields
       const addSecondaryOrderToMap = (o) => {
         if (!o || !o.id) return;
         if (!o.items || o.items.length === 0) {
@@ -319,10 +361,10 @@ export default function AdminOrdersPage({ defaultTab }) {
         if (!existing) {
           orderMap.set(o.id, formatFirestoreOrder(o));
         } else {
-          // Keep Firestore's live properties (readStatus, status) prioritized over stale local storage
           const merged = {
             ...o,
             ...existing,
+            orderType: "online",
             customer: {
               fullName: existing.customer?.fullName || o.customer?.fullName || o.shippingAddress?.name || "Customer",
               phone: existing.customer?.phone || o.customer?.phone || o.shippingAddress?.phone || "N/A",
@@ -338,15 +380,13 @@ export default function AdminOrdersPage({ defaultTab }) {
         }
       };
 
-      // 2. Add context orders
       if (Array.isArray(cartContextOrders)) {
         cartContextOrders.forEach(addSecondaryOrderToMap);
       }
 
-      // 3. Scan ALL localStorage keys containing 'orders' or 'order'
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.toLowerCase().includes("order")) {
+        if (key && key.toLowerCase().includes("order") && !key.includes("offline")) {
           try {
             const parsed = JSON.parse(localStorage.getItem(key) || "[]");
             if (Array.isArray(parsed)) {
@@ -354,27 +394,87 @@ export default function AdminOrdersPage({ defaultTab }) {
             } else if (parsed && parsed.id) {
               addSecondaryOrderToMap(parsed);
             }
-          } catch (e) {
-            // ignore non-JSON items
-          }
+          } catch (e) {}
         }
       }
 
+      const offlineMap = new Map();
+      try {
+        const salesSnap = await getDocs(collection(db, "sales"));
+        salesSnap.forEach((docSnap) => {
+          const data = { id: docSnap.id, ...docSnap.data() };
+          offlineMap.set(data.id, data);
+        });
+      } catch (sErr) {
+        console.warn("Firestore loadSales warning:", sErr);
+      }
+
+      try {
+        const savedOffline = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
+        if (Array.isArray(savedOffline)) {
+          savedOffline.forEach((item) => {
+            if (item && item.id && !offlineMap.has(item.id)) {
+              offlineMap.set(item.id, item);
+            }
+          });
+        }
+      } catch (e) {}
+
+      offlineMap.forEach((sale) => {
+        const dateObj = sale.saleDate ? new Date(sale.saleDate) : sale.createdAt ? new Date(sale.createdAt) : null;
+        const formattedDate = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : (sale.date || "Recent");
+        const formattedTime = dateObj && !isNaN(dateObj) ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+
+        const formattedOfflineOrder = {
+          ...sale,
+          orderType: "offline",
+          id: sale.id,
+          displayId: sale.billNumber || sale.id,
+          date: formattedDate,
+          orderDate: formattedDate,
+          orderTime: formattedTime,
+          status: "Completed",
+          total: sale.totalAmount ?? sale.total ?? 0,
+          totalAmount: sale.totalAmount ?? sale.total ?? 0,
+          subtotal: sale.subtotal || sale.totalAmount || 0,
+          discount: sale.discount || 0,
+          readStatus: "read",
+          customer: {
+            fullName: sale.customer?.name || sale.customer?.fullName || "Walk-in Customer",
+            name: sale.customer?.name || sale.customer?.fullName || "Walk-in Customer",
+            phone: sale.customer?.phone || "N/A",
+            email: sale.customer?.email || "",
+            address: sale.customer?.address || sale.customer?.city || "Physical Store / POS Sale",
+            city: sale.customer?.city || "",
+            paymentMethod: sale.paymentMethod ? String(sale.paymentMethod).toUpperCase() : "CASH",
+          },
+          items: sale.items || [],
+          originalSale: sale,
+        };
+
+        orderMap.set(sale.id, formattedOfflineOrder);
+      });
+
       const combined = Array.from(orderMap.values());
+      combined.sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.saleDate || a.date || 0).getTime();
+        const timeB = new Date(b.createdAt || b.saleDate || b.date || 0).getTime();
+        return timeB - timeA;
+      });
+
       setAllOrders(combined);
 
-      // Sync latest Firestore state to localStorage keys so local storage stays updated
       if (providedFirestoreOrders) {
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key && key.toLowerCase().includes("order")) {
+          if (key && key.toLowerCase().includes("order") && !key.includes("offline")) {
             try {
               const data = JSON.parse(localStorage.getItem(key) || "[]");
               if (Array.isArray(data)) {
                 let changed = false;
                 const updated = data.map((localItem) => {
                   const match = orderMap.get(localItem.id);
-                  if (match && (localItem.readStatus !== match.readStatus || localItem.status !== match.status)) {
+                  if (match && match.orderType === "online" && (localItem.readStatus !== match.readStatus || localItem.status !== match.status)) {
                     changed = true;
                     return { ...localItem, readStatus: match.readStatus, status: match.status };
                   }
@@ -442,7 +542,7 @@ export default function AdminOrdersPage({ defaultTab }) {
   ];
 
   const ORDER_STATUS_OPTIONS = [
-    "All",
+    "All Statuses",
     "Ordered",
     "Packed",
     "Out for Delivery",
@@ -451,6 +551,9 @@ export default function AdminOrdersPage({ defaultTab }) {
   ];
 
   const updateOrderData = (orderId, updateFields) => {
+    const targetOrder = allOrders.find((o) => o.id === orderId);
+    const isOffline = targetOrder?.orderType === "offline";
+
     const updatedOrders = allOrders.map((order) => {
       if (order.id !== orderId) return order;
       return { ...order, ...updateFields };
@@ -461,43 +564,54 @@ export default function AdminOrdersPage({ defaultTab }) {
       setSelectedOrder((prev) => ({ ...prev, ...updateFields }));
     }
 
-    // Persist to Firebase Firestore
     try {
-      updateDoc(doc(db, "orders", orderId), updateFields).catch((err) => {
-        console.warn("Firestore order update warning:", err);
+      const collectionName = isOffline ? "sales" : "orders";
+      updateDoc(doc(db, collectionName, orderId), updateFields).catch((err) => {
+        console.warn(`Firestore ${collectionName} update warning:`, err);
       });
     } catch (fErr) {
       console.warn("Firestore error:", fErr);
     }
 
-    // Persist to all localStorage order keys
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.toLowerCase().includes("order")) {
-        try {
-          const data = JSON.parse(localStorage.getItem(key) || "[]");
-          if (Array.isArray(data)) {
-            const updated = data.map((o) => {
-              if (o.id === orderId) {
-                return { ...o, ...updateFields };
-              }
-              return o;
-            });
-            localStorage.setItem(key, JSON.stringify(updated));
-          }
-        } catch (e) {
-          // ignore non-JSON
+    if (isOffline) {
+      try {
+        const saved = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
+        if (Array.isArray(saved)) {
+          const updated = saved.map((o) => (o.id === orderId ? { ...o, ...updateFields } : o));
+          localStorage.setItem("frd_offline_sales_v1", JSON.stringify(updated));
+        }
+      } catch (e) {}
+      window.dispatchEvent(new CustomEvent("frd_sales_updated"));
+    } else {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.toLowerCase().includes("order") && !key.includes("offline")) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || "[]");
+            if (Array.isArray(data)) {
+              const updated = data.map((o) => {
+                if (o.id === orderId) {
+                  return { ...o, ...updateFields };
+                }
+                return o;
+              });
+              localStorage.setItem(key, JSON.stringify(updated));
+            }
+          } catch (e) {}
         }
       }
+      window.dispatchEvent(new CustomEvent("frd_orders_updated"));
     }
-    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
   };
 
   const handleDeleteOrder = async (orderId) => {
     if (!orderId) return;
-    if (!window.confirm(`Are you sure you want to delete order #${orderId}? This cannot be undone.`)) return;
 
     const targetOrder = allOrders.find((o) => o.id === orderId);
+    const isOffline = targetOrder?.orderType === "offline";
+
+    if (!window.confirm(`Are you sure you want to delete ${isOffline ? "offline sale" : "order"} #${targetOrder?.displayId || orderId}? This cannot be undone.`)) return;
+
     const custEmail = (targetOrder?.customer?.email || targetOrder?.shippingAddress?.email || "").toLowerCase().trim();
 
     const remainingOrders = allOrders.filter((o) => o.id !== orderId);
@@ -506,52 +620,83 @@ export default function AdminOrdersPage({ defaultTab }) {
       setSelectedOrder(null);
     }
 
-    try {
-      await deleteDoc(doc(db, "orders", orderId));
-    } catch (err) {
-      console.warn("Firestore order delete warning:", err);
-    }
-
-    // Check if customer has any other orders left
-    if (custEmail) {
-      const hasOtherOrders = remainingOrders.some((o) => {
-        const e = (o.customer?.email || o.shippingAddress?.email || "").toLowerCase().trim();
-        return e === custEmail;
-      });
-
-      if (!hasOtherOrders) {
-        try {
-          await deleteDoc(doc(db, "users", custEmail));
-        } catch (uErr) {
-          console.warn("Firestore user cleanup warning:", uErr);
+    if (isOffline) {
+      try {
+        if (Array.isArray(targetOrder.items)) {
+          restoreProductStock(targetOrder.items);
         }
-        try {
-          localStorage.removeItem(`frd_user_profile_${custEmail}`);
-        } catch (e) {}
-      }
-    }
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.toLowerCase().includes("order")) {
+        await deleteDoc(doc(db, "sales", orderId));
+
         try {
-          const data = JSON.parse(localStorage.getItem(key) || "[]");
-          if (Array.isArray(data)) {
-            const updated = data.filter((o) => o.id !== orderId);
-            localStorage.setItem(key, JSON.stringify(updated));
+          const saved = JSON.parse(localStorage.getItem("frd_offline_sales_v1") || "[]");
+          if (Array.isArray(saved)) {
+            const updated = saved.filter((o) => o.id !== orderId);
+            localStorage.setItem("frd_offline_sales_v1", JSON.stringify(updated));
           }
         } catch (e) {}
+        window.dispatchEvent(new CustomEvent("frd_sales_updated"));
+        toast.success(`Offline sale #${targetOrder?.displayId || orderId} deleted and product stock restored!`);
+      } catch (err) {
+        console.error("Firestore sales delete warning:", err);
+        toast.error("Failed to delete offline sale.");
       }
-    }
+    } else {
+      try {
+        await deleteDoc(doc(db, "orders", orderId));
+      } catch (err) {
+        console.warn("Firestore order delete warning:", err);
+      }
 
-    window.dispatchEvent(new CustomEvent("frd_orders_updated"));
-    toast.success(`Order #${orderId} deleted successfully.`);
+      if (custEmail && custEmail !== "n/a") {
+        const hasOtherOrders = remainingOrders.some((o) => {
+          const e = (o.customer?.email || o.shippingAddress?.email || "").toLowerCase().trim();
+          return e === custEmail;
+        });
+
+        if (!hasOtherOrders) {
+          try {
+            await deleteDoc(doc(db, "users", custEmail));
+          } catch (uErr) {
+            console.warn("Firestore user cleanup warning:", uErr);
+          }
+          try {
+            localStorage.removeItem(`frd_user_profile_${custEmail}`);
+          } catch (e) {}
+        }
+      }
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.toLowerCase().includes("order") && !key.includes("offline")) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || "[]");
+            if (Array.isArray(data)) {
+              const updated = data.filter((o) => o.id !== orderId);
+              localStorage.setItem(key, JSON.stringify(updated));
+            }
+          } catch (e) {}
+        }
+      }
+
+      window.dispatchEvent(new CustomEvent("frd_orders_updated"));
+      toast.success(`Online order #${orderId} deleted successfully.`);
+    }
+  };
+
+  const handleEditOfflineSale = (order) => {
+    setEditingOfflineSale(order.originalSale || order);
+    setIsEditOfflineModalOpen(true);
+  };
+
+  const handlePrintOfflineBill = (order) => {
+    setSelectedBillSale(order.originalSale || order);
   };
 
   const getStatusStepIndex = (status) => {
     if (!status) return 0;
     const s = status.toLowerCase().trim();
-    if (s.includes("delivered")) return 3;
+    if (s.includes("delivered") || s.includes("completed")) return 3;
     if (s.includes("out for delivery") || s.includes("out_for_delivery")) return 2;
     if (s.includes("packed")) return 1;
     return 0; // Ordered
@@ -568,7 +713,6 @@ export default function AdminOrdersPage({ defaultTab }) {
     const normNewStatus = (newStatus || "").toLowerCase().trim();
     const isNewStatusRestorable = RESTORABLE_STATUSES.includes(normNewStatus);
 
-    // Enforce forward-only status progression (unless setting to Cancelled)
     if (!isNewStatusRestorable && targetIndex < currentIndex) {
       toast.error(`Cannot move order status backwards from "${currentOrder.status}" to "${newStatus}".`);
       return;
@@ -596,13 +740,13 @@ export default function AdminOrdersPage({ defaultTab }) {
     if (isNewStatusRestorable && !currentOrder.stockRestored) {
       restoreProductStock(currentOrder.items || []);
       nextStockRestored = true;
-      toast.success(`Order #${orderId} set to "${newStatus}". Product stock automatically restored!`);
+      toast.success(`Order #${currentOrder.displayId || orderId} set to "${newStatus}". Product stock automatically restored!`);
     } else if (!isNewStatusRestorable && currentOrder.stockRestored) {
       decreaseProductStock(currentOrder.items || []);
       nextStockRestored = false;
-      toast.success(`Order #${orderId} set to "${newStatus}". Product stock re-deducted!`);
+      toast.success(`Order #${currentOrder.displayId || orderId} set to "${newStatus}". Product stock re-deducted!`);
     } else {
-      toast.success(`Order #${orderId} status updated to "${newStatus}"`);
+      toast.success(`Order #${currentOrder.displayId || orderId} status updated to "${newStatus}"`);
     }
 
     updateOrderData(orderId, {
@@ -610,26 +754,6 @@ export default function AdminOrdersPage({ defaultTab }) {
       stockRestored: nextStockRestored,
       trackingSteps: updatedTrackingSteps,
     });
-  };
-
-  const updateOrderInLocalStorage = (orderId, updateFn) => {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.toLowerCase().includes("order")) {
-        try {
-          const data = JSON.parse(localStorage.getItem(key) || "[]");
-          if (Array.isArray(data)) {
-            const updated = data.map((o) => (o && o.id === orderId ? updateFn(o) : o));
-            localStorage.setItem(key, JSON.stringify(updated));
-          } else if (data && typeof data === "object" && data.id === orderId) {
-            const updated = updateFn(data);
-            localStorage.setItem(key, JSON.stringify(updated));
-          }
-        } catch (e) {
-          // ignore non-JSON keys
-        }
-      }
-    }
   };
 
   const handleToggleOrderRead = (id) => {
@@ -647,11 +771,8 @@ export default function AdminOrdersPage({ defaultTab }) {
     }
   };
 
-
-
   const unreadCount = contactMessages.filter((m) => m.status === "unread").length;
 
-  // Filter logic
   const filteredMessages = contactMessages.filter((m) => {
     const query = searchTerm.toLowerCase();
     const searchMatch =
@@ -683,23 +804,110 @@ export default function AdminOrdersPage({ defaultTab }) {
     return s;
   };
 
+  const isSameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  const getWeekRange = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diffToMon));
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  };
+
+  const matchesDateFilter = (orderDate) => {
+    if (!orderDate || dateFilter === "all") return true;
+    const d = new Date(orderDate);
+    if (isNaN(d.getTime())) return true;
+
+    const now = new Date();
+    if (dateFilter === "today") {
+      return isSameDay(d, now);
+    } else if (dateFilter === "yesterday") {
+      const yest = new Date(now);
+      yest.setDate(now.getDate() - 1);
+      return isSameDay(d, yest);
+    } else if (dateFilter === "this_week") {
+      const weekRange = getWeekRange(now);
+      return d >= weekRange.start && d <= weekRange.end;
+    } else if (dateFilter === "this_month") {
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    } else if (dateFilter === "this_year") {
+      return d.getFullYear() === now.getFullYear();
+    } else if (dateFilter === "custom") {
+      if (startDate && new Date(startDate) > d) return false;
+      if (endDate) {
+        const endD = new Date(endDate);
+        endD.setHours(23, 59, 59, 999);
+        if (endD < d) return false;
+      }
+      return true;
+    }
+    return true;
+  };
+
   const filteredOrders = allOrders.filter((o) => {
+    const orderDateRaw = o.createdAt || o.saleDate || o.orderDate || o.date;
+    const dateMatch = matchesDateFilter(orderDateRaw);
+
     const statusMatch =
       statusFilter === "All" ||
-      getNormalizedStatus(o.status) === getNormalizedStatus(statusFilter);
+      statusFilter === "All Statuses" ||
+      (o.orderType === "online" && getNormalizedStatus(o.status) === getNormalizedStatus(statusFilter));
 
-    const searchMatch =
-      o.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.customer?.fullName || o.shippingAddress?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.customer?.phone || o.shippingAddress?.phone || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.customer?.email || "").toLowerCase().includes(searchTerm.toLowerCase());
+    const sourceMatch =
+      orderSourceFilter === "All" ||
+      orderSourceFilter === "all" ||
+      ((orderSourceFilter === "Online" || orderSourceFilter === "online") && o.orderType === "online") ||
+      ((orderSourceFilter === "Offline" || orderSourceFilter === "offline") && o.orderType === "offline");
 
-    return statusMatch && searchMatch;
+    const query = searchTerm.toLowerCase().trim();
+    if (!query) return dateMatch && statusMatch && sourceMatch;
+
+    const queryClean = query.replace(/^#/, "");
+
+    const idStr = String(o.id || "").toLowerCase();
+    const displayIdStr = String(o.displayId || "").toLowerCase();
+    const billNumStr = String(o.billNumber || "").toLowerCase();
+
+    // Extract digits for numeric matching (e.g. searching "8" or "88" matches FRD-OFF-000008 or #FRD-03873)
+    const digitsOnlyQuery = queryClean.replace(/\D/g, "");
+
+    const matchesId =
+      idStr.includes(queryClean) ||
+      displayIdStr.includes(queryClean) ||
+      billNumStr.includes(queryClean) ||
+      (digitsOnlyQuery && (
+        idStr.includes(digitsOnlyQuery) ||
+        displayIdStr.includes(digitsOnlyQuery) ||
+        billNumStr.includes(digitsOnlyQuery)
+      ));
+
+    const custName = (o.customer?.fullName || o.customer?.name || o.shippingAddress?.name || "").toLowerCase();
+    const custPhone = String(o.customer?.phone || o.shippingAddress?.phone || "").toLowerCase();
+    const custEmail = String(o.customer?.email || "").toLowerCase();
+
+    const matchesCustomer =
+      custName.includes(query) ||
+      custPhone.includes(queryClean) ||
+      custEmail.includes(query);
+
+    const matchesProducts = (o.items || []).some((it) =>
+      (it.name || it.product?.name || "").toLowerCase().includes(query)
+    );
+
+    return dateMatch && statusMatch && sourceMatch && (matchesId || matchesCustomer || matchesProducts);
   });
 
   return (
     <div className="space-y-6">
-      {/* TAB 1: CUSTOMER ORDERS DATA TABLE */}
+      {/* TAB 1: CUSTOMER ORDERS & OFFLINE SALES DATA TABLE */}
       {activeTab === "orders" && (
         <div className="bg-[#141813] rounded-3xl border border-neutral-800 overflow-hidden shadow-2xl">
           <div className="p-5 border-b border-neutral-800/80 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -708,32 +916,121 @@ export default function AdminOrdersPage({ defaultTab }) {
                 Customer Orders ({filteredOrders.length})
               </h2>
               <p className="text-[11px] text-neutral-400 mt-1">
-                Search orders by ID, customer, phone or email, and filter by status.
+                View online website customer orders and physical offline store sales together in one place.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-72">
-                <input
-                  type="text"
-                  value={localSearchTerm}
-                  onChange={(e) => setLocalSearchTerm(e.target.value)}
-                  placeholder="Search order ID, customer name, email..."
-                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-lime-500 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition"
-                />
-                <FiSearch className="absolute left-3.5 top-3 text-neutral-500" size={15} />
-              </div>
+            
+            {/* + ADD OFFLINE STORE SALE BUTTON */}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingOfflineSale(null);
+                setIsAddOfflineModalOpen(true);
+              }}
+              className="px-5 py-2.5 rounded-full bg-[#84cc16] hover:bg-[#65a30d] text-black font-black transition cursor-pointer flex items-center justify-center gap-2 text-xs uppercase tracking-wide shadow-lg shadow-lime-500/20 active:scale-95"
+            >
+              <FiPlus size={18} className="stroke-[3]" />
+              <span>ADD OFFLINE STORE SALE</span>
+            </button>
+          </div>
+
+          {/* SALES REPORTING FILTERS SECTION */}
+          <div className="p-5 border-b border-neutral-800/80 bg-neutral-900/40 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-[#84cc16] flex items-center gap-2">
+                <FiFilter size={15} />
+                <span>SALES REPORTING FILTERS</span>
+              </span>
+              <span className="text-[11px] font-semibold text-neutral-400">
+                Showing {filteredOrders.length} of {allOrders.length} transactions
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+              {/* Date Period Dropdown */}
               <div>
+                <label className="block text-neutral-400 font-bold mb-1 text-[11px]">Date Period</label>
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 cursor-pointer text-xs"
+                >
+                  <option value="this_month">This Month</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="this_week">This Week</option>
+                  <option value="this_year">This Year</option>
+                  <option value="all">All Time</option>
+                  <option value="custom">Custom Date Range</option>
+                </select>
+              </div>
+
+              {/* Custom Date Inputs or Sale Channel */}
+              {dateFilter === "custom" ? (
+                <div className="flex items-center gap-2 col-span-1">
+                  <div className="w-1/2">
+                    <label className="block text-neutral-400 font-bold mb-1 text-[11px]">From</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-2 text-white text-xs focus:outline-none focus:border-lime-500"
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-neutral-400 font-bold mb-1 text-[11px]">To</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-2 text-white text-xs focus:outline-none focus:border-lime-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-neutral-400 font-bold mb-1 text-[11px]">Sale Channel</label>
+                  <select
+                    value={orderSourceFilter}
+                    onChange={(e) => setOrderSourceFilter(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 cursor-pointer text-xs"
+                  >
+                    <option value="All">All Sales (Online + Offline)</option>
+                    <option value="Online">Online Orders Only</option>
+                    <option value="Offline">Offline Physical Store Only</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Order Status */}
+              <div>
+                <label className="block text-neutral-400 font-bold mb-1 text-[11px]">Order Status</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full bg-[#192218] border border-neutral-800 text-lime-400 text-xs rounded-2xl px-3 py-2.5 focus:outline-none focus:border-lime-500"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime-500 cursor-pointer text-xs"
                 >
                   {ORDER_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status} className="bg-neutral-900 text-white">
+                    <option key={status} value={status}>
                       {status}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Search Transactions */}
+              <div>
+                <label className="block text-neutral-400 font-bold mb-1 text-[11px]">Search Transactions</label>
+                <div className="relative">
+                  <FiSearch className="absolute left-3.5 top-3 text-neutral-500" size={15} />
+                  <input
+                    type="text"
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                    placeholder="Search by customer name, phone, order ID, product..."
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-lime-500 transition"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -744,173 +1041,221 @@ export default function AdminOrdersPage({ defaultTab }) {
               </div>
               <h3 className="font-bold text-base text-white">No Orders Found</h3>
               <p className="text-xs text-neutral-400">
-                {searchTerm ? "No orders match your search." : "When customers place orders via checkout, they will appear here."}
+                {searchTerm || orderSourceFilter !== "All" || statusFilter !== "All Statuses"
+                  ? "No customer orders or offline sales match your selected search or filter criteria."
+                  : "When online orders are placed or offline store sales are recorded, they will appear here."}
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left border-collapse">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-neutral-900/90 text-neutral-400 font-bold uppercase text-[10px] tracking-wider border-b border-neutral-800">
-                    <th className="py-4 px-4">Order ID & Date</th>
-                    <th className="py-4 px-4">Customer Name & Email</th>
-                    <th className="py-4 px-4">Phone / Contact</th>
-                    <th className="py-4 px-4">Items Summary</th>
-                    <th className="py-4 px-4">Total Amount</th>
-                    <th className="py-4 px-4">Payment Method</th>
-                    <th className="py-4 px-4">Status</th>
-                    <th className="py-4 px-4 text-right">Actions</th>
+                  <tr className="bg-neutral-900/90 text-neutral-400 font-bold uppercase text-[9px] tracking-wider border-b border-neutral-800">
+                    <th className="py-3 px-3">Order ID & Date</th>
+                    <th className="py-3 px-3">Type</th>
+                    <th className="py-3 px-3">Customer & Contact</th>
+                    <th className="py-3 px-3">Products Purchased</th>
+                    <th className="py-3 px-2 text-center">Qty</th>
+                    <th className="py-3 px-3">Amount</th>
+                    <th className="py-3 px-2">Payment</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800/80 text-xs">
+                <tbody className="divide-y divide-neutral-800/80 text-[11px]">
                   {filteredOrders.map((order) => {
-                    const custName = order.customer?.fullName || order.shippingAddress?.name || "Customer";
-                    const custEmail = order.customer?.email || "N/A";
+                    const custName = order.customer?.fullName || order.customer?.name || order.shippingAddress?.name || "Customer";
+                    const custEmail = order.customer?.email || "";
                     const custPhone = order.customer?.phone || order.shippingAddress?.phone || "N/A";
                     const orderTotal = order.total || order.totalAmount || 0;
-                    const itemsCount = order.items ? order.items.length : 0;
+                    const isOffline = order.orderType === "offline";
+                    
+                    const totalQty = (order.items || []).reduce((acc, item) => acc + Number(item.quantity || 1), 0);
 
                     return (
                       <tr
                         key={order.id}
                         className={`hover:bg-neutral-900/50 transition ${
-                          order.readStatus === "unread" ? "bg-lime-500/[0.03]" : ""
+                          order.readStatus === "unread" && !isOffline ? "bg-lime-500/[0.03]" : ""
                         }`}
                       >
-                        {/* Order ID & Date */}
-                        <td className="py-4 px-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-xs font-black text-lime-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 block w-max">
-                                #{order.id}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-[11px] font-black text-lime-400 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800 inline-block">
+                                #{order.displayId || order.id}
                               </span>
-                              {order.readStatus === "unread" && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[9px] font-black uppercase">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              {order.readStatus === "unread" && !isOffline && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[8px] font-black uppercase">
+                                  <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
                                   New
                                 </span>
                               )}
                             </div>
-                            <span className="text-[10px] text-neutral-400 block whitespace-nowrap">
-                              {order.date || order.orderDate || "Recent"}
+                            <span className="text-[9px] text-neutral-400 block">
+                              {order.date || order.orderDate || "Recent"} {order.orderTime ? `• ${order.orderTime}` : ""}
                             </span>
                           </div>
                         </td>
 
-                        {/* Customer Name & Email */}
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-lime-500/20 text-lime-400 font-black flex items-center justify-center text-xs shrink-0 border border-lime-500/30">
-                              {custName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <span className="font-bold text-white block text-xs">{custName}</span>
-                              {custEmail !== "N/A" && (
-                                <a href={`mailto:${custEmail}`} className="text-[11px] text-lime-400 hover:underline block truncate max-w-[150px]">
-                                  {custEmail}
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Phone Contact */}
-                        <td className="py-4 px-4 font-mono text-xs text-lime-400 font-bold">
-                          {custPhone !== "N/A" ? (
-                            <a href={`tel:${custPhone}`} className="hover:underline flex items-center gap-1">
-                              <FiPhone size={12} className="shrink-0" />
-                              <span>{custPhone}</span>
-                            </a>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          {isOffline ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[9px] font-black uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              OFFLINE
+                            </span>
                           ) : (
-                            <span className="text-neutral-500">N/A</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-400 border border-lime-500/30 text-[9px] font-black uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
+                              ONLINE
+                            </span>
                           )}
                         </td>
 
-                        {/* Items Summary */}
-                        <td className="py-4 px-4">
-                          <div className="space-y-1 max-w-xs">
-                            <span className="font-bold text-neutral-200 block text-xs">
-                              {itemsCount} Product(s)
-                            </span>
-                            <div className="flex items-center gap-1.5 overflow-hidden">
-                              {order.items && order.items.map((item, idx) => (
-                                <img
-                                  key={idx}
-                                  src={item.product?.image || item.image}
-                                  alt={item.product?.name || item.name}
-                                  className="w-7 h-7 object-contain rounded bg-neutral-900 p-0.5 border border-neutral-800 shrink-0"
-                                  title={`${item.product?.name || item.name} (Qty: ${item.quantity})`}
-                                />
-                              ))}
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-full font-black flex items-center justify-center text-[10px] shrink-0 border ${
+                              isOffline ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-lime-500/20 text-lime-400 border-lime-500/30"
+                            }`}>
+                              {custName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-bold text-white block text-[11px] truncate max-w-[130px]">{custName}</span>
+                              {custEmail && custEmail !== "N/A" ? (
+                                <a href={`mailto:${custEmail}`} className="text-[10px] text-lime-400 hover:underline block truncate max-w-[130px]">
+                                  {custEmail}
+                                </a>
+                              ) : custPhone !== "N/A" ? (
+                                <a href={`tel:${custPhone}`} className="text-[10px] text-neutral-400 hover:text-white font-mono block">
+                                  {custPhone}
+                                </a>
+                              ) : null}
                             </div>
                           </div>
                         </td>
 
-                        {/* Total Amount */}
-                        <td className="py-4 px-4">
-                          <span className="font-black text-sm text-lime-400">
-                            ₹{orderTotal}
-                          </span>
+                        <td className="py-3 px-3">
+                          <div className="space-y-0.5 max-w-[200px] xl:max-w-[260px]">
+                            {order.items && order.items.map((item, idx) => (
+                              <span key={idx} className="block text-[10px] truncate text-neutral-300">
+                                • <strong className="text-white">{item.product?.name || item.name}</strong> × {item.quantity} (₹{item.product?.price || item.price})
+                              </span>
+                            ))}
+                          </div>
                         </td>
 
-                        {/* Payment Method */}
-                        <td className="py-4 px-4">
-                          <span className="px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800 text-[10px] font-bold uppercase text-neutral-300">
+                        <td className="py-3 px-2 text-center font-bold text-neutral-200">
+                          {totalQty}
+                        </td>
+
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div>
+                            <span className="font-black text-xs text-lime-400 block">
+                              ₹{orderTotal}
+                            </span>
+                            {isOffline && Number(order.discount || 0) > 0 && (
+                              <span className="text-[9px] text-amber-400 block font-semibold">
+                                Disc: ₹{order.discount}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-2 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[9px] font-bold uppercase text-neutral-300">
                             {formatPaymentMethod(order.customer?.paymentMethod || order.paymentMethod)}
                           </span>
                         </td>
 
-                        {/* Status Select Dropdown */}
-                        <td className="py-4 px-4">
-                          {(() => {
-                            const curIdx = getStatusStepIndex(order.status);
-                            const isCancelled = (order.status || "").toLowerCase().trim() === "cancelled";
-                            return (
-                              <select
-                                value={order.status || "Ordered"}
-                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[11px] rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm disabled:opacity-60"
-                              >
-                                <option value="Ordered" disabled={curIdx > 0} className="bg-neutral-900 text-white disabled:text-neutral-600">Ordered</option>
-                                <option value="Packed" disabled={curIdx > 1} className="bg-neutral-900 text-white disabled:text-neutral-600">Packed</option>
-                                <option value="Out for Delivery" disabled={curIdx > 2} className="bg-neutral-900 text-white disabled:text-neutral-600">Out for Delivery</option>
-                                <option value="Delivered" disabled={curIdx > 3} className="bg-neutral-900 text-white disabled:text-neutral-600">Delivered</option>
-                                <option value="Cancelled" disabled={isCancelled} className="bg-neutral-900 text-red-400 disabled:text-neutral-600">Cancelled</option>
-                              </select>
-                            );
-                          })()}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          {!isOffline ? (
+                            (() => {
+                              const curIdx = getStatusStepIndex(order.status);
+                              const isCancelled = (order.status || "").toLowerCase().trim() === "cancelled";
+                              return (
+                                <select
+                                  value={order.status || "Ordered"}
+                                  onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                  className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[10px] rounded-lg px-2 py-1 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm disabled:opacity-60"
+                                >
+                                  <option value="Ordered" disabled={curIdx > 0} className="bg-neutral-900 text-white disabled:text-neutral-600">Ordered</option>
+                                  <option value="Packed" disabled={curIdx > 1} className="bg-neutral-900 text-white disabled:text-neutral-600">Packed</option>
+                                  <option value="Out for Delivery" disabled={curIdx > 2} className="bg-neutral-900 text-white disabled:text-neutral-600">Out for Delivery</option>
+                                  <option value="Delivered" disabled={curIdx > 3} className="bg-neutral-900 text-white disabled:text-neutral-600">Delivered</option>
+                                  <option value="Cancelled" disabled={isCancelled} className="bg-neutral-900 text-red-400 disabled:text-neutral-600">Cancelled</option>
+                                </select>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-neutral-500 text-xs">—</span>
+                          )}
                         </td>
 
-                        {/* Actions */}
-                        <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleViewOrder(order)}
-                              className="p-2 rounded-xl bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800"
-                              title="View Order Details"
-                            >
-                              <FiEye size={15} />
-                            </button>
+                        <td className="py-3 px-3 text-right whitespace-nowrap">
+                          {isOffline ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleViewOrder(order)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800"
+                                title="View Sale Info & Details"
+                              >
+                                <FiEye size={14} />
+                              </button>
 
-                            <button
-                              onClick={() => handleToggleOrderRead(order.id)}
-                              className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition cursor-pointer border ${
-                                order.readStatus === "unread"
-                                  ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
-                                  : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                              }`}
-                            >
-                              {order.readStatus === "unread" ? "Mark Read" : "Unread"}
-                            </button>
+                              <button
+                                onClick={() => handleEditOfflineSale(order)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition cursor-pointer border border-neutral-800"
+                                title="Edit Offline Sale"
+                              >
+                                <FiEdit size={14} />
+                              </button>
 
-                            <button
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border border-neutral-800"
-                              title="Delete Order Record"
-                            >
-                              <FiTrash2 size={15} />
-                            </button>
-                          </div>
+                              <button
+                                onClick={() => handlePrintOfflineBill(order)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-lime-400 hover:text-lime-300 hover:bg-lime-500/10 transition cursor-pointer border border-neutral-800"
+                                title="View & Print Official Bill Invoice"
+                              >
+                                <FiFileText size={14} />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border border-neutral-800"
+                                title="Delete Offline Sale Record"
+                              >
+                                <FiTrash2 size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleViewOrder(order)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition cursor-pointer border border-neutral-800"
+                                title="View Order Details"
+                              >
+                                <FiEye size={14} />
+                              </button>
+
+                              <button
+                                onClick={() => handleToggleOrderRead(order.id)}
+                                className={`px-2 py-1 rounded-lg text-[9px] font-bold transition cursor-pointer border ${
+                                  order.readStatus === "unread"
+                                    ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
+                                    : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
+                                }`}
+                              >
+                                {order.readStatus === "unread" ? "Mark Read" : "Unread"}
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border border-neutral-800"
+                                title="Delete Order Record"
+                              >
+                                <FiTrash2 size={14} />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -925,7 +1270,6 @@ export default function AdminOrdersPage({ defaultTab }) {
       {/* TAB 2: CONTACT MESSAGES DATA TABLE */}
       {activeTab === "messages" && (
         <div className="bg-[#141813] rounded-3xl border border-neutral-800 overflow-hidden shadow-2xl space-y-0">
-          {/* Header Controls for Messages */}
           <div className="p-5 border-b border-neutral-800/80 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-heading text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -1335,46 +1679,22 @@ export default function AdminOrdersPage({ defaultTab }) {
 
             {/* Footer Modal Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-neutral-800 gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => {
-                    handleToggleRead(selectedMessage.id);
-                    setSelectedMessage((prev) => ({
-                      ...prev,
-                      status: prev.status === "read" ? "unread" : "read",
-                    }));
-                  }}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                    selectedMessage.status === "unread"
-                      ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
-                      : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
-                  }`}
-                >
-                  {selectedMessage.status === "unread" ? "Mark Read" : "Mark Unread"}
-                </button>
-
-                {selectedMessage.phone && (
-                  <a
-                    href={`https://wa.me/${formatWhatsAppPhone(selectedMessage.phone)}?text=${encodeURIComponent(buildWhatsAppMessageText(selectedMessage, products))}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-emerald-500/20 cursor-pointer"
-                  >
-                    <FaWhatsapp size={15} />
-                    <span>Reply via WhatsApp</span>
-                  </a>
-                )}
-
-                <a
-                  href={`mailto:${selectedMessage.email}?subject=Re: ${encodeURIComponent(selectedMessage.subject || selectedMessage.product || "FRD Nutrition Enquiry")}&body=${encodeURIComponent(`Hi ${selectedMessage.name},\n\nThank you for reaching out regarding ${selectedMessage.product || "your enquiry"}.\n\n`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-2.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 hover:bg-amber-400 transition"
-                >
-                  <FiMail size={13} />
-                  <span>Reply via Email</span>
-                </a>
-              </div>
+              <button
+                onClick={() => {
+                  handleToggleRead(selectedMessage.id);
+                  setSelectedMessage((prev) => ({
+                    ...prev,
+                    status: prev.status === "read" ? "unread" : "read",
+                  }));
+                }}
+                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  selectedMessage.status === "unread"
+                    ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
+                    : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
+                }`}
+              >
+                {selectedMessage.status === "unread" ? "Mark Read" : "Mark Unread"}
+              </button>
 
               <button
                 onClick={() => setSelectedMessage(null)}
@@ -1387,164 +1707,277 @@ export default function AdminOrdersPage({ defaultTab }) {
         </div>
       )}
 
-      {/* FULL ORDER DETAILS MODAL */}
+      {/* Order / Offline Sale Detail View Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-xl bg-[#141813] border border-neutral-800 rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6 relative shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto my-auto">
-
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-heading text-xl font-black text-white">
-                    Order #{selectedOrder.id}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+          {selectedOrder.orderType === "offline" ? (
+            /* OFFLINE SALE DETAIL MODAL (Exact match to Sales section offline detail view) */
+            <div className="relative w-full max-w-lg bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-5 text-white my-auto max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-white">
+                    Sale Transaction #{selectedOrder.displayId || selectedOrder.id}
                   </h3>
-                  {(() => {
-                    const selIdx = getStatusStepIndex(selectedOrder.status);
-                    const isSelCancelled = (selectedOrder.status || "").toLowerCase().trim() === "cancelled";
-                    return (
-                      <select
-                        value={selectedOrder.status || "Ordered"}
-                        onChange={(e) => handleStatusChange(selectedOrder.id, e.target.value)}
-                        className="bg-[#192218] border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-300 font-semibold focus:outline-none focus:border-lime-500 flex-1 sm:flex-none cursor-pointer disabled:opacity-60"
-                      >
-                        <option value="Ordered" disabled={selIdx > 0} className="bg-neutral-900 text-white disabled:text-neutral-600">Ordered</option>
-                        <option value="Packed" disabled={selIdx > 1} className="bg-neutral-900 text-white disabled:text-neutral-600">Packed</option>
-                        <option value="Out for Delivery" disabled={selIdx > 2} className="bg-neutral-900 text-white disabled:text-neutral-600">Out for Delivery</option>
-                        <option value="Delivered" disabled={selIdx > 3} className="bg-neutral-900 text-white disabled:text-neutral-600">Delivered</option>
-                        <option value="Cancelled" disabled={isSelCancelled} className="bg-neutral-900 text-red-400 disabled:text-neutral-600">Cancelled</option>
-                      </select>
-                    );
-                  })()}
+                  <span className="text-xs text-neutral-400">
+                    Physical Store Offline Sale
+                  </span>
                 </div>
-                <span className="text-xs text-neutral-400 block mt-0.5">
-                  Placed on {selectedOrder.date || selectedOrder.orderDate} • {selectedOrder.orderTime || ""}
-                </span>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white cursor-pointer"
+                >
+                  <FiX size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="p-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition"
-              >
-                <FiX size={18} />
-              </button>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1.5">
+                  <span className="text-neutral-400 font-bold block text-[11px] uppercase tracking-wider">CUSTOMER DETAILS</span>
+                  <span className="text-white font-bold block text-sm">Name:-{selectedOrder.customer?.name || selectedOrder.customer?.fullName || "Walk-in Customer"}</span>
+                  {selectedOrder.customer?.phone && selectedOrder.customer.phone !== "N/A" && (
+                    <span className="text-neutral-300 block font-mono">Phone :- {selectedOrder.customer.phone}</span>
+                  )}
+                  {selectedOrder.customer?.email && (
+                    <span className="text-neutral-300 block">Email :- {selectedOrder.customer.email}</span>
+                  )}
+                  {selectedOrder.customer?.address && (
+                    <span className="text-neutral-300 block">Address :- {selectedOrder.customer.address}</span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <span className="font-bold text-neutral-300 block">Items Purchased</span>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {selectedOrder.items && selectedOrder.items.map((it, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-neutral-900/60 border border-neutral-800">
+                        <div>
+                          <span className="font-bold text-white block">{it.name || it.product?.name}</span>
+                          <span className="text-[10px] text-neutral-400">₹{it.price || it.product?.price} × {it.quantity}</span>
+                        </div>
+                        <span className="font-bold text-lime-400">₹{(it.price || it.product?.price || 0) * (it.quantity || 1)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Subtotal:</span>
+                    <span className="font-mono text-white">₹{selectedOrder.subtotal || selectedOrder.totalAmount || selectedOrder.total || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Discount:</span>
+                    <span className="font-mono text-amber-400">-₹{selectedOrder.discount || 0}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-neutral-800 pt-1 font-bold text-sm">
+                    <span className="text-white">Total Amount:</span>
+                    <span className="text-lime-400">₹{selectedOrder.totalAmount || selectedOrder.total || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-neutral-800">
+                <button
+                  onClick={() => {
+                    const s = selectedOrder.originalSale || selectedOrder;
+                    setSelectedOrder(null);
+                    setSelectedBillSale(s);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-lime-500 hover:bg-lime-400 text-neutral-950 text-xs font-bold transition cursor-pointer"
+                >
+                  <FiFileText size={15} />
+                  <span>View Official Bill</span>
+                </button>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 font-bold hover:bg-neutral-800 hover:text-white text-xs transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-
-            {/* Customer Details Block */}
-            <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3 text-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-lime-400 block">
-                Customer & Shipping Info
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ) : (
+            /* ONLINE ORDER DETAIL MODAL (Unchanged) */
+            <div className="relative w-full max-w-2xl bg-[#141813] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 text-white my-auto max-h-[90vh] overflow-y-auto shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
                 <div>
-                  <span className="text-neutral-500 block">Full Name:</span>
-                  <span className="font-bold text-white text-sm">
-                    {selectedOrder.customer?.fullName || selectedOrder.shippingAddress?.name || "Customer"}
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-heading text-lg font-bold text-white">
+                      Order Details #{selectedOrder.id}
+                    </h3>
+                    {(() => {
+                      const curIdx = getStatusStepIndex(selectedOrder.status);
+                      const isCancelled = (selectedOrder.status || "").toLowerCase().trim() === "cancelled";
+                      return (
+                        <select
+                          value={selectedOrder.status || "Ordered"}
+                          onChange={(e) => handleStatusChange(selectedOrder.id, e.target.value)}
+                          className="bg-[#192218] border border-lime-500/40 text-lime-400 font-extrabold text-[11px] rounded-xl px-2.5 py-1 focus:outline-none focus:border-lime-400 cursor-pointer shadow-sm disabled:opacity-60"
+                        >
+                          <option value="Ordered" disabled={curIdx > 0} className="bg-neutral-900 text-white disabled:text-neutral-600">Ordered</option>
+                          <option value="Packed" disabled={curIdx > 1} className="bg-neutral-900 text-white disabled:text-neutral-600">Packed</option>
+                          <option value="Out for Delivery" disabled={curIdx > 2} className="bg-neutral-900 text-white disabled:text-neutral-600">Out for Delivery</option>
+                          <option value="Delivered" disabled={curIdx > 3} className="bg-neutral-900 text-white disabled:text-neutral-600">Delivered</option>
+                          <option value="Cancelled" disabled={isCancelled} className="bg-neutral-900 text-red-400 disabled:text-neutral-600">Cancelled</option>
+                        </select>
+                      );
+                    })()}
+                  </div>
+                  <span className="text-xs text-neutral-400 block mt-0.5">
+                    Placed on {selectedOrder.date || selectedOrder.orderDate} • {selectedOrder.orderTime || ""}
                   </span>
                 </div>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
 
-                <div>
-                  <span className="text-neutral-500 block">Phone Number:</span>
-                  <span className="font-bold text-lime-400">
-                    {selectedOrder.customer?.phone || selectedOrder.shippingAddress?.phone || "N/A"}
-                  </span>
-                </div>
-
-                {selectedOrder.customer?.email && (
+              {/* Customer Details Block */}
+              <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3 text-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-lime-400 block">
+                  Customer & Shipping Info
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <span className="text-neutral-500 block">Email Address:</span>
-                    <span className="font-bold text-neutral-200">
-                      {selectedOrder.customer.email}
+                    <span className="text-neutral-500 block">Full Name:</span>
+                    <span className="font-bold text-white text-sm">
+                      {selectedOrder.customer?.fullName || selectedOrder.shippingAddress?.name || "Customer"}
                     </span>
                   </div>
-                )}
 
-                <div>
-                  <span className="text-neutral-500 block">Payment Method:</span>
-                  <span className="font-bold text-white uppercase">
-                    {formatPaymentMethod(selectedOrder.customer?.paymentMethod || selectedOrder.paymentMethod)}
-                  </span>
+                  <div>
+                    <span className="text-neutral-500 block">Phone Number:</span>
+                    <span className="font-bold text-lime-400">
+                      {selectedOrder.customer?.phone || selectedOrder.shippingAddress?.phone || "N/A"}
+                    </span>
+                  </div>
+
+                  {selectedOrder.customer?.email && (
+                    <div>
+                      <span className="text-neutral-500 block">Email Address:</span>
+                      <span className="font-bold text-neutral-200">
+                        {selectedOrder.customer.email}
+                      </span>
+                    </div>
+                  )}
+
+                  <div>
+                    <span className="text-neutral-500 block">Payment Method:</span>
+                    <span className="font-bold text-white uppercase">
+                      {formatPaymentMethod(selectedOrder.customer?.paymentMethod || selectedOrder.paymentMethod)}
+                    </span>
+                  </div>
                 </div>
+
+                {(selectedOrder.customer?.address || selectedOrder.shippingAddress?.address) && (
+                  <div className="pt-2 border-t border-neutral-800">
+                    <span className="text-neutral-500 block text-[10px] uppercase font-bold">Delivery Address:</span>
+                    <p className="text-neutral-300 font-medium text-xs mt-0.5">
+                      {selectedOrder.customer?.address || selectedOrder.shippingAddress?.address}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {(selectedOrder.customer?.address || selectedOrder.shippingAddress?.address) && (
-                <div className="pt-2 border-t border-neutral-800">
-                  <span className="text-neutral-500 block text-[10px] uppercase font-bold">Delivery Address:</span>
-                  <p className="text-neutral-300 font-medium text-xs mt-0.5">
-                    {selectedOrder.customer?.address || selectedOrder.shippingAddress?.address}
-                  </p>
-                </div>
-              )}
-
-
-            </div>
-
-            {/* Purchased Items List */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block">
-                Purchased Items ({selectedOrder.items?.length || 0}):
-              </span>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {selectedOrder.items && selectedOrder.items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between bg-neutral-900/90 p-3 rounded-xl border border-neutral-800 text-xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={item.product?.image || item.image}
-                        alt={item.product?.name || item.name}
-                        className="w-9 h-9 object-contain rounded bg-neutral-950 p-1 shrink-0"
-                      />
-                      <div>
-                        <span className="font-bold text-white block">
-                          {item.product?.name || item.name}
+              {/* Purchased Items List */}
+              <div className="space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block">
+                  Purchased Items ({selectedOrder.items?.length || 0}):
+                </span>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {selectedOrder.items && selectedOrder.items.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-neutral-900/90 p-3 rounded-xl border border-neutral-800 text-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={item.product?.image || item.image}
+                          alt={item.product?.name || item.name}
+                          className="w-9 h-9 object-contain rounded bg-neutral-950 p-1 shrink-0"
+                        />
+                        <div>
+                          <span className="font-bold text-white block">
+                            {item.product?.name || item.name}
+                          </span>
+                          <span className="text-[10px] text-neutral-400 block">
+                            Flavor: {item.selectedFlavor || item.flavor || "Standard"} • Size: {item.selectedSize || item.size || "Standard"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-lime-400 block">
+                          ₹{(item.product?.price || item.price) * item.quantity}
                         </span>
-                        <span className="text-[10px] text-neutral-400 block">
-                          Flavor: {item.selectedFlavor || item.flavor || "Standard"} • Size: {item.selectedSize || item.size || "Standard"}
+                        <span className="text-[10px] text-neutral-500 block">
+                          Qty: {item.quantity} x ₹{item.product?.price || item.price}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-bold text-lime-400 block">
-                        ₹{(item.product?.price || item.price) * item.quantity}
-                      </span>
-                      <span className="text-[10px] text-neutral-500 block">
-                        Qty: {item.quantity} x ₹{item.product?.price || item.price}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Total Paid Summary */}
+              <div className="flex items-center justify-between p-4 bg-neutral-900 rounded-2xl border border-neutral-800 text-xs">
+                <span className="font-bold text-white">Total Amount Paid:</span>
+                <span className="font-black text-xl text-lime-400">
+                  ₹{selectedOrder.total || selectedOrder.totalAmount || 0}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
+                <button
+                  onClick={() => handleToggleOrderRead(selectedOrder.id)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                    selectedOrder.readStatus === "unread"
+                      ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
+                      : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
+                  }`}
+                >
+                  {selectedOrder.readStatus === "unread" ? "Mark as Read" : "Mark as Unread"}
+                </button>
+
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-6 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 font-bold hover:bg-neutral-800 hover:text-white transition text-xs cursor-pointer"
+                >
+                  Close
+                </button>
               </div>
             </div>
-
-            {/* Total Paid Summary */}
-            <div className="flex items-center justify-between p-4 bg-neutral-900 rounded-2xl border border-neutral-800 text-xs">
-              <span className="font-bold text-white">Total Amount Paid:</span>
-              <span className="font-black text-xl text-lime-400">
-                ₹{selectedOrder.total || selectedOrder.totalAmount || 0}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
-              <button
-                onClick={() => handleToggleOrderRead(selectedOrder.id)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                  selectedOrder.readStatus === "unread"
-                    ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
-                    : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
-                }`}
-              >
-                {selectedOrder.readStatus === "unread" ? "Mark as Read" : "Mark as Unread"}
-              </button>
-
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="px-6 py-2.5 rounded-xl bg-lime-500 text-neutral-950 font-bold hover:bg-lime-400 transition text-xs cursor-pointer shadow-lg shadow-lime-500/20"
-              >
-                Done
-              </button>
-            </div>
-          </div>
+          )}
         </div>
+      )}
+
+      {/* Add / Edit Offline Sale Modal Drawer */}
+      {(isAddOfflineModalOpen || isEditOfflineModalOpen) && (
+        <AddOfflineSaleModal
+          isOpen={isAddOfflineModalOpen || isEditOfflineModalOpen}
+          onClose={() => {
+            setIsAddOfflineModalOpen(false);
+            setIsEditOfflineModalOpen(false);
+            setEditingOfflineSale(null);
+          }}
+          onSaveSuccess={(savedSale) => {
+            setSelectedBillSale(savedSale);
+            loadOrders();
+          }}
+          editingSale={editingOfflineSale}
+        />
+      )}
+
+      {/* Offline Sale Bill / Invoice Modal */}
+      {selectedBillSale && (
+        <OfflineSaleBillModal
+          isOpen={Boolean(selectedBillSale)}
+          onClose={() => setSelectedBillSale(null)}
+          sale={selectedBillSale}
+        />
       )}
     </div>
   );

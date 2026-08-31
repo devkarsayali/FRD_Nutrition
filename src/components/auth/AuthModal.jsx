@@ -134,7 +134,7 @@ export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose
                   FRD NUTRITION OFFICIAL STORE
                 </span>
                 <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
-                  Athlete Access
+                  User Access
                 </h2>
                 <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
                   Sign in with your Google account for instant 1-click access to your profile, orders, and exclusive rewards.

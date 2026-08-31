@@ -885,12 +885,12 @@ export default function AdminSalesPage() {
 
       {/* Online vs Offline & Grand Total Revenue Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
-        {/* Online Revenue Card -> OPENS CUSTOMER ORDERS PAGE */}
+        {/* Online Revenue Card -> OPENS CUSTOMER ORDERS PAGE (ONLINE FILTERED) */}
         <button
           type="button"
-          onClick={() => navigate("/admin/orders")}
+          onClick={() => navigate("/admin/orders?source=online")}
           className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-1.5 sm:space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 bg-neutral-900/90 border border-neutral-800 hover:border-blue-500/50 group"
-          title="Click to open Customer Orders Page"
+          title="Click to open Customer Orders Page (Online Website Orders)"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs text-neutral-400 gap-1">
             <span className="flex items-center gap-1 sm:gap-1.5 font-bold text-neutral-300 group-hover:text-blue-400 transition truncate">
@@ -916,34 +916,35 @@ export default function AdminSalesPage() {
           </div>
         </button>
 
-        {/* Offline Store Revenue Card -> FILTERS OFFLINE TRANSACTIONS & SCROLLS */}
+        {/* Offline Store Revenue Card -> OPENS CUSTOMER ORDERS PAGE (OFFLINE FILTERED) */}
         <button
           type="button"
-          onClick={() => {
-            setSaleTypeFilter("offline");
-            setCurrentPage(1);
-            scrollToTable();
-          }}
-          className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-1.5 sm:space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 ${saleTypeFilter === "offline"
-            ? "bg-neutral-900 border-2 border-lime-500 shadow-lime-500/10"
-            : "bg-neutral-900/90 border border-neutral-800 hover:border-lime-500/50"
-            }`}
-          title="Click to view Offline Store Sales"
+          onClick={() => navigate("/admin/orders?source=offline")}
+          className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left space-y-1.5 sm:space-y-2 transition-all cursor-pointer transform hover:-translate-y-1 active:translate-y-0 bg-neutral-900/90 border border-neutral-800 hover:border-lime-500/50 group"
+          title="Click to open Customer Orders Page (Offline Store Orders)"
         >
           <div className="flex items-center justify-between text-[11px] sm:text-xs text-neutral-400 gap-1">
-            <span className="flex items-center gap-1 sm:gap-1.5 font-bold text-neutral-300 truncate">
+            <span className="flex items-center gap-1 sm:gap-1.5 font-bold text-neutral-300 group-hover:text-lime-400 transition truncate">
               <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-lime-500 shrink-0"></span>
               <span className="truncate">Offline Store Revenue</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] font-mono bg-lime-500/10 text-lime-400 px-1.5 sm:px-2 py-0.5 rounded-full border border-lime-500/20 shrink-0">
-              {metrics.totalRevenue > 0
-                ? ((metrics.offlineSalesTotal / metrics.totalRevenue) * 100).toFixed(1)
-                : 0}%
+            <span className="text-[9px] sm:text-[10px] font-mono bg-lime-500/10 text-lime-400 px-1.5 sm:px-2 py-0.5 rounded-full border border-lime-500/20 flex items-center gap-0.5 shrink-0">
+              <span>
+                {metrics.totalRevenue > 0
+                  ? ((metrics.offlineSalesTotal / metrics.totalRevenue) * 100).toFixed(1)
+                  : 0}%
+              </span>
+              <FiArrowRight size={10} className="group-hover:translate-x-0.5 transition hidden sm:inline" />
             </span>
           </div>
-          <span className="font-heading font-black text-xl sm:text-2xl text-lime-400 block truncate">
-            ₹{metrics.offlineSalesTotal.toLocaleString("en-IN")}
-          </span>
+          <div className="flex items-center justify-between gap-1">
+            <span className="font-heading font-black text-xl sm:text-2xl text-lime-400 block truncate">
+              ₹{metrics.offlineSalesTotal.toLocaleString("en-IN")}
+            </span>
+            <span className="text-[9px] sm:text-[10px] text-lime-400 font-bold underline opacity-0 group-hover:opacity-100 transition shrink-0 hidden sm:inline">
+              Orders →
+            </span>
+          </div>
         </button>
 
         {/* Grand Total Revenue Card */}

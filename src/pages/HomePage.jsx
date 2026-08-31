@@ -19,6 +19,8 @@ import { Link } from "react-router-dom";
 import ProductCard from "../components/common/ProductCard";
 import QuickViewModal from "../components/common/QuickViewModal";
 import { useProducts } from "../context/ProductContext";
+import { db } from "../firebase/firebase.config";
+import { collection, onSnapshot, getDocs } from "firebase/firestore";
 
 // Import Assets Images
 import About1 from "../assets/About1.jpeg";
@@ -54,91 +56,67 @@ export default function HomePage() {
   // Hero Slider Auto-Animation
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const heroSlides = [
-    {
-      id: 1,
-      image: Home1,
-      tagline: "390 CALORIES | 66G CARBS | 18G PROTEIN",
-      title: "LEGENDARY MASS GAINER FORMULA",
-      subtitle: "Power-packed mass gainer with USA Whey to support lean muscle growth, rapid recovery, and enhanced strength.",
-      btnText: "SHOP MASS GAINER NOW",
-      category: "Mass Gainer",
-    },
-    {
-      id: 2,
-      image: Home2,
-      tagline: "PREMIUM WELLNESS NUTRITION",
-      title: "BOOST YOUR HEALTH NATURALLY",
-      subtitle: "Discover high-quality vitamins, immunity boosters, and wellness supplements crafted for everyday health and vitality.",
-      btnText: "EXPLORE WELLNESS",
-      category: "All",
-    },
-    {
-      id: 3,
-      image: Home3,
-      tagline: "DAILY HEALTH ESSENTIALS",
-      title: "POWER YOUR HEALTH NATURALLY",
-      subtitle: "Fuel your body with premium vitamins, balanced nutrition, and wellness supplements for everyday vitality.",
-      btnText: "EXPLORE WELLNESS",
-      category: "All",
-    },
-    {
-      id: 4,
-      image: Home4,
-      tagline: "PURE WHEY | FAST ABSORPTION",
-      title: "FUEL EVERY REP WITH WHEY",
-      subtitle: "Premium Whey Protein with fast-digesting formula to support muscle recovery, strength, and lean gains.",
-      btnText: "SHOP WHEY NOW",
-      category: "Protein",
-    },
-    {
-      id: 5,
-      image: Home5,
-      tagline: "100% PURE WHEY ISOLATE",
-      title: "UNLEASH YOUR ULTIMATE POWER",
-      subtitle: "Premium New Zealand Whey Isolate with 26g Protein for Faster Recovery, Lean Muscle Building & Peak Performance.",
-      btnText: "SHOP ISOLATE NOW",
-      category: "Protein",
-    },
-    {
-      id: 6,
-      image: Home6,
-      tagline: "HIGH CALORIE MASS GAINER",
-      title: "LEGENDARY GAINS, LEGENDARY TASTE",
-      subtitle: "Fuel your bulk with 390 calories, 66g carbs, and 18g protein for maximum size, strength, and performance.",
-      btnText: "SHOP MASS GAINER NOW",
-      category: "Mass Gainer",
-    },
-    {
-      id: 7,
-      image: Home7,
-      tagline: "100% WHEY PROTEIN ISOLATE",
-      title: "LEGENDARY TASTE, ELITE PERFORMANCE.",
-      subtitle: "Fuel your fitness with 27g protein, zero carbs, and zero sugar for clean muscle gains and faster recovery.",
-      btnText: "SHOP PROTEIN NOW",
-      category: "Protein",
-    },
-    {
-      id: 8,
-      image: Home8,
-      tagline: "MAXIMUM ENERGY | LASER FOCUS",
-      title: "TRAIN HARDER, LIFT STRONGER",
-      subtitle: "Experience explosive energy, enhanced endurance, and skin-tearing pumps with our premium pre-workout formula.",
-      btnText: "SHOP PRE WORKOUT NOW",
-      category: "Pre Workout",
-    },
-    {
-      id: 9,
-      image: Home9,
-      tagline: "MAXIMUM STRENGTH | MAXIMUM PERFORMANCE",
-      title: "POWER EVERY REP WITH CREATINE",
-      subtitle: "Scientifically formulated Creatine Monohydrate to increase strength, training energy, and muscle performance.",
-      btnText: "SHOP CREATINE NOW",
-      category: "Creatine",
-    },
-  ];
+  const [heroSlides, setHeroSlides] = useState([]);
+
+  // Dynamic Banners Fetcher from Firestore & LocalStorage (Strictly controlled from Admin side)
+  const loadDynamicBanners = async () => {
+    let list = [];
+    let fetchedFromFirestore = false;
+
+    try {
+      const snap = await getDocs(collection(db, "banners"));
+      if (!snap.empty) {
+        snap.forEach((d) => {
+          list.push({ id: d.id, ...d.data() });
+        });
+        fetchedFromFirestore = true;
+      }
+    } catch (e) {}
+
+    if (!fetchedFromFirestore) {
+      try {
+        const localData = JSON.parse(localStorage.getItem("frd_home_banners_v1") || "[]");
+        if (Array.isArray(localData)) {
+          list = localData;
+        }
+      } catch (e) {}
+    }
+
+    const activeBanners = list.filter((b) => b.active !== false);
+    activeBanners.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+    setHeroSlides(activeBanners);
+  };
 
   useEffect(() => {
+    loadDynamicBanners();
+
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onSnapshot(collection(db, "banners"), (snapshot) => {
+        const liveList = [];
+        snapshot.forEach((docSnap) => {
+          liveList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        const activeLive = liveList.filter((b) => b.active !== false);
+        if (activeLive.length > 0) {
+          activeLive.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+          setHeroSlides(activeLive);
+        }
+      });
+    } catch (e) {}
+
+    window.addEventListener("frd_banners_updated", loadDynamicBanners);
+    window.addEventListener("storage", loadDynamicBanners);
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+      window.removeEventListener("frd_banners_updated", loadDynamicBanners);
+      window.removeEventListener("storage", loadDynamicBanners);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!heroSlides || heroSlides.length === 0) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 4500);
@@ -174,99 +152,113 @@ export default function HomePage() {
       )}
 
       {/* CONTINUOUS HERO SLIDER BANNER */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#0f172a] via-[#0b101d] to-[#090d16] border-b border-slate-800/80">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none" />
+      {heroSlides.length > 0 && (
+        <section className="relative overflow-hidden bg-gradient-to-b from-[#0f172a] via-[#0b101d] to-[#090d16] border-b border-slate-800/80">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none" />
 
-        <div className="relative min-h-[440px] sm:h-[480px] lg:h-[520px] w-full flex items-center z-10 py-6 sm:py-0">
-          {heroSlides.map((slide, index) => (
-            <div
-              key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 flex items-center justify-center ${index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
-                }`}
-            >
-              <div className="container-custom grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center h-full py-4 sm:py-8">
-                <div className="lg:col-span-6 space-y-2.5 sm:space-y-4 text-center lg:text-left z-20">
-                  <span className="inline-block px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[#f5b800] font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-md">
-                    ⚡ {slide.tagline}
-                  </span>
+          <div className="relative min-h-[440px] sm:h-[480px] lg:h-[520px] w-full flex items-center z-10 py-6 sm:py-0">
+            {heroSlides.map((slide, index) => (
+              <div
+                key={slide.id || index}
+                className={`absolute inset-0 transition-opacity duration-1000 flex items-center justify-center ${index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+                  }`}
+              >
+                <div className="container-custom grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center h-full py-4 sm:py-8">
+                  <div className="lg:col-span-6 space-y-2.5 sm:space-y-4 text-center lg:text-left z-20">
+                    {slide.tagline && (
+                      <span className="inline-block px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[#f5b800] font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-md">
+                        ⚡ {slide.tagline}
+                      </span>
+                    )}
 
-                  <h1 className="font-heading text-xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-white">
-                    {slide.title}
-                  </h1>
+                    <h1 className="font-heading text-xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-white">
+                      {slide.title}
+                    </h1>
 
-                  <p className="text-slate-300 text-xs sm:text-base max-w-lg leading-relaxed mx-auto lg:mx-0">
-                    {slide.subtitle}
-                  </p>
+                    {slide.subtitle && (
+                      <p className="text-slate-300 text-xs sm:text-base max-w-lg leading-relaxed mx-auto lg:mx-0">
+                        {slide.subtitle}
+                      </p>
+                    )}
 
-                  {/* MOBILE IMAGE DISPLAY (Appears after Subtitle and before CTA Button on Mobile!) */}
-                  <div className="lg:hidden my-2 flex justify-center">
-                    <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900/50 p-2 shadow-2xl max-w-full">
-                      <img
-                        src={slide.image}
-                        alt={slide.title}
-                        className="max-h-[170px] w-full object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(245,184,0,0.2)]"
-                      />
+                    {/* MOBILE IMAGE DISPLAY */}
+                    {slide.image && (
+                      <div className="lg:hidden my-2 flex justify-center">
+                        <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900/50 p-2 shadow-2xl max-w-full">
+                          <img
+                            src={slide.image}
+                            alt={slide.title}
+                            className="max-h-[170px] w-full object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(245,184,0,0.2)]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ACTION BUTTON */}
+                    <div className="pt-1 sm:pt-2">
+                      <Link
+                        to="/supplements"
+                        onClick={() => setSelectedCategory(slide.category || "All")}
+                        className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black hover:from-amber-400 hover:to-yellow-300 transition shadow-xl shadow-amber-500/20 text-xs sm:text-sm"
+                      >
+                        <span>{slide.btnText || "SHOP NOW"}</span>
+                        <FiArrowRight size={18} />
+                      </Link>
                     </div>
                   </div>
 
-                  {/* ACTION BUTTON (Appears below image on Mobile, below text on Desktop) */}
-                  <div className="pt-1 sm:pt-2">
-                    <Link
-                      to="/supplements"
-                      onClick={() => setSelectedCategory(slide.category)}
-                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black hover:from-amber-400 hover:to-yellow-300 transition shadow-xl shadow-amber-500/20 text-xs sm:text-sm"
-                    >
-                      <span>{slide.btnText}</span>
-                      <FiArrowRight size={18} />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* DESKTOP HERO IMAGE (Right Column on Desktop Only) */}
-                <div className="hidden lg:flex lg:col-span-6 justify-center items-center h-full">
-                  <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900/50 p-4 shadow-2xl max-w-full">
-                    <img
-                      src={slide.image}
-                      alt={slide.title}
-                      className="max-h-[380px] w-full object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(245,184,0,0.2)] hover:scale-105 transition-transform duration-700"
-                    />
-                  </div>
+                  {/* DESKTOP HERO IMAGE */}
+                  {slide.image && (
+                    <div className="hidden lg:flex lg:col-span-6 justify-center items-center h-full">
+                      <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900/50 p-4 shadow-2xl max-w-full">
+                        <img
+                          src={slide.image}
+                          alt={slide.title}
+                          className="max-h-[380px] w-full object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(245,184,0,0.2)] hover:scale-105 transition-transform duration-700"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
-
-          {/* Slider Controls (Left / Right Side Edge Arrows) */}
-          <button
-            onClick={prevSlide}
-            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl backdrop-blur-sm cursor-pointer"
-            aria-label="Previous Slide"
-          >
-            <FiChevronLeft size={18} />
-          </button>
-
-          <button
-            onClick={nextSlide}
-            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl backdrop-blur-sm cursor-pointer"
-            aria-label="Next Slide"
-          >
-            <FiChevronRight size={18} />
-          </button>
-
-          {/* Bottom Pagination Dots */}
-          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
-            {heroSlides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentSlide(idx)}
-                className={`h-1.5 rounded-full transition-all cursor-pointer ${idx === currentSlide ? "w-6 bg-[#f5b800]" : "w-1.5 bg-slate-700 hover:bg-slate-500"
-                  }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
             ))}
+
+            {/* Slider Controls */}
+            {heroSlides.length > 1 && (
+              <>
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl backdrop-blur-sm cursor-pointer"
+                  aria-label="Previous Slide"
+                >
+                  <FiChevronLeft size={18} />
+                </button>
+
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 border border-slate-700 hover:border-[#f5b800] text-slate-200 hover:text-[#f5b800] flex items-center justify-center transition shadow-xl backdrop-blur-sm cursor-pointer"
+                  aria-label="Next Slide"
+                >
+                  <FiChevronRight size={18} />
+                </button>
+
+                {/* Bottom Pagination Dots */}
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
+                  {heroSlides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlide(idx)}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${idx === currentSlide ? "w-6 bg-[#f5b800]" : "w-1.5 bg-slate-700 hover:bg-slate-500"
+                        }`}
+                      aria-label={`Go to slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CATEGORIES CARDS SHOWCASE */}
       <motion.section

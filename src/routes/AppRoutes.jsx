@@ -17,6 +17,7 @@ import AdminProductsPage from "../pages/admin/AdminProductsPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
 import AdminCustomersPage from "../pages/admin/AdminCustomersPage";
 import AdminSalesPage from "../pages/admin/AdminSalesPage";
+import AdminBannersPage from "../pages/admin/AdminBannersPage";
 
 import PrivacyPolicyPage from "../pages/policies/PrivacyPolicyPage";
 import ReturnsPolicyPage from "../pages/policies/ReturnsPolicyPage";
@@ -68,7 +69,8 @@ export default function AppRoutes() {
       </Route>
 
       {/* Admin Login Route */}
-      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/login" element={<AdminLoginPage />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
       {/* Admin Management Panel Routes */}
       <Route path="/admin" element={<AdminLayout />}>
@@ -77,6 +79,7 @@ export default function AppRoutes() {
         <Route path="sales" element={<AdminSalesPage />} />
         <Route path="products" element={<AdminProductsWrapper />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
+        <Route path="banners" element={<AdminBannersPage />} />
         <Route path="orders" element={<AdminOrdersPage defaultTab="orders" />} />
         <Route path="customers" element={<AdminCustomersPage />} />
         <Route path="messages" element={<AdminOrdersPage defaultTab="messages" />} />

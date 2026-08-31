@@ -16,13 +16,13 @@ export default function AdminCustomersPage() {
   useEffect(() => {
     loadCustomers();
 
-    let unsubscribeUsers = () => {};
-    let unsubscribeOrders = () => {};
+    let unsubscribeUsers = () => { };
+    let unsubscribeOrders = () => { };
 
     try {
       unsubscribeUsers = onSnapshot(collection(db, "users"), () => loadCustomers());
       unsubscribeOrders = onSnapshot(collection(db, "orders"), () => loadCustomers());
-    } catch (e) {}
+    } catch (e) { }
 
     const handleStorageUpdate = () => loadCustomers();
     window.addEventListener("storage", handleStorageUpdate);
@@ -87,7 +87,7 @@ export default function AdminCustomersPage() {
                 uniqueOrdersMap.set(order.id, order);
               }
             });
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -178,7 +178,7 @@ export default function AdminCustomersPage() {
 
     try {
       localStorage.removeItem(`frd_user_profile_${custEmail}`);
-    } catch (e) {}
+    } catch (e) { }
 
     toast.success(`Customer record for "${custEmail}" deleted successfully.`);
   };
