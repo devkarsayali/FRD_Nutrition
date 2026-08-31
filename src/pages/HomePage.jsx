@@ -49,16 +49,7 @@ import Latest2 from "../assets/LATEST2.jpeg";
 import Latest3 from "../assets/LATEST3.jpeg";
 import Latest4 from "../assets/LATEST4.jpeg";
 
-const DEFAULT_HERO_SLIDE = {
-  id: "default_hero_slide_1",
-  tagline: "OFFICIAL FRD NUTRITION STORE",
-  title: "UNLEASH YOUR ULTIMATE ATHLETIC POTENTIAL",
-  subtitle: "100% Authentic Whey Protein, Creatine, BCAA & Gym Supplements Delivered Across India.",
-  btnText: "SHOP SUPPLEMENTS",
-  category: "All",
-  image: HeroBanner1,
-  active: true,
-};
+
 
 export default function HomePage() {
   const { latestProducts, justLaunchedProducts, trendingProducts, popularProducts, setSelectedCategory, setSelectedTag } = useProducts();
@@ -77,7 +68,7 @@ export default function HomePage() {
           return active;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     return [DEFAULT_HERO_SLIDE];
   };
@@ -86,7 +77,7 @@ export default function HomePage() {
 
   // Fetch Banners from Firestore (Background Sync from Admin Database)
   useEffect(() => {
-    let unsubscribe = () => {};
+    let unsubscribe = () => { };
     try {
       unsubscribe = onSnapshot(collection(db, "banners"), (snapshot) => {
         if (!snapshot.empty) {
