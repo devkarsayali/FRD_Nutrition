@@ -70,7 +70,7 @@ export default function AdminBannersPage() {
         if (Array.isArray(localData)) {
           loadedList = localData;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Sort by display order
@@ -107,7 +107,7 @@ export default function AdminBannersPage() {
     try {
       localStorage.setItem("frd_home_banners_v1", JSON.stringify(updatedList));
       window.dispatchEvent(new CustomEvent("frd_banners_updated"));
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Open modal for Create
@@ -215,7 +215,7 @@ export default function AdminBannersPage() {
 
     try {
       await setDoc(doc(db, "banners", banner.id), { active: updatedBanner.active }, { merge: true });
-    } catch (e) {}
+    } catch (e) { }
 
     const newList = banners.map((b) => (b.id === banner.id ? updatedBanner : b));
     saveBannersToStorage(newList);
@@ -261,7 +261,7 @@ export default function AdminBannersPage() {
     // Re-assign displayOrder numbers 1..N
     newList.forEach((b, idx) => {
       b.displayOrder = idx + 1;
-      setDoc(doc(db, "banners", b.id), { displayOrder: b.displayOrder }, { merge: true }).catch(() => {});
+      setDoc(doc(db, "banners", b.id), { displayOrder: b.displayOrder }, { merge: true }).catch(() => { });
     });
 
     saveBannersToStorage(newList);
@@ -270,24 +270,9 @@ export default function AdminBannersPage() {
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#141813] p-6 rounded-3xl border border-neutral-800 shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-lime-500/20 text-lime-400 font-bold flex items-center justify-center border border-lime-500/30">
-            <FiImage size={24} />
-          </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-3">
-              Home Hero Banners
-              <span className="text-xs bg-lime-500/10 text-lime-400 px-3 py-1 rounded-full border border-lime-500/20 font-sans">
-                {banners.filter((b) => b.active !== false).length} Active ({banners.length} Total)
-              </span>
-            </h1>
-            <p className="text-xs text-neutral-400 mt-1">
-              Upload and manage hero slider images, headings, taglines, and CTA buttons for the public homepage.
-            </p>
-          </div>
-        </div>
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between gap-4">
+
 
         <button
           onClick={handleOpenAddModal}
@@ -316,9 +301,8 @@ export default function AdminBannersPage() {
           {banners.map((banner, index) => (
             <div
               key={banner.id}
-              className={`relative bg-[#141813] border rounded-3xl overflow-hidden flex flex-col transition-all duration-300 ${
-                banner.active !== false ? "border-neutral-800 hover:border-lime-500/50" : "border-neutral-800/50 opacity-60"
-              }`}
+              className={`relative bg-[#141813] border rounded-3xl overflow-hidden flex flex-col transition-all duration-300 ${banner.active !== false ? "border-neutral-800 hover:border-lime-500/50" : "border-neutral-800/50 opacity-60"
+                }`}
             >
               {/* Image Preview */}
               <div className="relative h-44 bg-neutral-950 overflow-hidden group">
@@ -337,11 +321,10 @@ export default function AdminBannersPage() {
 
                     <button
                       onClick={() => handleToggleActive(banner)}
-                      className={`px-3 py-1 rounded-full font-bold text-[10px] backdrop-blur-md transition cursor-pointer flex items-center gap-1.5 border ${
-                        banner.active !== false
-                          ? "bg-lime-500/20 text-lime-400 border-lime-500/40"
-                          : "bg-red-500/20 text-red-400 border-red-500/40"
-                      }`}
+                      className={`px-3 py-1 rounded-full font-bold text-[10px] backdrop-blur-md transition cursor-pointer flex items-center gap-1.5 border ${banner.active !== false
+                        ? "bg-lime-500/20 text-lime-400 border-lime-500/40"
+                        : "bg-red-500/20 text-red-400 border-red-500/40"
+                        }`}
                     >
                       {banner.active !== false ? <FiEye size={12} /> : <FiEyeOff size={12} />}
                       <span>{banner.active !== false ? "Active" : "Disabled"}</span>
