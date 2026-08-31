@@ -56,9 +56,37 @@ export default function HomePage() {
   // Hero Slider Auto-Animation
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const [heroSlides, setHeroSlides] = useState([]);
+  // Synchronous Initial Banners (renders in 0ms without waiting for network)
+  const getInitialHeroSlides = () => {
+    try {
+      const localData = JSON.parse(localStorage.getItem("frd_home_banners_v1") || "[]");
+      if (Array.isArray(localData) && localData.length > 0) {
+        const active = localData.filter((b) => b.active !== false);
+        if (active.length > 0) {
+          active.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+          return active;
+        }
+      }
+    } catch (e) {}
 
-  // Dynamic Banners Fetcher from Firestore & LocalStorage (Strictly controlled from Admin side)
+    // Instant fallback banner so the homepage hero section is NEVER blank or delayed
+    return [
+      {
+        id: "instant_default_hero",
+        tagline: "100% AUTHENTIC SPORTS NUTRITION",
+        title: "UNLEASH YOUR ULTIMATE ATHLETIC POTENTIAL",
+        subtitle: "Premium Whey Protein, Creatine, BCAA & Gym Supplements Delivered Across India.",
+        btnText: "EXPLORE SUPPLEMENTS",
+        category: "All",
+        image: HeroBanner1,
+        active: true,
+      },
+    ];
+  };
+
+  const [heroSlides, setHeroSlides] = useState(getInitialHeroSlides);
+
+  // Dynamic Banners Fetcher from Firestore & LocalStorage
   const loadDynamicBanners = async () => {
     let list = [];
     let fetchedFromFirestore = false;
@@ -83,8 +111,10 @@ export default function HomePage() {
     }
 
     const activeBanners = list.filter((b) => b.active !== false);
-    activeBanners.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
-    setHeroSlides(activeBanners);
+    if (activeBanners.length > 0) {
+      activeBanners.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+      setHeroSlides(activeBanners);
+    }
   };
 
   useEffect(() => {
