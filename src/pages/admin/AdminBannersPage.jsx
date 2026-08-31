@@ -44,33 +44,20 @@ export default function AdminBannersPage() {
     active: true,
   });
 
-  // Load Banners strictly from Firestore & LocalStorage (No hardcoded default images)
+  // Load Banners strictly from Firestore database
   const loadBanners = async () => {
     setLoading(true);
     let loadedList = [];
-    let fetchedFromFirestore = false;
 
-    // 1. Fetch from Firestore `banners` collection
     try {
       const snap = await getDocs(collection(db, "banners"));
       if (!snap.empty) {
         snap.forEach((d) => {
           loadedList.push({ id: d.id, ...d.data() });
         });
-        fetchedFromFirestore = true;
       }
     } catch (e) {
       console.warn("Firestore banners fetch warning:", e);
-    }
-
-    // 2. LocalStorage fallback if Firestore snap was empty or offline
-    if (!fetchedFromFirestore) {
-      try {
-        const localData = JSON.parse(localStorage.getItem("frd_home_banners_v1") || "[]");
-        if (Array.isArray(localData)) {
-          loadedList = localData;
-        }
-      } catch (e) { }
     }
 
     // Sort by display order

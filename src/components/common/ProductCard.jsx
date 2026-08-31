@@ -79,6 +79,8 @@ export default function ProductCard({ product, onQuickView }) {
           <img
             src={product.image}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             className={`max-h-28 sm:max-h-44 object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${isOutOfStock ? "opacity-60" : ""}`}
           />
         </Link>

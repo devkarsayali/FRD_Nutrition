@@ -49,6 +49,17 @@ import Latest2 from "../assets/LATEST2.jpeg";
 import Latest3 from "../assets/LATEST3.jpeg";
 import Latest4 from "../assets/LATEST4.jpeg";
 
+const DEFAULT_HERO_SLIDE = {
+  id: "default_hero_slide_1",
+  tagline: "OFFICIAL FRD NUTRITION STORE",
+  title: "UNLEASH YOUR ULTIMATE ATHLETIC POTENTIAL",
+  subtitle: "100% Authentic Whey Protein, Creatine, BCAA & Gym Supplements Delivered Across India.",
+  btnText: "SHOP SUPPLEMENTS",
+  category: "All",
+  image: HeroBanner1,
+  active: true,
+};
+
 export default function HomePage() {
   const { latestProducts, justLaunchedProducts, trendingProducts, popularProducts, setSelectedCategory, setSelectedTag } = useProducts();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
@@ -56,7 +67,6 @@ export default function HomePage() {
   // Hero Slider Auto-Animation
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Synchronous Initial Banners (renders in 0ms without waiting for network)
   const getInitialHeroSlides = () => {
     try {
       const localData = JSON.parse(localStorage.getItem("frd_home_banners_v1") || "[]");
@@ -69,79 +79,34 @@ export default function HomePage() {
       }
     } catch (e) {}
 
-    // Instant fallback banner so the homepage hero section is NEVER blank or delayed
-    return [
-      {
-        id: "instant_default_hero",
-        tagline: "100% AUTHENTIC SPORTS NUTRITION",
-        title: "UNLEASH YOUR ULTIMATE ATHLETIC POTENTIAL",
-        subtitle: "Premium Whey Protein, Creatine, BCAA & Gym Supplements Delivered Across India.",
-        btnText: "EXPLORE SUPPLEMENTS",
-        category: "All",
-        image: HeroBanner1,
-        active: true,
-      },
-    ];
+    return [DEFAULT_HERO_SLIDE];
   };
 
   const [heroSlides, setHeroSlides] = useState(getInitialHeroSlides);
 
-  // Dynamic Banners Fetcher from Firestore & LocalStorage
-  const loadDynamicBanners = async () => {
-    let list = [];
-    let fetchedFromFirestore = false;
-
-    try {
-      const snap = await getDocs(collection(db, "banners"));
-      if (!snap.empty) {
-        snap.forEach((d) => {
-          list.push({ id: d.id, ...d.data() });
-        });
-        fetchedFromFirestore = true;
-      }
-    } catch (e) {}
-
-    if (!fetchedFromFirestore) {
-      try {
-        const localData = JSON.parse(localStorage.getItem("frd_home_banners_v1") || "[]");
-        if (Array.isArray(localData)) {
-          list = localData;
-        }
-      } catch (e) {}
-    }
-
-    const activeBanners = list.filter((b) => b.active !== false);
-    if (activeBanners.length > 0) {
-      activeBanners.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
-      setHeroSlides(activeBanners);
-    }
-  };
-
+  // Fetch Banners from Firestore (Background Sync from Admin Database)
   useEffect(() => {
-    loadDynamicBanners();
-
     let unsubscribe = () => {};
     try {
       unsubscribe = onSnapshot(collection(db, "banners"), (snapshot) => {
-        const liveList = [];
-        snapshot.forEach((docSnap) => {
-          liveList.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        const activeLive = liveList.filter((b) => b.active !== false);
-        if (activeLive.length > 0) {
-          activeLive.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
-          setHeroSlides(activeLive);
+        if (!snapshot.empty) {
+          const liveList = [];
+          snapshot.forEach((docSnap) => {
+            liveList.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          const activeLive = liveList.filter((b) => b.active !== false);
+          if (activeLive.length > 0) {
+            activeLive.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+            setHeroSlides(activeLive);
+          }
         }
       });
-    } catch (e) {}
-
-    window.addEventListener("frd_banners_updated", loadDynamicBanners);
-    window.addEventListener("storage", loadDynamicBanners);
+    } catch (e) {
+      console.warn("Firestore banners listener warning:", e);
+    }
 
     return () => {
       if (typeof unsubscribe === "function") unsubscribe();
-      window.removeEventListener("frd_banners_updated", loadDynamicBanners);
-      window.removeEventListener("storage", loadDynamicBanners);
     };
   }, []);
 
@@ -571,6 +536,8 @@ export default function HomePage() {
                 <img
                   src={About4}
                   alt="FRD Nutrition Premium Storefront - About4"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-48 sm:h-[380px] object-cover object-top hover:scale-105 transition-transform duration-500"
                 />
               </div>
@@ -581,6 +548,8 @@ export default function HomePage() {
                   <img
                     src={About2}
                     alt="FRD Store Interior Shelves - About2"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-20 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -588,6 +557,8 @@ export default function HomePage() {
                   <img
                     src={About3}
                     alt="FRD Store Exterior Team - About3"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-20 sm:h-32 object-cover object-top hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -595,6 +566,8 @@ export default function HomePage() {
                   <img
                     src={About1}
                     alt="FRD Store Stock Display - About1"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-20 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>

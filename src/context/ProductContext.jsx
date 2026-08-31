@@ -305,7 +305,7 @@ export function ProductProvider({ children }) {
     } catch (error) {
       console.error("Failed to load products from localStorage", error);
     }
-    return [];
+    return normalizeProducts(INITIAL_PRODUCTS);
   };
 
   const [products, setProducts] = useState(loadStoredProducts);
