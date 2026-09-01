@@ -12,7 +12,7 @@ import {
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useUserAuth } from "../../context/UserAuthContext";
-import oipLogo from "../../assets/OIP.png";
+import oipLogo from "../../assets/OIP2-removebg-preview.png";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -90,7 +90,7 @@ export default function Navbar() {
           <img
             src={oipLogo}
             alt="FRD Nutrition Official Logo"
-            className="h-14 sm:h-16 md:h-18 max-h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-[0_0_20px_rgba(245,184,0,0.4)]"
+            className="h-20 sm:h-24 md:h-28 max-h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-[0_0_20px_rgba(245,184,0,0.4)]"
           />
         </Link>
 

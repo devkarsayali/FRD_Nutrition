@@ -411,7 +411,7 @@ export default function UserDashboardPage() {
             Please Log In to Access Portal
           </h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Access your personal FRD Athlete Hub, view live shipment tracking, manage orders, and view saved items.
+            Access your personal HR Sports & Nutrition Athlete Hub, view live shipment tracking, manage orders, and view saved items.
           </p>
         </div>
         <Link

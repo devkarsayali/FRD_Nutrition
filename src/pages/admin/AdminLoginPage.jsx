@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FiArrowRight, FiCheckCircle, FiEye, FiEyeOff, FiLock, FiMail, FiShield, FiX } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import oipLogo from "../../assets/OIP.png";
+import oipLogo from "../../assets/OIP2-removebg-preview.png";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { isValidEmail } from "../../utils/validation";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
           <img
             src={oipLogo}
             alt="FRD Nutrition Official Logo"
-            className="h-14 sm:h-16 w-auto object-contain mx-auto mb-2 filter drop-shadow-[0_0_18px_rgba(132,204,22,0.4)]"
+            className="h-20 sm:h-24 w-auto object-contain mx-auto mb-2 filter drop-shadow-[0_0_18px_rgba(132,204,22,0.4)]"
           />
           <h1 className="font-heading text-2xl font-black">ADMIN PORTAL LOGIN</h1>
           <p className="text-xs text-neutral-400">

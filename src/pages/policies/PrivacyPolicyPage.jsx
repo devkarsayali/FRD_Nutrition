@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
             Privacy <span className="text-gradient-gold">Policy</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-            At FRD Nutrition, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our website.
+            At HR Sports & Nutrition, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our website.
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default function PrivacyPolicyPage() {
                 <span>Policy Updates</span>
               </h2>
               <p className="pl-9 text-slate-400">
-                FRD Nutrition reserves the right to update this Privacy Policy at any time. Changes will be effective immediately upon posting on the website.
+                HR Sports & Nutrition reserves the right to update this Privacy Policy at any time. Changes will be effective immediately upon posting on the website.
               </p>
             </div>
           </div>
@@ -154,16 +154,16 @@ export default function PrivacyPolicyPage() {
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiMail className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Privacy Contact</span>
-                <a href="mailto:support@frdnutritionpremium.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
-                  support@frdnutritionpremium.com
+                <a href="mailto:aldarharshad@gmail.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
+                  aldarharshad@gmail.com
                 </a>
               </div>
 
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiPhone className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Helpline</span>
-                <a href="tel:09466832004" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
-                  +91 9088032004 / 01262660027
+                <a href="tel:+918767942220" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
+                  +91 8767942220 / +91 9309140591
                 </a>
               </div>
             </div>

@@ -94,7 +94,7 @@ export const buildWhatsAppMessageText = (msg, productsList = []) => {
 
     return (
       `Hi ${custName},\n\n` +
-      `Thank you for reaching out to FRD Nutrition! Here are the details regarding your enquiry for *${productName}*:\n\n` +
+      `Thank you for reaching out to HR Sports & Nutrition! Here are the details regarding your enquiry for *${productName}*:\n\n` +
       `*Product Details:*\n` +
       `• Category: ${category}\n` +
       `• Special Price: ${priceDetailStr}\n` +
@@ -106,7 +106,7 @@ export const buildWhatsAppMessageText = (msg, productsList = []) => {
   } else {
     return (
       `Hi ${custName},\n\n` +
-      `Thank you for reaching out to FRD Nutrition!\n\n` +
+      `Thank you for reaching out to HR Sports & Nutrition!\n\n` +
       `Regarding your enquiry:\n` +
       `‘${userQuery}’\n\n` +
       `Please let us know how we can assist you further or if you have any questions!`
@@ -196,7 +196,7 @@ export default function AdminOrdersPage({ defaultTab }) {
     loadMessages();
     loadOrders();
 
-    let unsubscribeFirestore = () => {};
+    let unsubscribeFirestore = () => { };
     try {
       unsubscribeFirestore = onSnapshot(
         collection(db, "contact_messages"),
@@ -209,7 +209,7 @@ export default function AdminOrdersPage({ defaultTab }) {
           let localMsgs = [];
           try {
             localMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
-          } catch {}
+          } catch { }
 
           const msgMap = new Map();
           firestoreMsgs.forEach((m) => msgMap.set(m.id, m));
@@ -229,7 +229,7 @@ export default function AdminOrdersPage({ defaultTab }) {
       console.warn("Firestore listener setup error:", err);
     }
 
-    let unsubscribeOrders = () => {};
+    let unsubscribeOrders = () => { };
     try {
       unsubscribeOrders = onSnapshot(
         collection(db, "orders"),
@@ -248,7 +248,7 @@ export default function AdminOrdersPage({ defaultTab }) {
       console.warn("Firestore orders listener setup error:", err);
     }
 
-    let unsubscribeSales = () => {};
+    let unsubscribeSales = () => { };
     try {
       unsubscribeSales = onSnapshot(
         collection(db, "sales"),
@@ -302,7 +302,7 @@ export default function AdminOrdersPage({ defaultTab }) {
       let localMsgs = [];
       try {
         localMsgs = JSON.parse(localStorage.getItem("frd_contact_messages") || "[]");
-      } catch {}
+      } catch { }
 
       const msgMap = new Map();
       firestoreMsgs.forEach((m) => msgMap.set(m.id, m));
@@ -394,7 +394,7 @@ export default function AdminOrdersPage({ defaultTab }) {
             } else if (parsed && parsed.id) {
               addSecondaryOrderToMap(parsed);
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -418,7 +418,7 @@ export default function AdminOrdersPage({ defaultTab }) {
             }
           });
         }
-      } catch (e) {}
+      } catch (e) { }
 
       offlineMap.forEach((sale) => {
         const dateObj = sale.saleDate ? new Date(sale.saleDate) : sale.createdAt ? new Date(sale.createdAt) : null;
@@ -484,7 +484,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                   localStorage.setItem(key, JSON.stringify(updated));
                 }
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       }
@@ -580,7 +580,7 @@ export default function AdminOrdersPage({ defaultTab }) {
           const updated = saved.map((o) => (o.id === orderId ? { ...o, ...updateFields } : o));
           localStorage.setItem("frd_offline_sales_v1", JSON.stringify(updated));
         }
-      } catch (e) {}
+      } catch (e) { }
       window.dispatchEvent(new CustomEvent("frd_sales_updated"));
     } else {
       for (let i = 0; i < localStorage.length; i++) {
@@ -597,7 +597,7 @@ export default function AdminOrdersPage({ defaultTab }) {
               });
               localStorage.setItem(key, JSON.stringify(updated));
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
       window.dispatchEvent(new CustomEvent("frd_orders_updated"));
@@ -634,7 +634,7 @@ export default function AdminOrdersPage({ defaultTab }) {
             const updated = saved.filter((o) => o.id !== orderId);
             localStorage.setItem("frd_offline_sales_v1", JSON.stringify(updated));
           }
-        } catch (e) {}
+        } catch (e) { }
         window.dispatchEvent(new CustomEvent("frd_sales_updated"));
         toast.success(`Offline sale #${targetOrder?.displayId || orderId} deleted and product stock restored!`);
       } catch (err) {
@@ -662,7 +662,7 @@ export default function AdminOrdersPage({ defaultTab }) {
           }
           try {
             localStorage.removeItem(`frd_user_profile_${custEmail}`);
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -675,7 +675,7 @@ export default function AdminOrdersPage({ defaultTab }) {
               const updated = data.filter((o) => o.id !== orderId);
               localStorage.setItem(key, JSON.stringify(updated));
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -919,7 +919,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                 View online website customer orders and physical offline store sales together in one place.
               </p>
             </div>
-            
+
             {/* + ADD OFFLINE STORE SALE BUTTON */}
             <button
               type="button"
@@ -941,7 +941,7 @@ export default function AdminOrdersPage({ defaultTab }) {
                 <FiFilter size={15} />
                 <span>SALES REPORTING FILTERS</span>
               </span>
-              <span className="text-[11px] font-semibold text-neutral-400">
+              <span className="text-[11px] font-black text-white">
                 Showing {filteredOrders.length} of {allOrders.length} transactions
               </span>
             </div>
@@ -1069,15 +1069,14 @@ export default function AdminOrdersPage({ defaultTab }) {
                     const custPhone = order.customer?.phone || order.shippingAddress?.phone || "N/A";
                     const orderTotal = order.total || order.totalAmount || 0;
                     const isOffline = order.orderType === "offline";
-                    
+
                     const totalQty = (order.items || []).reduce((acc, item) => acc + Number(item.quantity || 1), 0);
 
                     return (
                       <tr
                         key={order.id}
-                        className={`hover:bg-neutral-900/50 transition ${
-                          order.readStatus === "unread" && !isOffline ? "bg-lime-500/[0.03]" : ""
-                        }`}
+                        className={`hover:bg-neutral-900/50 transition ${order.readStatus === "unread" && !isOffline ? "bg-lime-500/[0.03]" : ""
+                          }`}
                       >
                         <td className="py-3 px-3 whitespace-nowrap">
                           <div className="space-y-0.5">
@@ -1114,9 +1113,8 @@ export default function AdminOrdersPage({ defaultTab }) {
 
                         <td className="py-3 px-3">
                           <div className="flex items-center gap-2">
-                            <div className={`w-7 h-7 rounded-full font-black flex items-center justify-center text-[10px] shrink-0 border ${
-                              isOffline ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-lime-500/20 text-lime-400 border-lime-500/30"
-                            }`}>
+                            <div className={`w-7 h-7 rounded-full font-black flex items-center justify-center text-[10px] shrink-0 border ${isOffline ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-lime-500/20 text-lime-400 border-lime-500/30"
+                              }`}>
                               {custName.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
@@ -1238,11 +1236,10 @@ export default function AdminOrdersPage({ defaultTab }) {
 
                               <button
                                 onClick={() => handleToggleOrderRead(order.id)}
-                                className={`px-2 py-1 rounded-lg text-[9px] font-bold transition cursor-pointer border ${
-                                  order.readStatus === "unread"
+                                className={`px-2 py-1 rounded-lg text-[9px] font-bold transition cursor-pointer border ${order.readStatus === "unread"
                                     ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
                                     : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                                }`}
+                                  }`}
                               >
                                 {order.readStatus === "unread" ? "Mark Read" : "Unread"}
                               </button>
@@ -1330,11 +1327,10 @@ export default function AdminOrdersPage({ defaultTab }) {
                 {filteredMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`p-4 rounded-2xl border transition space-y-3 ${
-                      msg.status === "unread"
+                    className={`p-4 rounded-2xl border transition space-y-3 ${msg.status === "unread"
                         ? "bg-lime-500/[0.04] border-lime-500/30 shadow-md shadow-lime-500/5"
                         : "bg-neutral-900/60 border-neutral-800"
-                    }`}
+                      }`}
                   >
                     {/* Header Row: ID, Date, Status */}
                     <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
@@ -1445,9 +1441,8 @@ export default function AdminOrdersPage({ defaultTab }) {
                     {filteredMessages.map((msg) => (
                       <tr
                         key={msg.id}
-                        className={`hover:bg-neutral-900/50 transition ${
-                          msg.status === "unread" ? "bg-lime-500/[0.03]" : ""
-                        }`}
+                        className={`hover:bg-neutral-900/50 transition ${msg.status === "unread" ? "bg-lime-500/[0.03]" : ""
+                          }`}
                       >
                         {/* ID & Date */}
                         <td className="py-3.5 px-3">
@@ -1687,11 +1682,10 @@ export default function AdminOrdersPage({ defaultTab }) {
                     status: prev.status === "read" ? "unread" : "read",
                   }));
                 }}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                  selectedMessage.status === "unread"
+                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${selectedMessage.status === "unread"
                     ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
                     : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
-                }`}
+                  }`}
               >
                 {selectedMessage.status === "unread" ? "Mark Read" : "Mark Unread"}
               </button>
@@ -1933,11 +1927,10 @@ export default function AdminOrdersPage({ defaultTab }) {
               <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
                 <button
                   onClick={() => handleToggleOrderRead(selectedOrder.id)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                    selectedOrder.readStatus === "unread"
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${selectedOrder.readStatus === "unread"
                       ? "bg-lime-500 text-neutral-950 border-lime-400 hover:bg-lime-400 font-extrabold"
                       : "bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white"
-                  }`}
+                    }`}
                 >
                   {selectedOrder.readStatus === "unread" ? "Mark as Read" : "Mark as Unread"}
                 </button>

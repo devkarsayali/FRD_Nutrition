@@ -1,5 +1,5 @@
 /**
- * Centralized Form Validation Helpers for FRD Nutrition Store
+ * Centralized Form Validation Helpers for HR Sports & Nutrition Store
  */
 
 /**

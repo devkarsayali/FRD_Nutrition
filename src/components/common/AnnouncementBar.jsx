@@ -1,11 +1,10 @@
 import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa";
 import { FiTruck } from "react-icons/fi";
 
-const FACEBOOK_URL =
-  "https://www.facebook.com/people/FRD-Nutrition-Hub/61562015493064/?mibextid=wwXIfr&rdid=s9QQG374GAE28t24&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F16RdAzGQFL%2F%3Fmibextid%3DwwXIfr";
+const FACEBOOK_URL = "";
 const INSTAGRAM_URL =
-  "https://www.instagram.com/frd_nutrition_rohtak_?igsh=Y2JxaXlybXV1NWxu";
-const YOUTUBE_URL = "https://youtu.be/ThqDnNDKLpE?si=12qZFVuMofdFxhbF";
+  "https://www.instagram.com/hrsportsandnutrision/";
+const YOUTUBE_URL = "";
 
 export default function AnnouncementBar() {
   return (
@@ -29,7 +28,7 @@ export default function AnnouncementBar() {
               target="_blank"
               rel="noreferrer"
               className="text-slate-400 hover:text-[#f5b800] transition"
-              title="Facebook - FRD Nutrition Hub"
+              title="Facebook - HR Sports & Nutrition"
             >
               <FaFacebookF size={13} />
             </a>
@@ -38,7 +37,7 @@ export default function AnnouncementBar() {
               target="_blank"
               rel="noreferrer"
               className="text-slate-400 hover:text-[#f5b800] transition"
-              title="Instagram - @frd_nutrition_rohtak_"
+              title="Instagram - @hrsportsandnutrision"
             >
               <FaInstagram size={14} />
             </a>
@@ -47,7 +46,7 @@ export default function AnnouncementBar() {
               target="_blank"
               rel="noreferrer"
               className="text-slate-400 hover:text-[#f5b800] transition"
-              title="YouTube - FRD Nutrition Video"
+              title="YouTube - HR Sports & Nutrition"
             >
               <FaYoutube size={14} />
             </a>

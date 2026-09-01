@@ -20,7 +20,7 @@ export default function TermsPolicyPage() {
             Terms & <span className="text-gradient-gold">Conditions</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-            By accessing or purchasing from FRD Nutrition, you agree to the following terms and conditions. Please read them carefully before using our website.
+            By accessing or purchasing from HR Sports & Nutrition, you agree to the following terms and conditions. Please read them carefully before using our website.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export default function TermsPolicyPage() {
                 <FiShield size={20} />
               </div>
               <h3 className="font-heading text-sm font-bold text-white">Intellectual Property</h3>
-              <p className="text-xs text-slate-400">All website content & branding belongs exclusively to FRD Nutrition</p>
+              <p className="text-xs text-slate-400">All website content & branding belongs exclusively to HR Sports & Nutrition</p>
             </div>
           </div>
 
@@ -69,7 +69,7 @@ export default function TermsPolicyPage() {
                 <span>Product Information</span>
               </h2>
               <p className="pl-9 text-slate-400">
-                All products sold on FRD Nutrition are nutritional supplements meant to support fitness and wellness. Products are not intended to diagnose, treat, cure, or prevent any disease.
+                All products sold on HR Sports & Nutrition are nutritional supplements meant to support fitness and wellness. Products are not intended to diagnose, treat, cure, or prevent any disease.
               </p>
             </div>
 
@@ -121,7 +121,7 @@ export default function TermsPolicyPage() {
                 <span>User Responsibility</span>
               </h2>
               <p className="pl-9 text-slate-400">
-                Users are responsible for providing accurate information while placing orders. FRD Nutrition is not liable for issues arising from incorrect details.
+                Users are responsible for providing accurate information while placing orders. HR Sports & Nutrition is not liable for issues arising from incorrect details.
               </p>
             </div>
 
@@ -134,7 +134,7 @@ export default function TermsPolicyPage() {
                 <span>Intellectual Property</span>
               </h2>
               <p className="pl-9 text-slate-400">
-                All content on this website including text, images, logos, and designs belongs to FRD Nutrition and may not be used without permission.
+                All content on this website including text, images, logos, and designs belongs to HR Sports & Nutrition and may not be used without permission.
               </p>
             </div>
 
@@ -147,7 +147,7 @@ export default function TermsPolicyPage() {
                 <span>Limitation of Liability</span>
               </h2>
               <p className="pl-9 text-slate-400">
-                FRD Nutrition shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or website.
+                HR Sports & Nutrition shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or website.
               </p>
             </div>
 
@@ -174,16 +174,16 @@ export default function TermsPolicyPage() {
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiMail className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Official Email</span>
-                <a href="mailto:support@frdnutritionpremium.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
-                  support@frdnutritionpremium.com
+                  <a href="mailto:aldarharshad@gmail.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
+                    aldarharshad@gmail.com
                 </a>
               </div>
 
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiPhone className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Customer Support</span>
-                <a href="tel:09466832004" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
-                  +91 9088032004 / 01262660027
+                  <a href="tel:+918767942220" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
+                    +91 8767942220 / +91 9309140591
                 </a>
               </div>
             </div>

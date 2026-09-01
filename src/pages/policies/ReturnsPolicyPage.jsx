@@ -21,7 +21,7 @@ export default function ReturnsPolicyPage() {
             Returns & Refunds <span className="text-gradient-gold">Policy</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-            At FRD Nutrition, we prioritize product quality, hygiene, and customer safety. Please read our Returns & Refunds Policy carefully before placing an order.
+            At HR Sports & Nutrition, we prioritize product quality, hygiene, and customer safety. Please read our Returns & Refunds Policy carefully before placing an order.
           </p>
         </div>
 
@@ -115,15 +115,15 @@ export default function ReturnsPolicyPage() {
                 <li>
                   All required details must be emailed to:{" "}
                   <a
-                    href="mailto:support@frdnutritionpremium.com"
-                    className="text-[#f5b800] font-bold underline"
+                    href="mailto:aldarharshad@gmail.com"
+                    className="text-amber-400 font-bold hover:underline"
                   >
-                    support@frdnutritionpremium.com
+                    aldarharshad@gmail.com
                   </a>
                 </li>
               </ul>
               <p className="text-[11px] text-slate-400 italic pt-2 border-t border-amber-500/20">
-                Replacement requests are reviewed by the FRD Nutrition team, and the decision to approve or reject a request is at our sole discretion.
+                Replacement requests are reviewed by the HR Sports & Nutrition team, and the decision to approve or reject a request is at our sole discretion.
               </p>
             </div>
 
@@ -149,7 +149,7 @@ export default function ReturnsPolicyPage() {
                 <span>Policy Disclaimer</span>
               </h2>
               <p className="pl-9 text-slate-400">
-                FRD Nutrition reserves the right to approve or reject any replacement claim after verification. This policy may be updated or modified at any time without prior notice.
+                HR Sports & Nutrition reserves the right to approve or reject any replacement claim after verification. This policy may be updated or modified at any time without prior notice.
               </p>
             </div>
           </div>
@@ -166,16 +166,16 @@ export default function ReturnsPolicyPage() {
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiMail className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Support Email</span>
-                <a href="mailto:support@frdnutritionpremium.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
-                  support@frdnutritionpremium.com
+                  <a href="mailto:aldarharshad@gmail.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
+                    aldarharshad@gmail.com
                 </a>
               </div>
 
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiPhone className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Phone & WhatsApp</span>
-                <a href="tel:09466832004" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
-                  +91 9088032004 / 01262660027
+                  <a href="tel:+918767942220" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
+                    +91 8767942220 / +91 9309140591
                 </a>
               </div>
             </div>

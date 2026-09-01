@@ -18,7 +18,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import OIPLogo from "../../assets/OIP.png";
+import OIPLogo from "../../assets/OIP2-removebg-preview.png";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { useCart } from "../../context/CartContext";
 import { db } from "../../firebase/firebase.config";
@@ -269,7 +269,7 @@ export default function AdminLayout() {
             <img
               src={OIPLogo}
               alt="FRD Nutrition Official Logo"
-              className="h-10 sm:h-14 max-h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-[0_0_18px_rgba(132,204,22,0.4)]"
+              className="h-14 sm:h-20 max-h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-[0_0_18px_rgba(132,204,22,0.4)]"
             />
             <span className="text-[11px] font-black tracking-widest text-lime-400 bg-lime-500/10 px-3 py-1 rounded-xl border border-lime-500/30 uppercase hidden sm:inline-block shadow-sm">
               ADMIN PORTAL

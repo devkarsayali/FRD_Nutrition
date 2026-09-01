@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FiCheckCircle, FiUser, FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
-import oipLogo from "../../assets/OIP.png";
+import oipLogo from "../../assets/OIP2-removebg-preview.png";
 import { useUserAuth } from "../../context/UserAuthContext";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../../firebase/firebase.config";
@@ -128,7 +128,7 @@ export default function AuthModal({ isOpen: customIsOpen, onClose: customOnClose
                 <img
                   src={oipLogo}
                   alt="FRD Nutrition Official Logo"
-                  className="h-14 sm:h-16 w-auto object-contain mx-auto mb-2 filter drop-shadow-[0_0_18px_rgba(245,184,0,0.4)]"
+                  className="h-20 sm:h-24 w-auto object-contain mx-auto mb-2 filter drop-shadow-[0_0_18px_rgba(245,184,0,0.4)]"
                 />
                 <span className="text-[#f5b800] text-xs font-black uppercase tracking-widest block">
                   FRD NUTRITION OFFICIAL STORE

@@ -220,7 +220,7 @@ export default function ProductDetailsPage() {
     if (navigator.share) {
       navigator
         .share({
-          title: product.name || "FRD Nutrition Supplement",
+          title: product.name || "HR Sports & Nutrition Supplement",
           url: window.location.href,
         })
         .catch(() => { });

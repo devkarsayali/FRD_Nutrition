@@ -294,7 +294,7 @@ export default function CheckoutModal() {
                     required
                     value={formData.city}
                     onChange={handleChange}
-                    placeholder="Mumbai / Rohtak"
+                    placeholder="Mumbai / Sangli"
                     className="w-full bg-[#090d16] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#f5b800] transition"
                   />
                 </div>

@@ -22,7 +22,7 @@ export default function ShippingPolicyPage() {
             Shipping <span className="text-gradient-gold">Information</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-            At FRD Nutrition, we ensure your fitness supplements are packed securely and delivered as quickly as possible.
+            At HR Sports & Nutrition, we ensure your fitness supplements are packed securely and delivered as quickly as possible.
           </p>
         </div>
 
@@ -165,15 +165,15 @@ export default function ShippingPolicyPage() {
                 <li>
                   All required details must be emailed to:{" "}
                   <a
-                    href="mailto:support@frdnutritionpremium.com"
-                    className="text-[#f5b800] font-bold underline"
+                    href="mailto:aldarharshad@gmail.com"
+                    className="text-amber-400 font-bold hover:underline"
                   >
-                    support@frdnutritionpremium.com
+                    aldarharshad@gmail.com
                   </a>
                 </li>
               </ul>
               <p className="text-[11px] text-slate-400 italic pt-2 border-t border-amber-500/20">
-                Please note: All claims are subject to verification by the FRD Nutrition team. FRD Nutrition reserves the right to approve or reject any claim based on the provided evidence.
+                Please note: All claims are subject to verification by the HR Sports & Nutrition team. HR Sports & Nutrition reserves the right to approve or reject any claim based on the provided evidence.
               </p>
             </div>
 
@@ -200,16 +200,16 @@ export default function ShippingPolicyPage() {
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiMail className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Email Support</span>
-                <a href="mailto:support@frdnutritionpremium.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
-                  support@frdnutritionpremium.com
+                <a href="mailto:aldarharshad@gmail.com" className="text-xs font-bold text-white hover:text-[#f5b800] transition block truncate">
+                  aldarharshad@gmail.com
                 </a>
               </div>
 
               <div className="p-5 rounded-2xl bg-[#0b101d] border border-slate-800 space-y-2">
                 <FiPhone className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Phone Line</span>
-                <a href="tel:09466832004" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
-                  094668 32004 / +91 9088032004
+                <a href="tel:+918767942220" className="text-xs font-bold text-white hover:text-[#f5b800] transition block">
+                  +91 8767942220 / +91 9309140591
                 </a>
               </div>
 
@@ -217,7 +217,7 @@ export default function ShippingPolicyPage() {
                 <FiMapPin className="text-[#f5b800]" size={20} />
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Official Hub</span>
                 <p className="text-xs text-slate-300 leading-normal">
-                  FRD Nutrition, Chhar Khamba Road, near Tikona Park, near Aarya Samaj Mandir, Model Town, Rohtak, Haryana – 124001
+                  <a href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en" target="_blank" rel="noreferrer" className="text-slate-300 hover:text-[#f5b800] transition">Shiv The Midtown Old Military Canteen, Opposite 100 Feet Road, Dhami Chowk, Sangli, Maharashtra – 416416, India</a>
                 </p>
               </div>
             </div>

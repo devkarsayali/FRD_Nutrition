@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { FiPrinter, FiDownload, FiX, FiCheckCircle } from "react-icons/fi";
-import logoImg from "../../assets/OIP1.jpg";
+import logoImg from "../../assets/OIP2-removebg-preview.png";
 
 export default function OfflineSaleBillModal({ isOpen, onClose, sale }) {
   const printRef = useRef();
@@ -110,13 +110,13 @@ export default function OfflineSaleBillModal({ isOpen, onClose, sale }) {
             <div>
               <table class="header-table">
                 <tr>
-                  <td class="logo-cell"><img src="${absoluteLogoUrl}" alt="FRD Logo" class="logo-img" /></td>
+                  <td class="logo-cell"><img src="${absoluteLogoUrl}" alt="HR Sports & Nutrition Logo" class="logo-img" /></td>
                   <td class="store-cell">
-                    <h1 class="store-title">FRD NUTRITION STORE</h1>
+                    <h1 class="store-title">HR SPORTS & NUTRITION STORE</h1>
                     <div class="store-info">
                       Physical Fitness & Sports Store Outlet<br />
-                      FRD Nutrition, Dev Colony Gali 1, Delhi Road, Rohtak, Haryana 124001<br />
-                      Phone: +91 90880 32004 | GSTIN: 27AAAAA0000A1Z5
+                      <a href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en" target="_blank" style="color: inherit; text-decoration: none;">Shiv The Midtown Old Military Canteen, Opposite 100 Feet Road, Dhami Chowk, Sangli, Maharashtra – 416416, India</a><br />
+                      Phone: <a href="tel:+918767942220" style="color: inherit; text-decoration: none;">+91 8767942220</a>, <a href="tel:+919309140591" style="color: inherit; text-decoration: none;">+91 9309140591</a> | GSTIN: 27AAAAA0000A1Z5
                     </div>
                   </td>
                   <td class="meta-cell">
@@ -256,13 +256,13 @@ export default function OfflineSaleBillModal({ isOpen, onClose, sale }) {
             <div>
               <table class="header-table">
                 <tr>
-                  <td class="logo-cell"><img src="${absoluteLogoUrl}" alt="FRD Logo" class="logo-img" /></td>
+                  <td class="logo-cell"><img src="${absoluteLogoUrl}" alt="HR Sports & Nutrition Logo" class="logo-img" /></td>
                   <td class="store-cell">
-                    <h1 class="store-title">FRD NUTRITION STORE</h1>
+                    <h1 class="store-title">HR SPORTS & NUTRITION STORE</h1>
                     <div class="store-info">
                       Physical Fitness & Sports Store Outlet<br />
-                      FRD Nutrition, Dev Colony Gali 1, Delhi Road, Rohtak, Haryana 124001<br />
-                      Phone: +91 90880 32004 | GSTIN: 27AAAAA0000A1Z5
+                      <a href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en" target="_blank" style="color: inherit; text-decoration: none;">Shiv The Midtown Old Military Canteen, Opposite 100 Feet Road, Dhami Chowk, Sangli, Maharashtra – 416416, India</a><br />
+                      Phone: <a href="tel:+918767942220" style="color: inherit; text-decoration: none;">+91 8767942220</a>, <a href="tel:+919309140591" style="color: inherit; text-decoration: none;">+91 9309140591</a> | GSTIN: 27AAAAA0000A1Z5
                     </div>
                   </td>
                   <td class="meta-cell">
@@ -396,12 +396,12 @@ export default function OfflineSaleBillModal({ isOpen, onClose, sale }) {
                 />
                 <div>
                   <h1 className="text-base sm:text-xl font-extrabold text-neutral-900 tracking-tight leading-none mb-1">
-                    FRD NUTRITION STORE
+                    HR SPORTS & NUTRITION STORE
                   </h1>
                   <p className="text-[10px] sm:text-[11px] text-neutral-600 leading-relaxed font-medium">
                     Physical Fitness & Sports Store Outlet<br />
-                    FRD Nutrition, Dev Colony Gali 1, Delhi Road, Rohtak, Haryana 124001<br />
-                    Phone: +91 90880 32004 | GSTIN: 27AAAAA0000A1Z5
+                    Shiv The Midtown Old Military Canteen, Opposite 100 Feet Road, Dhami Chowk, Sangli, Maharashtra – 416416, India<br />
+                    Phone: +91 8767942220, +91 9309140591 | GSTIN: 27AAAAA0000A1Z5
                   </p>
                 </div>
               </div>

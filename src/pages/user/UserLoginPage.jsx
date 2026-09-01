@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import oipLogo from "../../assets/OIP.png";
+import oipLogo from "../../assets/OIP2-removebg-preview.png";
 import { useUserAuth } from "../../context/UserAuthContext";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../../firebase/firebase.config";
@@ -35,7 +35,7 @@ export default function UserLoginPage() {
       // Immediately sign out from Firebase Auth so Google OAuth account is stored as customer only
       try {
         await auth.signOut();
-      } catch (e) {}
+      } catch (e) { }
       navigate("/user/dashboard");
     } catch (err) {
       console.error("Google login error:", err);
@@ -57,11 +57,11 @@ export default function UserLoginPage() {
         <div className="text-center space-y-2">
           <img
             src={oipLogo}
-            alt="FRD Nutrition Official Logo"
-            className="h-14 sm:h-16 w-auto object-contain mx-auto mb-2 filter drop-shadow-[0_0_18px_rgba(245,184,0,0.4)]"
+            alt="HR Sports & Nutrition Official Logo"
+            className="h-20 sm:h-24 w-auto object-contain mx-auto mb-2 filter drop-shadow-[0_0_18px_rgba(245,184,0,0.4)]"
           />
           <span className="text-[#f5b800] text-xs font-black uppercase tracking-widest block">
-            FRD NUTRITION OFFICIAL STORE
+            HR SPORTS & NUTRITION OFFICIAL STORE
           </span>
           <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
             User Access

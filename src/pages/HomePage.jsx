@@ -27,6 +27,10 @@ import About1 from "../assets/About1.jpeg";
 import About2 from "../assets/About2.jpeg";
 import About3 from "../assets/About3.jpeg";
 import About4 from "../assets/About4.jpeg";
+import StoreImg1 from "../assets/about.jpg";
+import StoreImg2 from "../assets/aboutt.jpg";
+import StoreImg3 from "../assets/abouttt.jpg";
+import StoreLogo from "../assets/OIP2-removebg-preview.png";
 import CatProtein from "../assets/Protein.jpeg";
 import CatCreatine from "../assets/Creatine.jpeg";
 import CatBCAA from "../assets/BCAA1.jpeg";
@@ -51,7 +55,7 @@ import Latest4 from "../assets/LATEST4.jpeg";
 
 const DEFAULT_HERO_SLIDE = {
   id: "default_hero_slide_1",
-  tagline: "OFFICIAL FRD NUTRITION STORE",
+  tagline: "OFFICIAL HR SPORTS & NUTRITION STORE",
   title: "UNLEASH YOUR ULTIMATE ATHLETIC POTENTIAL",
   subtitle: "100% Authentic Whey Protein, Creatine, BCAA & Gym Supplements Delivered Across India.",
   btnText: "SHOP SUPPLEMENTS",
@@ -306,7 +310,7 @@ export default function HomePage() {
         <div className="container-custom bg-[#0f172a]/90 p-4 sm:p-12 rounded-3xl sm:rounded-[2.5rem] shadow-2xl border border-slate-800/80 space-y-6 sm:space-y-10">
           <div className="text-center space-y-2">
             <span className="text-[10px] font-black text-[#f5b800] uppercase tracking-widest block">
-              FRD NUTRITION OFFICIAL WEBSITE
+              HR NUTRITION OFFICIAL WEBSITE
             </span>
             <h2 className="font-heading text-lg sm:text-2xl font-bold tracking-wider text-slate-200 uppercase flex items-center justify-center gap-2 sm:gap-3">
               <span>LATEST</span>
@@ -531,23 +535,23 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center">
             {/* Left: Storefront & Interior Gallery */}
             <div className="lg:col-span-6 space-y-3 sm:space-y-4">
-              {/* Main Large Store Image: About4 */}
+              {/* Main Large Store Image */}
               <div className="rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80 bg-[#090d16]">
                 <img
-                  src={About4}
-                  alt="FRD Nutrition Premium Storefront - About4"
+                  src={StoreImg1}
+                  alt="HR Sports & Nutrition Premium Storefront"
                   loading="lazy"
                   decoding="async"
                   className="w-full h-48 sm:h-[380px] object-cover object-top hover:scale-105 transition-transform duration-500"
                 />
               </div>
 
-              {/* Bottom 3 Grid Images: About2, About3 & About1 */}
+              {/* Bottom 3 Grid Images */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
                   <img
-                    src={About2}
-                    alt="FRD Store Interior Shelves - About2"
+                    src={StoreImg2}
+                    alt="HR Sports & Nutrition Store Interior Shelves"
                     loading="lazy"
                     decoding="async"
                     className="w-full h-20 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
@@ -555,20 +559,20 @@ export default function HomePage() {
                 </div>
                 <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
                   <img
-                    src={About3}
-                    alt="FRD Store Exterior Team - About3"
+                    src={StoreImg3}
+                    alt="HR Sports & Nutrition Store Exterior Team"
                     loading="lazy"
                     decoding="async"
                     className="w-full h-20 sm:h-32 object-cover object-top hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16]">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-slate-700/80 bg-[#090d16] flex items-center justify-center p-2">
                   <img
-                    src={About1}
-                    alt="FRD Store Stock Display - About1"
+                    src={StoreLogo}
+                    alt="HR Sports & Nutrition Logo"
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-20 sm:h-32 object-cover hover:scale-105 transition-transform duration-500"
+                    className="w-full h-16 sm:h-28 object-contain drop-shadow-[0_0_12px_rgba(245,184,0,0.3)] hover:scale-105 transition-transform duration-500"
                   />
                 </div>
               </div>
@@ -580,7 +584,7 @@ export default function HomePage() {
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
                   <FiMapPin className="text-[#f5b800]" size={14} />
                 </div>
-                <span>FRD NUTRITION STORE • LIVE EXPERIENCE</span>
+                <span>HR SPORTS & NUTRITION STORE • LIVE EXPERIENCE</span>
               </div>
 
               <h2 className="font-heading text-xl sm:text-4xl font-extrabold text-white leading-tight">
@@ -588,27 +592,27 @@ export default function HomePage() {
               </h2>
 
               <p className="text-slate-300 text-sm leading-relaxed">
-                Visit the official FRD Nutrition store located in Rohtak, Haryana. We provide premium whey protein, gym supplements, creatine, BCAA, and sports nutrition products trusted by athletes and fitness enthusiasts across India.
+                Visit the official HR Sports & Nutrition store located in Sangli, Maharashtra. We provide premium whey protein, gym supplements, creatine, BCAA, and sports nutrition products trusted by athletes and fitness enthusiasts across India.
               </p>
 
               <div className="space-y-2.5 text-xs text-slate-300 bg-[#090d16]/80 p-5 rounded-2xl border border-slate-800 shadow-inner">
                 <p className="flex items-start gap-2.5">
                   <FiMapPin className="text-[#f5b800] shrink-0 mt-0.5" size={16} />
-                  <span><strong>Address:</strong> Dev Colony Gali 1, Delhi Road, Rohtak, Haryana 124001</span>
+                  <span><strong>Address:</strong> <a href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en" target="_blank" rel="noreferrer" className="hover:text-[#f5b800] transition">Shiv The Midtown Old Military Canteen, Opposite 100 Feet Road, Dhami Chowk, Sangli, Maharashtra – 416416, India</a></span>
                 </p>
                 <p className="flex items-center gap-2.5">
                   <FiPhone className="text-[#f5b800] shrink-0" size={16} />
-                  <span><strong>Phone:</strong> +91 9088032004 • 01262 660027</span>
+                  <span><strong>Phone:</strong> <a href="tel:+918767942220" className="hover:text-[#f5b800] transition">+91 8767942220</a> • <a href="tel:+919309140591" className="hover:text-[#f5b800] transition">+91 9309140591</a></span>
                 </p>
                 <p className="flex items-center gap-2.5">
                   <FiMail className="text-[#f5b800] shrink-0" size={16} />
-                  <span><strong>Email:</strong> support@frdnutritionpremium.com</span>
+                  <span><strong>Email:</strong> <a href="mailto:aldarharshad@gmail.com" className="hover:text-[#f5b800] transition">aldarharshad@gmail.com</a></span>
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <a
-                  href="https://maps.google.com/?q=FRD+Nutrition+Dev+Colony+Gali+1+Delhi+Road+Rohtak+Haryana+124001"
+                  href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en"
                   target="_blank"
                   rel="noreferrer"
                   className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black hover:from-amber-400 hover:to-yellow-300 transition shadow-lg shadow-amber-500/20 flex items-center gap-2 text-xs"
@@ -647,13 +651,13 @@ export default function HomePage() {
               OFFICIAL BRAND HUB
             </span>
             <h2 className="font-heading text-3xl font-extrabold text-white">
-              FRD Nutrition Official Website
+              HR Sports & Nutrition Official Website
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed">
-              FRD Nutrition is a trusted sports nutrition brand based in Rohtak, Haryana founded by Ram Niwas. We provide premium raw whey protein isolate, gym supplements, creatine, BCAA and mass gainers for athletes and fitness enthusiasts across India.
+              HR Sports & Nutrition is a trusted sports nutrition brand based in Sangli, Maharashtra founded by Harshad Aldar and Rahul Chavan. We provide premium raw whey protein isolate, gym supplements, creatine, BCAA and mass gainers for athletes and fitness enthusiasts across India.
             </p>
             <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-              Shop authentic FRD Nutrition supplements directly from our official website. Our mission is to deliver high-quality sports nutrition products that help you build muscle, improve performance and achieve your fitness goals.
+              Shop authentic HR Sports & Nutrition supplements directly from our official website. Our mission is to deliver high-quality sports nutrition products that help you build muscle, improve performance and achieve your fitness goals.
             </p>
           </div>
         </div>

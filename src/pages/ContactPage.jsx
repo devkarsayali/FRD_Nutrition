@@ -159,7 +159,7 @@ export default function ContactPage() {
           className="text-center space-y-3 max-w-3xl mx-auto"
         >
           <span className="text-[#f5b800] text-xs font-black uppercase tracking-widest block">
-            FRD NUTRITION OFFICIAL STORE
+            HR SPORTS & NUTRITION OFFICIAL STORE
           </span>
           <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white">
             {formData.product ? "PRODUCT ENQUIRY & CONTACT" : "GET IN TOUCH WITH US"}
@@ -167,7 +167,7 @@ export default function ContactPage() {
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
             {formData.product
               ? `Submit your enquiry regarding "${formData.product}". Our supplement specialists will provide guidance within 24 hours.`
-              : "Have questions about authentic supplements, stack guidance, or your order status? Send us a message or visit our official flagship store in Rohtak, Haryana."}
+              : "Have questions about authentic supplements, stack guidance, or your order status? Send us a message or visit our official flagship store in Sangli, Maharashtra."}
           </p>
         </motion.div>
 
@@ -195,8 +195,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h5 className="font-bold text-white text-sm">Phone Helpline</h5>
-                    <p className="text-xs text-slate-300 font-medium">+91 9088032004</p>
-                    <p className="text-xs text-slate-400">Landline: 01262 660027</p>
+                    <p className="text-xs text-slate-300 font-medium"><a href="tel:+918767942220" className="hover:text-[#f5b800] transition">+91 8767942220</a></p>
+                    <p className="text-xs text-slate-400">Phone: <a href="tel:+919309140591" className="hover:text-[#f5b800] transition">+91 9309140591</a></p>
                   </div>
                 </div>
 
@@ -206,8 +206,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h5 className="font-bold text-white text-sm">Email Support</h5>
-                    <a href="mailto:support@frdnutritionpremium.com" className="text-xs text-[#f5b800] font-medium hover:underline block">
-                      support@frdnutritionpremium.com
+                    <a href="mailto:aldarharshad@gmail.com" className="text-xs text-[#f5b800] font-medium hover:underline block">
+                      aldarharshad@gmail.com
                     </a>
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export default function ContactPage() {
                   <div>
                     <h5 className="font-bold text-white text-sm">Store Address</h5>
                     <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                      FRD Nutrition, Dev Colony Gali 1, Delhi Road, Rohtak, Haryana 124001
+                      <a href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en" target="_blank" rel="noreferrer" className="hover:text-[#f5b800] transition">Shiv The Midtown Old Military Canteen, Opposite 100 Feet Road, Dhami Chowk, Sangli, Maharashtra – 416416, India</a>
                     </p>
                   </div>
                 </div>
@@ -269,7 +269,7 @@ export default function ContactPage() {
                     {formData.product ? "Enquiry Received!" : "Message Received!"}
                   </h3>
                   <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                    Thank you for reaching out to FRD Nutrition. Our team has received your query and will reply via email or phone shortly.
+                    Thank you for reaching out to HR Sports & Nutrition. Our team has received your query and will reply via email or phone shortly.
                   </p>
                 </div>
                 <button
@@ -427,8 +427,8 @@ export default function ContactPage() {
             {/* Left Side: Embedded Google Map */}
             <div className="lg:col-span-5 rounded-2xl overflow-hidden border border-slate-800 shadow-lg h-60 sm:h-64 lg:h-full min-h-[220px]">
               <iframe
-                title="FRD Nutrition Store Location - Dev Colony Gali 1, Delhi Road, Rohtak"
-                src="https://maps.google.com/maps?q=FRD%20Nutrition,%20Dev%20Colony%20Gali%201,%20Delhi%20Road,%20Rohtak,%20Haryana%20124001&t=&z=16&ie=UTF8&iwloc=B&output=embed"
+                title="HR Sports & Nutrition Store Location - Dhami Chowk, Sangli"
+                src="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&t=&z=16&ie=UTF8&iwloc=B&output=embed"
                 width="100%"
                 height="100%"
                 className="w-full h-full min-h-[220px]"
@@ -446,17 +446,17 @@ export default function ContactPage() {
                   VISIT OUR PHYSICAL STOREFRONT
                 </span>
                 <h3 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
-                  Experience FRD Nutrition Live
+                  Experience HR Sports & Nutrition Live
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                  Step into our store in Dev Colony, Rohtak for personalized stack guidance, 100% genuine lab-certified supplements, and direct consultation with fitness experts.
+                  Step into our store in Dhami Chowk, Sangli for personalized stack guidance, 100% genuine lab-certified supplements, and direct consultation with fitness experts.
                 </p>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <a
-                  href="https://maps.google.com/?q=FRD+Nutrition+Dev+Colony+Gali+1+Delhi+Road+Rohtak+Haryana+124001"
+                  href="https://maps.google.com/maps?q=16.845714569091797%2C74.58794403076172&z=17&hl=en"
                   target="_blank"
                   rel="noreferrer"
                   className="px-5 py-3 rounded-xl bg-gradient-to-r from-[#f5b800] to-amber-500 text-slate-950 font-black hover:from-amber-400 hover:to-yellow-300 transition shadow-lg shadow-amber-500/20 flex items-center gap-2 text-xs"
